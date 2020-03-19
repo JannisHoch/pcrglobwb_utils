@@ -29,7 +29,7 @@ def plot_var_at_timestep(fo, var_name, time, savefig=False, outdir=None):
     ds = xr.open_dataset(fo)
     
     plt.figure()
-    qplot = ds[var_name].sel(time=time).plot()
+    ds[var_name].sel(time=time).plot()
         
     if savefig:
         f_name = var_name + '_' + time + '.png'
