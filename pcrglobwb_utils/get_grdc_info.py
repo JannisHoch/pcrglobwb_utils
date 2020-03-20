@@ -69,7 +69,7 @@ def get_grdc_station_properties(fo):
 # In[4]:
 
 
-def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+def get_grdc_station_values(fo, var_name='GRDC discharge', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
     """
     reads (discharge) values of GRDC station from txt-file.
     creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name.
@@ -78,7 +78,7 @@ def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_hea
     input:
     -------
     fo {string} = path to txt-file
-    val_name {string} = user-specified column header name
+    var_name {string} = user-specified column header name (default: 'GRDC discharge')
     remove_mv {bool} = True/False whether missing values should be removed (default: True)
     mv_val {int} = integer value corresponding to missing value in timeseries (default: -999)
     print_head {bool} = True/False whether df.head() is printed (default: False)
@@ -92,10 +92,10 @@ def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_hea
     
     #TODO: the number of rows to be skipped seem to change between files
     # appraoch: make it generic by scanning until lines do not start with # anymore
-    df = pd.read_csv(fo, skiprows=40, sep=';')
+    df = pd.read_csv(fo, skiprows=35, sep=';')
         
-    df[val_name] = df[' Original'].copy()
-    del df[' Original']
+    df[val_name] = df[' Value'].copy()
+    del df[' Value']
     
     df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
     df.set_index(df['date'], inplace=True)
