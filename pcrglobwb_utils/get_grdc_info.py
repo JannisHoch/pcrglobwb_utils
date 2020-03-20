@@ -69,7 +69,7 @@ def get_grdc_station_properties(fo):
 # In[4]:
 
 
-def get_grdc_station_values(fo, var_name='GRDC discharge', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
     """
     reads (discharge) values of GRDC station from txt-file.
     creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name.
