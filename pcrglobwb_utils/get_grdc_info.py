@@ -65,11 +65,7 @@ def get_grdc_station_properties(fo):
     
     return plot_title, props
 
-
-# In[4]:
-
-
-def get_grdc_station_values(fo, var_name='GRDC discharge', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+def get_grdc_station_values(fo, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
     """
     reads (discharge) values of GRDC station from txt-file.
     creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name.
@@ -78,7 +74,7 @@ def get_grdc_station_values(fo, var_name='GRDC discharge', remove_mv=True, mv_va
     input:
     -------
     fo {string} = path to txt-file
-    var_name {string} = user-specified column header name (default: 'GRDC discharge')
+    var_name {string} = user-specified column header name
     remove_mv {bool} = True/False whether missing values should be removed (default: True)
     mv_val {int} = integer value corresponding to missing value in timeseries (default: -999)
     print_head {bool} = True/False whether df.head() is printed (default: False)
