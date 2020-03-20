@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -97,8 +99,8 @@ def get_grdc_station_values(fo, var_name, remove_mv=True, mv_val=-999, print_hea
 
     df = pd.read_csv(fo, skiprows=stopline, sep=';')
         
-    df[val_name] = df[' Value'].copy()
-    del df[' Value']
+    df[val_name] = df[' Original'].copy()
+    del df[' Original']
     
     df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
     df.set_index(df['date'], inplace=True)

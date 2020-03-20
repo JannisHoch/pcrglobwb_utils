@@ -10,9 +10,9 @@
 # River:                 AMAZONAS
 # Station:               OBIDOS - PORTO
 # Country:               BR
-# Latitude (dec. °):       -1.947200
-# Longitude (de. °):      -55.511100
-# Catchment area (km²):  4680000.000
+# Latitude (dec. degree):       -1.947200
+# Longitude (de. degree):      -55.511100
+# Catchment area (km2):  4680000.000
 # Altitude (m.a.s.l):          37.00
 # Next d/s station:      -
 # Remarks:               
@@ -20,7 +20,7 @@
 #
 # Data Set Content:      MEAN DAILY DISCHARGE
 #                        --------------------
-# Unit:                  m³/s
+# Unit:                  m3/s
 # Time series:           1927-12 - 1998-05
 # No. of years:          72
 # Last update:           2011-01-13

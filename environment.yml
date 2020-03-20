@@ -11,6 +11,8 @@ dependencies:
   - numpy>=1.16.5
   - matplotlib>=3.2.0
   - ipython
+  - notebook
+  - click
   - scipy
   - pip:
     - spotpy>=1.5.8
