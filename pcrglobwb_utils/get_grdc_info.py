@@ -69,7 +69,7 @@ def get_grdc_station_properties(fo):
 # In[4]:
 
 
-def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+def get_grdc_station_values(fo, var_name='GRDC discharge', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
     """
     reads (discharge) values of GRDC station from txt-file.
     creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name.
@@ -89,10 +89,17 @@ def get_grdc_station_values(fo, val_name, remove_mv=True, mv_val=-999, print_hea
     -------
     df {dataframe} = dataframe containing GRDC values per time step
     """
-    
-    #TODO: the number of rows to be skipped seem to change between files
-    # appraoch: make it generic by scanning until lines do not start with # anymore
-    df = pd.read_csv(fo, skiprows=35, sep=';')
+
+    f = open(fo)
+    for i, line in enumerate(f):
+        if '#' in line:
+            pass
+        else:
+            stopline = i
+            print(str(stopline))
+            break
+
+    df = pd.read_csv(fo, skiprows=stopline, sep=';')
         
     df[val_name] = df[' Value'].copy()
     del df[' Value']

@@ -9,9 +9,10 @@ grdc_file = sys.argv[-1]
 print('get info from GRDC file')
 
 grdc_plot_title, grdc_props = pcrglobwb_utils.get_grdc_info.get_grdc_station_properties(grdc_file)
-# print(grdc_props)
 
-df_grdc = pcrglobwb_utils.get_grdc_info.get_grdc_station_values(grdc_file, val_name='GRDC discharge [m3/s]', plot=True)
+df_grdc = pcrglobwb_utils.get_grdc_info.get_grdc_station_values(grdc_file, 
+                                                                val_name='GRDC discharge [m3/s]', 
+                                                                plot=True)
 print(df_grdc.head())
 
 for file in ncfiles_list:
