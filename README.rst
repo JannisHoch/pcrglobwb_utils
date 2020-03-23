@@ -36,7 +36,7 @@ Features
 Installation
 ------------
 
-For explanation of the installation procedure, please see here :ref:`_installation`
+For explanation of the installation procedure, please see here installation_.
 
 Credits
 -------
