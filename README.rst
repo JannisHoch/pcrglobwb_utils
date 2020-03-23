@@ -38,6 +38,8 @@ Installation
 
 For explanation of the installation procedure, please see here installation_.
 
+.. _installation: https://github.com/JannisHoch/pcrglobwb_utils/blob/master/docs/installation.rst
+
 Credits
 -------
 
