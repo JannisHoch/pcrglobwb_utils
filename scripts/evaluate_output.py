@@ -3,7 +3,6 @@
 import pcrglobwb_utils
 import matplotlib.pyplot as plt
 import datetime
-import pickle
 import os, sys
 
 #TODO: create something like that with click
@@ -94,9 +93,5 @@ for file in ncfiles_list:
     print('timeseries validation results are:')
     print(eval_dic)
 
-    # pickling output
-    outfile = open(os.path.join(out_dir, 'pickles'),'wb')
-    pickle.dump(df_eval, outfile) # dataframe
-    pickle.dump(eval_dic, outfile) # dictionary
-    outfile.close()
+df_eval.to_csv(os.path.join(out_dir, 'dataframe.csv'), sep=';')
 
