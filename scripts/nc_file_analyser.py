@@ -58,6 +58,7 @@ df_grdc = pcrglobwb_utils.get_grdc_info.get_grdc_station_values(grdc_file,
 
 # go throuh all provided nc-files
 #NOTE: tested with 1 file so far only
+#TODO: think about how to do this with multiple nc-files
 for file in ncfiles_list:
 
     if os.path.isabs(file):
@@ -95,7 +96,7 @@ for file in ncfiles_list:
 
     # pickling output
     outfile = open(os.path.join(out_dir, 'pickles'),'wb')
-    pickle.dump(df_eval, outfile)
-    pickle.dump(eval_dic, outfile)
+    pickle.dump(df_eval, outfile) # dataframe
+    pickle.dump(eval_dic, outfile) # dictionary
     outfile.close()
 
