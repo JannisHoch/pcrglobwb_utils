@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rasterio as rio
 import spotpy as sp
+import csv
 import os, sys
 
 def read_nc_file_at_indices(fo, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
@@ -78,7 +79,7 @@ def calc_montly_avg(df_in, var_name=None):
     
     return df_out
 
-def validate_results(df_obs, df_sim, var_name_obs=None, var_name_sim=None, plot=False):
+def validate_results(df_obs, df_sim, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
     """
     validates observed and simulated values in a timeseries. 
     computes KGE, NSE, RMSE, and R^2.
@@ -129,6 +130,12 @@ def validate_results(df_obs, df_sim, var_name_obs=None, var_name_sim=None, plot=
     # plot if specified
     if plot == True:
         both.plot()
+        plt.show()
+        if save_fig == True:
+            plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
+    if save_fig == True:
+        both.plot()
+        plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
     
     # convert to np-arrays
     obs = both[both.columns[0]].to_numpy()
@@ -145,5 +152,11 @@ def validate_results(df_obs, df_sim, var_name_obs=None, var_name_sim=None, plot=
                   'NSE': nse,
                   'RMSE': rmse,
                   'R2': r2}
+
+    # save dict to csv
+    out_fo = os.path.join(out_dir, 'evaluation.csv')
+    w = csv.writer(open(out_fo, "w"))
+    for key, val in evaluation.items():
+        w.writerow([key, val])
     
-    return evaluation
+    return both, evaluation

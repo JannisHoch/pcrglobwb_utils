@@ -7,10 +7,26 @@ import os, sys
 
 #TODO: create something like that with click
 
-# parsing arguments
-ncfiles_list = sys.argv[1:-2]
-grdc_file = str(sys.argv[-2])
-out_dir = str(sys.argv[-1])
+# parsing arguments and checking whether provided paths are absolute or relative
+ncfiles_list = sys.argv[1:-2] # list of nc-files to be evaluated
+
+grdc_file = str(sys.argv[-2]) # file with grdc info
+if os.path.isabs(grdc_file):
+    pass
+else:
+    grdc_file = os.path.join(os.getcwd(), grdc_file)
+
+out_dir = str(sys.argv[-1]) # path to output_dir
+if os.path.isabs(out_dir):
+    pass
+else:
+    out_dir = os.path.join(os.getcwd(), out_dir)
+
+# check whether out_dir already exists, if not make a new folder
+if os.path.exists(out_dir):
+    pass
+else:
+    os.mkdir(out_dir)
 
 # provding plot names 
 #TODO: make this more interactive and less hard-coded
@@ -25,9 +41,6 @@ sys.stdout = open(os.path.join(out_dir, 'logfile.log'), 'w')
 
 print(datetime.datetime.now())
 print('')
-
-# get absolute path to GRDC file
-grdc_file = os.path.join(cwd, grdc_file)
 
 print('get info from GRDC file', os.path.abspath(grdc_file))
 print('')
@@ -47,7 +60,10 @@ df_grdc = pcrglobwb_utils.get_grdc_info.get_grdc_station_values(grdc_file,
 #NOTE: tested with 1 file so far only
 for file in ncfiles_list:
 
-    nc_file = os.path.join(cwd, file)
+    if os.path.isabs(file):
+        pass
+    else:
+        nc_file = os.path.join(os.getcwd(), file)
 
     print('reading from nc-file', os.path.abspath(nc_file))
     print('')

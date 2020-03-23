@@ -94,24 +94,26 @@ def get_grdc_station_values(fo, var_name, remove_mv=True, mv_val=-999, print_hea
             pass
         else:
             stopline = i
-            print(str(stopline))
             break
 
     df = pd.read_csv(fo, skiprows=stopline, sep=';')
         
-    df[val_name] = df[' Original'].copy()
+    df[var_name] = df[' Original'].copy()
     del df[' Original']
     
     df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
     df.set_index(df['date'], inplace=True)
+
+    df_out = pd.DataFrame(index=df.index,
+                          data=df[var_name])
     
     if remove_mv == True:
-        df[val_name].replace(mv_val, np.nan, inplace=True)
+        df_out.replace(mv_val, np.nan, inplace=True)
     
     if print_head == True:
-        print(df.head())
+        print(df_out.head())
         
     if plot == True:
-        df[val_name].plot(title=plot_title, legend=True)
+        df_out.plot(title=plot_title, legend=True)
     
-    return df
+    return df_out

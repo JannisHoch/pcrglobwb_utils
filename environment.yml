@@ -16,4 +16,3 @@ dependencies:
   - scipy
   - pip:
     - spotpy>=1.5.8
-    - git+https://github.com/JannisHoch/pcrglobwb_utils.git
