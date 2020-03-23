@@ -1,51 +1,42 @@
+.. _installation:
+
 .. highlight:: shell
 
 ============
 Installation
 ============
 
+.... note:: Currently, it is not possible to install this package via pip or conda
 
-Stable release
---------------
-
-To install pcrglobwb_utils, run this command in your terminal:
-
-.. code-block:: console
-
-    $ pip install pcrglobwb_utils
-
-This is the preferred method to install pcrglobwb_utils, as it will always install the most recent stable release.
-
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
+From source
 ------------
 
 The sources for pcrglobwb_utils can be downloaded from the `Github repo`_.
 
-You can either clone the public repository:
+You can clone the public repository:
 
 .. code-block:: console
 
     $ git clone git://github.com/JannisHoch/pcrglobwb_utils
 
-Or download the `tarball`_:
+To avoid conflicting package version numbers, it is advised to create a separate conda environnmet
+for this package:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/JannisHoch/pcrglobwb_utils/tarball/master
+    $ conda-env create -f=path/to/pcrglobwb_utils/environment.yml
 
-Once you have a copy of the source, you can install it with:
+Subsequently, activate this environment with:
 
 .. code-block:: console
 
-    $ python setup.py install
+    $ conda activate pcrglobwb_utils
+
+Installation of the package is then possible:
+
+.. code-block:: console
+
+    $ python path/to/pcrglobwb_utils/setup.py develop
 
 
 .. _Github repo: https://github.com/JannisHoch/pcrglobwb_utils
-.. _tarball: https://github.com/JannisHoch/pcrglobwb_utils/tarball/master

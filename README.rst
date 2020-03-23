@@ -30,7 +30,13 @@ Handy functions to work with PCR-GLOBWB input and output
 Features
 --------
 
-* TODO
+* allows evaluation of timeseries simulated by PCR-GLOBWB with observations
+* currently limited to PCR-GLOBWB discharge and GRDC observations only
+
+Installation
+------------
+
+For explanation of the installation procedure, please see here :ref:`./docs/rst_tutorial`
 
 Credits
 -------
