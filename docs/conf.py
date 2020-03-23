@@ -104,8 +104,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
+autodoc_member_order = 'alphabetical'
+
+autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------
 
