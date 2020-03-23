@@ -36,7 +36,7 @@ Features
 Installation
 ------------
 
-For explanation of the installation procedure, please see here :ref:`./docs/rst_tutorial`
+For explanation of the installation procedure, please see here :ref:`_installation`
 
 Credits
 -------
