@@ -12,6 +12,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
+import sys
 from mock import Mock as MagicMock
 
 class Mock(MagicMock):
@@ -31,8 +33,7 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
-import os
-import sys
+
 sys.path.insert(0, os.path.abspath('../'))
 
 import pcrglobwb_utils
