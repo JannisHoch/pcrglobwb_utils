@@ -3,6 +3,7 @@
 import pcrglobwb_utils
 import matplotlib.pyplot as plt
 import datetime
+import pickle
 import os, sys
 
 #TODO: create something like that with click
@@ -33,11 +34,10 @@ else:
 new_var_name_obs = 'Q$obs$ GRDC [m3/s]'
 new_var_name_sim = 'Q$sim$ PCR-GLOBWB [m3/s]'
 
-# get current working directory
-cwd = os.getcwd()
-
 # initiate logging
 sys.stdout = open(os.path.join(out_dir, 'logfile.log'), 'w')
+
+
 
 print(datetime.datetime.now())
 print('')
@@ -92,4 +92,10 @@ for file in ncfiles_list:
     
     print('timeseries validation results are:')
     print(eval_dic)
+
+    # pickling output
+    outfile = open(os.path.join(out_dir, 'pickles'),'wb')
+    pickle.dump(df_eval, outfile)
+    pickle.dump(eval_dic, outfile)
+    outfile.close()
 
