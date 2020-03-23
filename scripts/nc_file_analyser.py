@@ -6,8 +6,9 @@ import os, sys
 
 #TODO: create something like that with click
 
-ncfiles_list = sys.argv[1:-1]
-grdc_file = str(sys.argv[-1])
+ncfiles_list = sys.argv[1:-2]
+grdc_file = str(sys.argv[-2])
+out_dir = str(sys.argv[-1])
 
 new_var_name_obs = 'Q$obs$ GRDC [m3/s]'
 new_var_name_sim = 'Q$sim$ PCR-GLOBWB [m3/s]'
@@ -38,6 +39,11 @@ for file in ncfiles_list:
                                                                col, 
                                                                plot_var_name=new_var_name_sim)
 
-    eval_dic = pcrglobwb_utils.timeseries.validate_results(df_grdc, q_sim, new_var_name_obs, new_var_name_sim, plot=True)
+    eval_dic = pcrglobwb_utils.timeseries.validate_results(df_grdc, 
+                                                           q_sim, 
+                                                           out_dir, 
+                                                           new_var_name_obs, 
+                                                           new_var_name_sim, 
+                                                           plot=False)
     print(eval_dic)
 
