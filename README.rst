@@ -1,5 +1,5 @@
 ===============
-pcrglobwb_utils
+Overview
 ===============
 
 
@@ -12,7 +12,6 @@ pcrglobwb_utils
 .. image:: https://readthedocs.org/projects/pcrglobwb-utils/badge/?version=latest
         :target: https://pcrglobwb-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
-
 
 .. image:: https://pyup.io/repos/github/JannisHoch/pcrglobwb_utils/shield.svg
      :target: https://pyup.io/repos/github/JannisHoch/pcrglobwb_utils/
