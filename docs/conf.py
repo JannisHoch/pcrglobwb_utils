@@ -24,7 +24,7 @@ class Mock(MagicMock):
             return Mock()
 
 # Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = ['xarray']
+MOCK_MODULES = ['xarray', 'rasterio']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -42,11 +42,25 @@ import pcrglobwb_utils
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '2.4'
+# needs_sphinx = '2.4'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.napoleon',
+              'sphinx.ext.autosectionlabel',
+              ]
+
+napoleon_google_docstring = False
+napoleon_use_param = False
+napoleon_use_ivar = True
+
+todo_include_todos=True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
