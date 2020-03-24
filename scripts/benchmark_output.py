@@ -38,10 +38,12 @@ df_out = pd.DataFrame()
 for i, file in enumerate(ncfiles_list):
 
     # loop through provided filenames and check whether path is absolute or relative
-    if os.path.isabs(ncfiles_list[i]):
-        pass
+    if os.path.isabs(file):
+        nc_file = file
     else:
         nc_file = os.path.join(os.getcwd(), file)
+
+    nc_file_name = nc_file.rsplit('/')[-1]
 
     print('reading from nc-file', os.path.abspath(nc_file))
     print('')
@@ -53,7 +55,7 @@ for i, file in enumerate(ncfiles_list):
     q_sim = pcrglobwb_utils.timeseries.read_nc_file_at_indices(nc_file, 
                                                                row, 
                                                                col, 
-                                                               plot_var_name='discharge'+str(i+1))
+                                                               plot_var_name=str(nc_file_name))
 
     # concatenate all extracted timeseries to one output dataframe
     df_out = pd.concat([df_out, q_sim], axis=1)

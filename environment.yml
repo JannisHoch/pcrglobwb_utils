@@ -16,3 +16,4 @@ dependencies:
   - scipy
   - pip:
     - spotpy>=1.5.8
+    - netCDF4
