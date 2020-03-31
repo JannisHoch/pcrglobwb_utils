@@ -35,6 +35,7 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 #
 
 sys.path.insert(0, os.path.abspath('../'))
+# sys.path.insert(0, os.path.abspath('.'))
 
 import pcrglobwb_utils
 
@@ -58,10 +59,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
-    'sphinx.ext.autosectionlabel',
-    'nbsphinx',
-    'nbsphinx_link'
+    'sphinx.ext.autosectionlabel'
 ]
 
 napoleon_google_docstring = False
