@@ -17,6 +17,10 @@ Overview
      :target: https://pyup.io/repos/github/JannisHoch/pcrglobwb_utils/
      :alt: Updates
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3725813.svg
+   :target: https://doi.org/10.5281/zenodo.3725813
+   :alt: DOI
+
 
 
 Handy functions to work with PCR-GLOBWB input and output
