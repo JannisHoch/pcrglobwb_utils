@@ -6,35 +6,30 @@ import rasterio as rio
 import spotpy as sp
 import os, sys
 
-def indeces(self, fo, lon, lat):
+def find_indices_from_coords(fo, lon, lat):
     """
-    test
+    Read in georeferenced 2D file (e.g. tiff or nc-file) and 
+    get row and column indices corresponding to given longitude and latitude information.
+    
+    input:
+    ------
+    fo {str} = georeferenced 2D file
+    lon {float} = longitude of point
+    lat {float} = latitude of point
+    
+    output:
+    -------
+    row {float} = row corresponding to longitude
+    col {float} = column corresponding to latitude
     """
-
-    def find_indices_from_coords(self, fo, lon, lat):
-        """
-        Read in georeferenced 2D file (e.g. tiff or nc-file) and 
-        get row and column indices corresponding to given longitude and latitude information.
-        
-        input:
-        ------
-        fo {str} = georeferenced 2D file
-        lon {float} = longitude of point
-        lat {float} = latitude of point
-        
-        output:
-        -------
-        row {float} = row corresponding to longitude
-        col {float} = column corresponding to latitude
-        """
-        
-        # open file
-        ds = rio.open(fo)
-        
-        # get indices
-        row, col = ds.index(lon, lat)
-        
-        # close file
-        ds.close()
-        
-        return row, col
+    
+    # open file
+    ds = rio.open(fo)
+    
+    # get indices
+    row, col = ds.index(lon, lat)
+    
+    # close file
+    ds.close()
+    
+    return row, col
