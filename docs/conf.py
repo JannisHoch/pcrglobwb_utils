@@ -14,19 +14,20 @@
 
 import os
 import sys
-from mock import Mock as MagicMock
 
-class Mock(MagicMock):
-    __all__ = []
-    __version__ = "1.6"
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
+# from mock import Mock as MagicMock
 
-# Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = ['xarray', 'rasterio']
+# class Mock(MagicMock):
+#     __all__ = []
+#     __version__ = "1.6"
+#     @classmethod
+#     def __getattr__(cls, name):
+#             return Mock()
 
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# # Mock modules so that we can build on readthedocs.org
+# MOCK_MODULES = ['xarray', 'rasterio']
+
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
