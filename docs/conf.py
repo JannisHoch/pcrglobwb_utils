@@ -15,19 +15,19 @@
 import os
 import sys
 
-# from mock import Mock as MagicMock
+from mock import Mock as MagicMock
 
-# class Mock(MagicMock):
-#     __all__ = []
-#     __version__ = "1.6"
-#     @classmethod
-#     def __getattr__(cls, name):
-#             return Mock()
+class Mock(MagicMock):
+    __all__ = []
+    __version__ = "1.6"
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
 
-# # Mock modules so that we can build on readthedocs.org
-# MOCK_MODULES = ['xarray', 'rasterio']
+# Mock modules so that we can build on readthedocs.org
+MOCK_MODULES = ['xarray', 'rasterio', 'spotpy']
 
-# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
@@ -35,7 +35,7 @@ import sys
 # absolute, like shown here.
 #
 
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pcrglobwb_utils
@@ -122,7 +122,8 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+# html_theme = 'pydata_sphinx_theme'
+html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
