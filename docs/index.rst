@@ -19,7 +19,6 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    contributing
    authors
    history
-   code_doc
 
 Indices and tables
 ==================
