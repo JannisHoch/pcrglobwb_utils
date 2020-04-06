@@ -8,24 +8,24 @@ import csv
 import os, sys
 
 def read_nc_file_at_indices(fo, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
-    """
-    reading a nc-file and retrieving variable values at given column and row indices.
-    default setting is that discharge is extracted at this point.
-    resulting timeseries is stored as pandas timeframe and can be plotted with user-specified variable name and title.
+    """Reading a nc-file and retrieving variable values at given column and row indices.\
+        Default setting is that discharge is extracted at this point.\
+        Resulting timeseries is stored as pandas timeframe and can be plotted \
+        with user-specified variable name and title.
     
-    input:
-    ------
-    fo {str} = georeferenced 2D nc-file
-    idx_row {float} = row index
-    idx_col {float} = column index
-    var_name {str} = name of variable to be retrieved in nc-file (default: 'discharge')
-    plot {bool} = True/False whether timeseries is plooted
-    plot_var_name {str} = user-specified alternative name of variable in plot (default: None)
-    plot_tile {str} = user-specified plot title (default: None)
+    Arguments:
+        fo {str} -- path to nc-file
+        idx_row {float} -- row index from which to read the data
+        idx_col {float} -- column index from which to read the data
     
-    output:
-    -------
-    df {dataframe} = dataframe containing variable values per time step, i.e. alrady datetime as indices
+    Keyword Arguments:
+        var_name {str} -- variable in nc-file whose data is to be read (default: {'discharge'})
+        plot {bool} -- whether or not to plot the timeseries (default: {False})
+        plot_var_name {str} -- user-specified name to be used for plot legend (default: {None})
+        plot_title {[type]} -- user-specified plot title (default: {None})
+    
+    Returns:
+        dataframe -- pandas dataframe containing datetime objects as indices and retrieved data as column values
     """
     
     # open file
@@ -52,21 +52,18 @@ def read_nc_file_at_indices(fo, idx_row, idx_col, var_name='discharge', plot=Fal
     return df
 
 def calc_montly_avg(df_in, var_name=None):
-    """
-    calculates the monthly averages of a time series.
+    """Calculates the monthly averages of a timeseries.
+
+    Arguments:
+        df_in {dataframe} -- pandas dataframe containing timeseries
     
-    input:
-    ------
-    df_in {dataframe} = dataframe containing daily values
-    var_name {str} = column header in df_in containing observed values. this is handy
-                            if dataframe contains more than one column with values. if 'None',
-                            it is assumed that only one column with values exists (default: None).
-                            
-    output:
-    -------
-    df_out {dataframe} = dataframe containing one column only with monthly average values.
-    """
+    Keyword Arguments:
+        var_name {str} -- header of column in df_in from which monthly averages are to be computed (default: {None})
     
+    Returns:
+        dataframe -- pandas dataframe containing timeseries with monthly averages
+    """
+
     # if variable name is not None, then pick values from specified column
     if var_name != None:
         df = df_in[var_name]
@@ -80,30 +77,28 @@ def calc_montly_avg(df_in, var_name=None):
     return df_out
 
 def validate_results(df_obs, df_sim, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
+    """Validates observed and simulated values in a timeseries. Computes KGE, NSE, RMSE, and R^2.\
+        Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
+    
+    Arguments:
+        df_obs {dataframe} -- pandas dataframe containing observed values
+        df_sim {dataframe} -- pandas dataframe containing simulated values
+        out_dir {str} -- user-specified output directory for validation output
+    
+    Keyword Arguments:
+        var_name_obs {str} -- header name of column in df_obs whose values are to be used (default: {None})
+        var_name_sim {str} -- header name of column in df_sim whose values are to be used (default: {None})
+        plot {bool} -- whether or not to show the figure (default: {False})
+        save_fig {bool} -- whether or not to save the figure (default: {True})
+    
+    Raises:
+        error: if df_obs and df_sim do not overlap in time, an error is thrown.
+    
+    Returns:
+        dataframe -- pandas dataframe containing evaluated values for overlapping time period
+        dict -- dictionary containing results of objective functions KGE, RMSE, NSE and R2
     """
-    validates observed and simulated values in a timeseries. 
-    computes KGE, NSE, RMSE, and R^2.
-    concatenates the two dataframes and drops all NaNs to achieve dataframe with common
-    time period.
-    
-    input:
-    ------
-    df_obs {dataframe} = dataframe containing observed values
-    df_sim {dataframe} = dataframe containing simulated values
-    var_name_obs {str} = column header in df_obs containing observed values. this is handy
-                            if dataframe contains more than one column with values. if 'None',
-                            it is assumed that only one column with values exists (default: None).
-    var_name_sim {str} = column header in df_sim containing simulated values. this is handy
-                            if dataframe contains more than one column with values. if 'None',
-                            it is assumed that only one column with values exists (default: None).
-    plot {bool} = True/False whether data of common time period is plotted (default: False)
-    
-    output:
-    -------
-    evaluation {dict} = dictionary containing computed values per objective function    
-    
-    """
-    
+
     # if variable name is not None, then pick values from specified column
     if var_name_obs != None:
         df_obs = df_obs[var_name_obs]

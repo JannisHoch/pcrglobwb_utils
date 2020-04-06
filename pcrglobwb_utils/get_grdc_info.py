@@ -9,18 +9,15 @@ import spotpy as sp
 import os, sys
 
 def get_grdc_station_properties(fo):
-    """
-    gets GRDC station properties from txt-file.
-    creates and returns header from those properties as well as dictionary.
+    """Retrieves GRDC station properties from txt-file. Creates and returns \
+        header from those properties as well as a dictionary containt station name, lat, and lon info.
     
-    input:
-    -------
-    fo {string} = path to txt-file
+    Arguments:
+        fo {str} -- path to GRDC file
     
-    output:
-    -------
-    plot_title {string} = header
-    props {dict} = dictionary with GRDC station name, latitude, and longitude
+    Returns:
+        str -- plot title containing station name and lat/lon info
+        dict -- dictionary containing name, lat, and lon info
     """
     
     # open file
@@ -68,24 +65,25 @@ def get_grdc_station_properties(fo):
     return plot_title, props
 
 def get_grdc_station_values(fo, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
-    """
-    reads (discharge) values of GRDC station from txt-file.
-    creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name.
-    also possible to remove possible missing values in the timeseries and plot the resulting series.
+    """Reads (discharge-)values of GRDC station from txt-file. \
+        Creates a pandas dataframe with a user-specified column \
+        header for values instead of default ' Values' header name. \
+        Also possible to remove possible missing values in the \
+        timeseries and plot the resulting series.
     
-    input:
-    -------
-    fo {string} = path to txt-file
-    var_name {string} = user-specified column header name
-    remove_mv {bool} = True/False whether missing values should be removed (default: True)
-    mv_val {int} = integer value corresponding to missing value in timeseries (default: -999)
-    print_head {bool} = True/False whether df.head() is printed (default: False)
-    plot {bool} = True/False whether dataframe should be plotted (default: False)
-    plot_title {str} = title of dataframe plot (default: None)
+    Arguments:
+        fo {str} -- path to file
+        var_name {str} -- user-specified variable name to be given to time series
     
-    output:
-    -------
-    df {dataframe} = dataframe containing GRDC values per time step
+    Keyword Arguments:
+        remove_mv {bool} -- whether or not remove missing values in timeseries (default: {True})
+        mv_val {int} -- missing value in timeseries (default: {-999})
+        print_head {bool} -- whether or not to print the pandas dataframe head (default: {False})
+        plot {bool} -- whether or not to plot the timeseries (default: {False})
+        plot_title {str} -- user-specified title for plot of timeseries (default: {None})
+    
+    Returns:
+        dataframe -- dataframe containing datetime objects as index and observations as column values
     """
 
     f = open(fo)

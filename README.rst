@@ -36,13 +36,6 @@ Features
 * allows evaluation of timeseries simulated by PCR-GLOBWB with observations
 * currently limited to PCR-GLOBWB discharge and GRDC observations only
 
-Installation
-------------
-
-For explanation of the installation procedure, please see here installation_.
-
-.. _installation: https://github.com/JannisHoch/pcrglobwb_utils/blob/master/docs/installation.rst
-
 Credits
 -------
 
