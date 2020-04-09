@@ -115,3 +115,36 @@ def get_grdc_station_values(fo, var_name, remove_mv=True, mv_val=-999, print_hea
         df_out.plot(title=plot_title, legend=True)
     
     return df_out
+
+def get_values_from_csv(fo, t_col, v_col, sep=';', datetime_format='%Y-%m-%d', print_head=False, plot=False, plot_title=None):
+    """Reads simple csv file containing of multiple columns with at least one containing time information, and returns dataframe for dates and selected column.
+    
+    Arguments:
+        fo {str} -- path to file
+        t_col {str} -- header of column containing time information
+        v_col {str} -- header of column containing values
+        sep {str} -- column separator (default: {';'})
+    
+    Keyword Arguments:
+        datetime_format {str} -- datetime format used in csv file (default: {'%Y-%m-%d'})
+        print_head {bool} -- whether or not to print the header of dataframe (default: {False})
+        plot {bool} -- whether or not to plot the timeseries (default: {False})
+        plot_title {str} -- optional title for plot (default: {None})
+    
+    Returns:
+        dataframe -- dataframe containing datetime objects as index and observations as column values
+    """
+    
+    df = pd.read_csv(fo, sep=sep)
+    
+    df.set_index(pd.to_datetime(df[t_col], format=datetime_format), inplace=True)
+    
+    del df[t_col]
+        
+    if print_head == True:
+        print(df.head())
+        
+    if plot == True:
+        df[v_col].plot(title=plot_title, legend=True, figsize=(20,10))
+    
+    return df

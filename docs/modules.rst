@@ -19,6 +19,7 @@ between them must be defined.
    :toctree: generated/
    :nosignatures:
 
-   pcrglobwb_utils.get_grdc_info
+   pcrglobwb_utils.get_obs_data
    pcrglobwb_utils.timeseries
    pcrglobwb_utils.utils
+   pcrglobwb_utils.plotting
