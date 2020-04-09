@@ -1,7 +1,7 @@
-pcrglobwb\_utils.get\_grdc\_info
-================================
+pcrglobwb\_utils.get\_obs\_data
+===============================
 
-.. automodule:: pcrglobwb_utils.get_grdc_info
+.. automodule:: pcrglobwb_utils.get_obs_data
 
    
    
@@ -11,6 +11,7 @@ pcrglobwb\_utils.get\_grdc\_info
    
       get_grdc_station_properties
       get_grdc_station_values
+      get_values_from_csv
    
    
 
