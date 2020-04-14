@@ -22,8 +22,8 @@ In the current version, it allows you to either validate one nc-file against obs
 
 For the start, two convenience scripts are provided as well as two shell-scripts facilitating the use of pcrglobwb_utils for command line applications.
 
-    Convenience script for model validation
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convenience script for model validation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For this script, it is only possible to use one output nc-file together with a text file containing observed values and following the default GRDC format.
 Note that there is a dedicated function in the module to also read csv-files with other formatting, but this is not supported in command line application.
@@ -38,8 +38,8 @@ Alternatively, you can use the shell-script
 
 The functions called in the script will provide a plot, a pandas-dataframe, and a dictionary with the results of several objective functions in a user-defined output directory.
 
-    Convenience script for model benchmarking
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convenience script for model benchmarking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes, a model is run several times with different settings or different models are run for the same study area.
 In both cases, it may be useful to compare output at the same location for model benchmarking.
