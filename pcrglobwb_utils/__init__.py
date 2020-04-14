@@ -3,8 +3,7 @@
 from . import timeseries
 from . import get_obs_data
 from . import utils
-from . import plotting
-from . import pcrglobwb_utils  
+from . import plotting 
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
