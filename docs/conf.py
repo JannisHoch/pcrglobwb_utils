@@ -35,7 +35,8 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # absolute, like shown here.
 #
 
-sys.path.insert(0, os.path.abspath('..'))
+# sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../pcrglobwb_utils'))
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pcrglobwb_utils
@@ -64,6 +65,7 @@ extensions = [
 ]
 
 napoleon_google_docstring = False
+napoleon_numpy_docstring = True
 napoleon_use_param = False
 napoleon_use_ivar = True
 
