@@ -14,6 +14,7 @@
 
 import os
 import sys
+
 from mock import Mock as MagicMock
 
 class Mock(MagicMock):
@@ -24,7 +25,7 @@ class Mock(MagicMock):
             return Mock()
 
 # Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = ['xarray', 'rasterio']
+MOCK_MODULES = ['xarray', 'rasterio', 'spotpy', 'pandas']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -34,7 +35,8 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # absolute, like shown here.
 #
 
-sys.path.insert(0, os.path.abspath('../'))
+# sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../pcrglobwb_utils'))
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pcrglobwb_utils
@@ -63,6 +65,7 @@ extensions = [
 ]
 
 napoleon_google_docstring = False
+napoleon_numpy_docstring = True
 napoleon_use_param = False
 napoleon_use_ivar = True
 
@@ -122,15 +125,17 @@ autosummary_generate = True
 # a list of builtin themes.
 #
 html_theme = 'pydata_sphinx_theme'
+# html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    "github_url": "https://github.com/JannisHoch/pcrglobwb_utils",
-    "use_edit_page_button": False
-}
+# html_theme_options = {
+#     "github_url": "https://github.com/JannisHoch/pcrglobwb_utils",
+#     "use_edit_page_button": False
+# }
+html_theme_options = {}
 
 autosummary_generate = True
 numpydoc_show_class_members = False

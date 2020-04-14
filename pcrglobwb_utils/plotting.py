@@ -7,20 +7,16 @@ import spotpy as sp
 import os, sys
 
 def plot_var_at_timestep(fo, var_name, time, savefig=False, outdir=None):
-    """
-    plots variable at a given timestep from 2D netcdf file.
+    """Plots variable at a given timestep from 2D netcdf file.
     
-    input:
-    ------
-    fo {str} = georeferenced 2D nc-file
-    var_name {str} = name of variable to be retrieved in nc-file
-    time {str} = time at which variable is plotted
-    savefig {bool} = True/False whether plot is saved to png at 300 dpi (default: False)
-    outdir {str} = output directory where plot is stored (default: None)
+    Arguments:
+        fo {str} -- path to nc-file
+        var_name {str} -- variable name to be plotted
+        time {str} -- time at which variable is to be plotted
     
-    output:
-    -------
-    None
+    Keyword Arguments:
+        savefig {bool} -- whether or not to save the figure (default: {False})
+        outdir {str} -- path to location where figure is to be stored (default: {None})
     """
     
     if savefig == True and outdir == None:

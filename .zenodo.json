@@ -1,0 +1,22 @@
+{
+    "description": "handy tools for analysing output from PCR-GLOBWB",
+    "license": "GNU GPL v3",
+    "title": "pcrglobwb_utils",
+    "upload_type": "software",
+    "creators": [
+      {
+        "affiliation": "Utrecht University, Utrecht, the Netherlands",
+        "name": "Jannis M. Hoch",
+        "orcid": "0000-0003-3570-6436"
+      }
+    ],
+    "access_right": "open",
+    "keywords": [
+      "python",
+      "groundwater",
+      "surface water",
+      "hydrology",
+      "global hydrological model",
+      "open source"
+    ]
+  }

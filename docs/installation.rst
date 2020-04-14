@@ -6,8 +6,7 @@
 Installation
 ============
 
-Note
-    Currently, it is not possible to install this package via pip or conda
+.. note:: Currently, it is not possible to install this package via pip or conda
 
 From source
 ------------

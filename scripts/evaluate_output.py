@@ -45,13 +45,13 @@ print('get info from GRDC file', os.path.abspath(grdc_file))
 print('')
 
 # get GRDC station properties
-grdc_plot_title, grdc_props = pcrglobwb_utils.get_grdc_info.get_grdc_station_properties(grdc_file)
+grdc_plot_title, grdc_props = pcrglobwb_utils.get_obs_data.get_grdc_station_properties(grdc_file)
 print('GRDC station properties are:')
 print(grdc_props)
 print('')
 
 # get GRDC timeseries
-df_grdc = pcrglobwb_utils.get_grdc_info.get_grdc_station_values(grdc_file, 
+df_grdc = pcrglobwb_utils.get_obs_data.get_grdc_station_values(grdc_file, 
                                                                 var_name=new_var_name_obs,
                                                                 plot=False)
 

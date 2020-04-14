@@ -8,6 +8,7 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    any platform and any data!
 
 .. toctree::
+   :numbered:
    :maxdepth: 2
    :caption: Contents:
 
