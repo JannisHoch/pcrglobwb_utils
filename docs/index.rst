@@ -9,12 +9,13 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
 
 .. toctree::
    :numbered:
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    readme
    installation
    usage
+   first_proof_of_concept
    modules
    contributing
    authors
