@@ -3,7 +3,7 @@
 .. highlight:: shell
 
 ==================================
-pcrglobwb_utils API documentation
+API documentation
 ==================================
 
 Initialization

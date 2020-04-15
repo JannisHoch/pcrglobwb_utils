@@ -121,6 +121,12 @@ def validate_results(df_obs, df_sim, out_dir, var_name_obs=None, var_name_sim=No
     # raise error if there is no common time period
     if both.empty:
         os.sys.exit('no common time period of observed and simulated values found in dataframes!')
+
+    if save_fig == True:
+        if os.path.isdir(out_dir) == True:
+            pass
+        else:
+            os.mkdir(out_dir)
     
     # plot if specified
     if plot == True:

@@ -34,7 +34,9 @@ Note that there is a dedicated function in the module to also read csv-files wit
 
 Alternatively, you can use the shell-script
 
-:command:`bash run_example_evaluation.sh` 
+.. code-block:: console
+
+    bash run_example_evaluation.sh
 
 The functions called in the script will provide a plot, a pandas-dataframe, and a dictionary with the results of several objective functions in a user-defined output directory.
 
@@ -52,7 +54,9 @@ This can be done with by calling the script as follows:
 
 Alternatively, you can use the shell-script
 
-:command:`bash run_example_benchmark.sh` 
+.. code-block:: console
+
+    bash run_example_benchmark.sh
 
 For the output files 1 until x, values are read from a location with the specified lon/lat and a plot as well as a pandas-dataframe stored in a user-defined output directory.
 
