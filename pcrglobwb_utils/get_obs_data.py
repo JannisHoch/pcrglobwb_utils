@@ -9,7 +9,7 @@ import spotpy as sp
 import os, sys
 
 class grdc_data:
-    """class to retrieve, re-work and visualize data from a GRDC-file.
+    """Retrieve, re-work and visualize data from a GRDC-file.
 
     Parameters
     ----------
@@ -139,7 +139,12 @@ class grdc_data:
         return df_out
 
 class other_data:
-    """class to retrieve, re-work and visualize data from other data sources than GRDC files.
+    """Retrieve, re-work and visualize data from other data sources than GRDC files.
+
+    Parameters
+    ----------
+    fo: str
+        path to text file containing data
     
     Returns
     -------
@@ -149,11 +154,6 @@ class other_data:
 
     def __init__(self, fo):
         """Initializing class.
-        
-        Parameters
-        ----------
-        fo: str
-            path to other data source
         """
 
         self.fo = fo

@@ -9,3 +9,11 @@ There are function to load (meta-)data of observations from file:
     :maxdepth: 1
 
     obs_data.rst
+
+And others to read timeseries from nc-files:
+
+.. toctree::
+    :maxdepth: 1
+
+    timeseries.rst
+    
