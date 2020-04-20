@@ -7,33 +7,46 @@ import spotpy as sp
 import csv
 import os, sys
 
-class timeseries:
-    
+class nc_data:
+    """Retrieving and working with timeseries data from a nc-file.
+
+    Parameters
+    ----------
+    fo: str
+        path to text file containing data
+    """
+
     def __init__(self, fo):
+        """Initializing class.
+        """
 
         self.ds = fo
+    
+    def read_values_at_indices(self, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
+        """Reading a nc-file and retrieving variable values at given column and row indices. Default setting is that discharge is extracted at this point.
+        Resulting timeseries is stored as pandas timeframe and can be plotted with user-specified variable name and title.
+        
+        Arguments
+        ---------
+        idx_row: float
+            row index from which to read the data
+        idx_col: float
+            column index from which to read the data
+        var_name: str, optional
+            variable in nc-file whose data is to be read (default: {'discharge'})
+        plot: bool, optional 
+            whether or not to plot the timeseries (default: {False})
+        plot_var_name: str, optional 
+            user-specified name to be used for plot legend (default: {None})
+        plot_title: str, optional 
+            user-specified plot title (default: {None})
 
-
-    def read_nc_file_at_indices(self, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
-        """Reading a nc-file and retrieving variable values at given column and row indices.\
-            Default setting is that discharge is extracted at this point.\
-            Resulting timeseries is stored as pandas timeframe and can be plotted \
-            with user-specified variable name and title.
-        
-        Arguments:
-            fo {str} -- path to nc-file
-            idx_row {float} -- row index from which to read the data
-            idx_col {float} -- column index from which to read the data
-        
-        Keyword Arguments:
-            var_name {str} -- variable in nc-file whose data is to be read (default: {'discharge'})
-            plot {bool} -- whether or not to plot the timeseries (default: {False})
-            plot_var_name {str} -- user-specified name to be used for plot legend (default: {None})
-            plot_title {[type]} -- user-specified plot title (default: {None})
-        
-        Returns:
-            dataframe -- pandas dataframe containing datetime objects as indices and retrieved data as column values
+        Returns
+        -------
+        df: dataframe
+            dataframe containing values
         """
+
         
         # open file
         ds = xr.open_dataset(self.ds)
@@ -55,55 +68,68 @@ class timeseries:
         
         # close file
         ds.close()
+
+        self.df = df
         
         return self.df
 
     def calc_montly_avg(self, var_name=None):
         """Calculates the monthly averages of a timeseries.
 
-        Arguments:
-            df_in {dataframe} -- pandas dataframe containing timeseries
+        Parameters
+        ---------
+        df_in: dataframe
+            pandas dataframe containing timeseries
+        var_name: str, optional 
+            header of column in df_in from which monthly averages are to be computed (default: {None})
         
-        Keyword Arguments:
-            var_name {str} -- header of column in df_in from which monthly averages are to be computed (default: {None})
-        
-        Returns:
-            dataframe -- pandas dataframe containing timeseries with monthly averages
+        Returns
+        -------
+        dataframe
+            pandas dataframe containing timeseries with monthly averages
         """
 
         # if variable name is not None, then pick values from specified column
         if var_name != None:
-            df = df_in[var_name]
+            df = self.df[var_name]
         # else, just use the dataframe as is
         else:
-            df = df_in
+            df = self.df
         
         # group values by month and then calculate mean
         df_out = df.groupby(df.index.month).mean()
         
         return df_out
 
-    def validate_results(df_obs, df_sim, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
-        """Validates observed and simulated values in a timeseries. Computes KGE, NSE, RMSE, and R^2.\
-            Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
+    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
+        """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
         
-        Arguments:
-            df_obs {dataframe} -- pandas dataframe containing observed values
-            df_sim {dataframe} -- pandas dataframe containing simulated values
-            out_dir {str} -- user-specified output directory for validation output
+        Parameters
+        ----------
+        df_obs: dataframe
+            pandas dataframe containing observed values
+        out_dir: str 
+            user-specified output directory for validation output
+        var_name_obs (str, optional) 
+            header name of column in df_obs whose values are to be used (default: {None})
+        var_name_sim (str, optional) 
+            header name of column in df_sim whose values are to be used (default: {None})
+        plot (bool, optional)
+            whether or not to show the figure (default: {False})
+        save_fig (bool, optional)
+            whether or not to save the figure (default: {True})
         
-        Keyword Arguments:
-            var_name_obs {str} -- header name of column in df_obs whose values are to be used (default: {None})
-            var_name_sim {str} -- header name of column in df_sim whose values are to be used (default: {None})
-            plot {bool} -- whether or not to show the figure (default: {False})
-            save_fig {bool} -- whether or not to save the figure (default: {True})
+        Raises
+        ------
+        error
+            if df_obs and df_sim do not overlap in time, an error is thrown.
         
-        Raises:
-            error: if df_obs and df_sim do not overlap in time, an error is thrown.
-        
-        Returns:
-            dataframe -- pandas dataframe containing evaluated values for overlapping time period
-            dict -- dictionary containing results of objective functions KGE, RMSE, NSE and R2
+        Returns
+        -------
+        dataframe
+            pandas dataframe containing evaluated values for overlapping time period
+        dict
+            dictionary containing results of objective functions KGE, RMSE, NSE and R2
         """
 
         # if variable name is not None, then pick values from specified column
@@ -115,9 +141,9 @@ class timeseries:
             
         # idem  
         if var_name_sim != None:
-            df_sim = df_sim[var_name_sim]
+            df_sim = self.df[var_name_sim]
         else:
-            df_sim = df_sim
+            df_sim = self.df
         
         # concatenate both dataframes
         both = pd.concat([df_obs, df_sim], axis=1)
