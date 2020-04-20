@@ -6,6 +6,6 @@ Interface (API) of 'pcrglobwb_utils'.
 There are function to load (meta-)data of observations from file:
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     obs_data.rst

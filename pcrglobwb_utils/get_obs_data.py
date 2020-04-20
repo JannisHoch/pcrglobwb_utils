@@ -10,16 +10,20 @@ import os, sys
 
 class grdc_data:
     """class to retrieve, re-work and visualize data from a GRDC-file.
+
+    Parameters
+    ----------
+    fo: str
+        path to GRDC file
     
-    Returns:
-        {object} -- python object of GRDC data source
+    Returns
+    --------
+    self.fo: object
+        python object of GRDC data source
     """
 
     def __init__(self, fo):
-        """initiates grdc_data class.
-        
-        Arguments:
-            fo {str} -- path to GRDC file
+        """Initiates grdc_data object.
         """
 
         self.fo = fo
@@ -27,9 +31,12 @@ class grdc_data:
     def get_grdc_station_properties(self):
         """Retrieves GRDC station properties from txt-file. Creates and returns header from those properties as well as a dictionary containt station name, lat, and lon info.
         
-        Returns:
-            str -- plot title containing station name and lat/lon info
-            dict -- dictionary containing name, lat, and lon info
+        Returns
+        -------
+        plot_title: str
+            plot title containing station name and lat/lon info
+        props: dict
+            dictionary containing name, lat, and lon info
         """
         
         # open file
@@ -79,18 +86,25 @@ class grdc_data:
     def get_grdc_station_values(self, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
         
-        Arguments:
-            var_name {str} -- user-specified variable name to be given to time series
+        Parameters
+        -----------
+        var_name: str
+            user-specified variable name to be given to time series
+        remove_mv: bool, optional
+            whether or not remove missing values in timeseries (default: {True})
+        mv_val: int, optional
+            missing value in timeseries (default: {-999})
+        print_head: bool, optonial
+            whether or not to print the pandas dataframe head (default: {False})
+        plot: bool, optional
+            whether or not to plot the timeseries (default: {False})
+        plot_title: str, optional
+            user-specified title for plot of timeseries (default: {None})
         
-        Keyword Arguments:
-            remove_mv {bool} -- whether or not remove missing values in timeseries (default: {True})
-            mv_val {int} -- missing value in timeseries (default: {-999})
-            print_head {bool} -- whether or not to print the pandas dataframe head (default: {False})
-            plot {bool} -- whether or not to plot the timeseries (default: {False})
-            plot_title {str} -- user-specified title for plot of timeseries (default: {None})
-        
-        Returns:
-            {dataframe} -- dataframe containing datetime objects as index and observations as column values
+        Returns
+        -------
+            df_out: dataframe
+                dataframe containing datetime objects as index and observations as column values
         """
 
         f = open(self.fo)
@@ -127,15 +141,19 @@ class grdc_data:
 class other_data:
     """class to retrieve, re-work and visualize data from other data sources than GRDC files.
     
-    Returns:
-        {object} -- python object of data source
+    Returns
+    -------
+    self.fo: object
+        python object of data source
     """
 
     def __init__(self, fo):
         """Initializing class.
         
-        Arguments:
-            fo {str} -- path to other data source
+        Parameters
+        ----------
+        fo: str
+            path to other data source
         """
 
         self.fo = fo
@@ -143,21 +161,31 @@ class other_data:
     def get_values_from_csv(self, t_col, v_col, sep=';', datetime_format='%Y-%m-%d', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
         """Reads simple csv file containing of multiple columns with at least one containing time information, and returns dataframe for dates and selected column.
         
-        Arguments:
-            t_col {str} -- header of column containing time information
-            v_col {str} -- header of column containing values
-            sep {str} -- column separator (default: {';'})
+        Parameters
+        ----------
+        t_col: str
+            header of column containing time information.
+        v_col: str
+            header of column containing values.
+        sep: str, optional
+            column separator (default: {';'})
+        datetime_format: str, optinal
+            datetime format used in csv file (default: {'%Y-%m-%d'})
+        remove_mv: bool, optional
+            whether or not to remove missing values (default: {True})
+        mv_val: float, optional
+            placeholder value of missing values (default: {-999})
+        print_head: bool, optional 
+            whether or not to print the header of dataframe (default: {False})
+        plot: bool, optional 
+            whether or not to plot the timeseries (default: {False})
+        plot_title: str, optional
+            optional title for plot (default: {None})
         
-        Keyword Arguments:
-            datetime_format {str} -- datetime format used in csv file (default: {'%Y-%m-%d'})
-            remove_mv {bool} -- whether or not to remove missing values (default: {True})
-            mv_val {float} -- placeholder value of missing values (default: {-999})
-            print_head {bool} -- whether or not to print the header of dataframe (default: {False})
-            plot {bool} -- whether or not to plot the timeseries (default: {False})
-            plot_title {str} -- optional title for plot (default: {None})
-        
-        Returns:
-            {dataframe} -- dataframe containing datetime objects as index and observations as column values
+        Returns
+        --------
+        df: dataframe
+            dataframe containing datetime objects as index and observations as column values
         """
         
         df = pd.read_csv(self.fo, sep=sep)
