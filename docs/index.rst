@@ -15,7 +15,6 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    readme
    installation
    usage
-   first_proof_of_concept
    modules
    contributing
    authors
