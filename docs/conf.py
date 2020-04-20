@@ -62,7 +62,6 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
-    'nbsphinx'
 ]
 
 napoleon_google_docstring = False
