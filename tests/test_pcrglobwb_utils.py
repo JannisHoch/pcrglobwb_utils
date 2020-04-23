@@ -49,6 +49,6 @@ def test_daily2monthly():
 
     df_test = pcrglobwb_utils.time_funcs.daily2monthly(df)
 
-    assert df_test.sum() == df.sum()
+    assert float(df_test.sum()) == float(df.sum())
 
 
