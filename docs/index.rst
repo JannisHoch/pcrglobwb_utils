@@ -15,10 +15,10 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    readme
    installation
    usage
-   modules
    contributing
    authors
    history
+   API Docs <api/index>
 
 Indices and tables
 ==================
