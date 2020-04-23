@@ -7,6 +7,8 @@ import pytest
 import pcrglobwb_utils
 import pandas as pd
 import os
+import numpy as np
+from datetime import datetime, timedelta
 
 
 @pytest.fixture
@@ -37,18 +39,15 @@ def test_content(response):
 
 def test_daily2monthly():
 
-    df = '../examples/example_data/Obidos_data.csv'
-    print(os.getcwd())
-    df = os.path.join(os.getcwd(), df)
+    date_today = datetime.now()
+    days = pd.date_range(date_today, date_today + timedelta(7), freq='D')
 
-    csv_obj = pcrglobwb_utils.obs_data.other_data(df)
+    np.random.seed(seed=1111)
+    data = np.random.randint(1, high=100, size=len(days))
+    df = pd.DataFrame({'test': days, 'col2': data})
+    df = df.set_index('test')
 
-    df_CSV = csv_obj.get_values_from_csv(t_col='YYYY-MM-DD', 
-                                         v_col='Calculated', 
-                                         plot=True,
-                                         datetime_format='%d-%m-%Y')
-
-    df_test = pcrglobwb_utils.time_funcs.daily2monthly(df_CSV)
+    df_test = pcrglobwb_utils.time_funcs.daily2monthly(df)
 
     assert csv_obj.sum() == df_test.sum()
 
