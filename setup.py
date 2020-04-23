@@ -10,7 +10,15 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=7.0', ]
+# with open('requirements_dev.txt') as requirements_file:
+#     requirements = requirements_file.read()
+
+requirements = ['Click>=7.0', 
+                'xarray>=0.15.0',
+                'pandas>=0.25.1',
+                'rasterio>=1.0.21',
+                'spotpy>=1.5.8',
+                'numpy>=1.16.5']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -19,14 +27,13 @@ test_requirements = ['pytest>=3', ]
 setup(
     author="Jannis M. Hoch",
     author_email='j.m.hoch@uu.nl',
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
@@ -48,6 +55,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/pcrglobwb_utils',
-    version='0.1.0',
+    version='0.1.2.1',
     zip_safe=False,
 )

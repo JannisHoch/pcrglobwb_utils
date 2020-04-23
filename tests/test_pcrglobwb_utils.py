@@ -51,4 +51,18 @@ def test_daily2monthly():
 
     assert float(df_test.sum()) == float(df.sum())
 
+def test_daily2yearly():
+
+    date_today = datetime.now()
+    days = pd.date_range(date_today, date_today + timedelta(7), freq='D')
+
+    np.random.seed(seed=1111)
+    data = np.random.randint(1, high=100, size=len(days))
+    df = pd.DataFrame({'test': days, 'col2': data})
+    df = df.set_index('test')
+
+    df_test = pcrglobwb_utils.time_funcs.daily2yearly(df)
+
+    assert float(df_test.sum()) == float(df.sum())
+
 
