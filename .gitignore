@@ -105,5 +105,4 @@ ENV/
 .vscode/
 
 # example output folders
-/examples/_validation_out/
-/examples/_benchmark_out/
+/scripts/OUT/

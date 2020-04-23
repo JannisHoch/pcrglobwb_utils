@@ -26,6 +26,15 @@ if os.path.exists(out_dir):
 else:
     os.mkdir(out_dir)
 
+# create default benchmark out folder
+out_dir = os.path.join(out_dir, '_benchmark_out')
+
+# check whether out_dir already exists, if not make a new folder
+if os.path.exists(out_dir):
+    pass
+else:
+    os.mkdir(out_dir)
+
 # initiate logging
 sys.stdout = open(os.path.join(out_dir, 'logfile.log'), 'w')
 
@@ -50,13 +59,14 @@ for i, file in enumerate(ncfiles_list):
 
     # get row/col from lon/lat
     row, col = pcrglobwb_utils.utils.find_indices_from_coords(nc_file, lon, lat)
-    
-    # extract information at a certain row/col
-    q_sim = pcrglobwb_utils.timeseries.read_nc_file_at_indices(nc_file, 
-                                                               row, 
-                                                               col, 
-                                                               plot_var_name=str(nc_file_name))
 
+    pcr_data = pcrglobwb_utils.nc_data.nc_data(nc_file)
+
+    # extract information at a certain row/col
+    q_sim = pcr_data.read_values_at_indices(row,
+                                            col,
+                                            plot_var_name=str(nc_file_name))
+    
     # concatenate all extracted timeseries to one output dataframe
     df_out = pd.concat([df_out, q_sim], axis=1)
     df_out = df_out.dropna()
