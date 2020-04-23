@@ -73,34 +73,6 @@ class nc_data:
         
         return self.df
 
-    def calc_montly_avg(self, var_name=None):
-        """Calculates the monthly averages of a timeseries.
-
-        Parameters
-        ---------
-        df_in: dataframe
-            pandas dataframe containing timeseries
-        var_name: str, optional 
-            header of column in df_in from which monthly averages are to be computed (default: {None})
-        
-        Returns
-        -------
-        dataframe
-            pandas dataframe containing timeseries with monthly averages
-        """
-
-        # if variable name is not None, then pick values from specified column
-        if var_name != None:
-            df = self.df[var_name]
-        # else, just use the dataframe as is
-        else:
-            df = self.df
-        
-        # group values by month and then calculate mean
-        df_out = df.groupby(df.index.month).mean()
-        
-        return df_out
-
     def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
         """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
         
@@ -194,3 +166,17 @@ class nc_data:
             w.writerow([key, val])
         
         return both, evaluation
+
+    def calc_stats(self, plot=False):
+
+        stats = {'mean': int(self.df.mean()),
+                 'median': int(self.df.median()),
+                 'max': int(self.df.max()),
+                 'min': int(self.df.min()),
+                 'q10': int(self.df.quantile(q=0.1)),
+                 'q50': int(self.df.quantile(q=0.5)),
+                 'q90': int(self.df.quantile(q=0.9))}
+
+        if plot: self.df.plot.hist()
+
+        return stats
