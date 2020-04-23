@@ -21,6 +21,9 @@ Overview
    :target: https://doi.org/10.5281/zenodo.3725813
    :alt: DOI
 
+.. image:: https://img.shields.io/badge/License-GPLv3-blue.svg
+   :target: https://www.gnu.org/licenses/gpl-3.0
+   :alt: License
 
 
 Handy functions to work with PCR-GLOBWB input and output
