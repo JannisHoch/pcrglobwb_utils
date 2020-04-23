@@ -4,10 +4,10 @@ Retrieving timeseries
 From points
 -----------
 
-.. currentmodule:: timeseries
+.. currentmodule:: nc_data
 .. autoclass:: nc_data
 
-.. currentmodule:: timeseries.nc_data
+.. currentmodule:: nc_data.nc_data
 
 PCR-GLOBWB writes output to netCDF4-files. It is thus necessary to have the right tools to read and process the data.
 
@@ -20,8 +20,8 @@ With these methods the work is hopefully bit easier:
    :nosignatures:
 
    read_values_at_indices
-   calc_montly_avg
    validate_results
+   calc_stats
 
 
     

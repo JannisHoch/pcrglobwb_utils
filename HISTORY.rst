@@ -2,6 +2,13 @@
 History
 =======
 
+**0.1.2 (2020-04-23)**
+
+Additional functionality.
+
+* Added functions for temporal aggregation (daily to monthly, daily to yearly)
+* Statistics of simulated discharge (mean, max, min etc) can be computed
+
 **0.1.1 (2020-04-20)**
 
 Minor updates.

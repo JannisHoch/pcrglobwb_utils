@@ -8,4 +8,4 @@ from . import plotting
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.1.1'
+__version__ = '0.1.2'

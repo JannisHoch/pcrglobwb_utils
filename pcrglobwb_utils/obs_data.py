@@ -103,8 +103,8 @@ class grdc_data:
         
         Returns
         -------
-            df_out: dataframe
-                dataframe containing datetime objects as index and observations as column values
+        df_out: dataframe
+            dataframe containing datetime objects as index and observations as column values
         """
 
         f = open(self.fo)

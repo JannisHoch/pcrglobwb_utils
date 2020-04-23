@@ -43,7 +43,7 @@ class nc_data:
 
         Returns
         -------
-        df: dataframe
+        self.df: dataframe
             dataframe containing values
         """
 
@@ -98,9 +98,9 @@ class nc_data:
         
         Returns
         -------
-        dataframe
+        both: dataframe
             pandas dataframe containing evaluated values for overlapping time period
-        dict
+        evaluation: dict
             dictionary containing results of objective functions KGE, RMSE, NSE and R2
         """
 
@@ -168,6 +168,18 @@ class nc_data:
         return both, evaluation
 
     def calc_stats(self, plot=False):
+        """Calculates statistics for nc-data object.
+
+        Parameters
+        ----------
+        plot: bool, optional
+            whether or not to plot the histogram
+
+        Returns
+        -------
+        stats: dict
+            dictionary containing statistical values
+        """
 
         stats = {'mean': int(self.df.mean()),
                  'median': int(self.df.median()),
