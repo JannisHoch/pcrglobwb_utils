@@ -19,14 +19,13 @@ test_requirements = ['pytest>=3', ]
 setup(
     author="Jannis M. Hoch",
     author_email='j.m.hoch@uu.nl',
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
@@ -48,6 +47,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/pcrglobwb_utils',
-    version='0.1.0',
+    version='0.1.2',
     zip_safe=False,
 )
