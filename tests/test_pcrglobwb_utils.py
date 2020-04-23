@@ -49,6 +49,6 @@ def test_daily2monthly():
 
     df_test = pcrglobwb_utils.time_funcs.daily2monthly(df)
 
-    assert csv_obj.sum() == df_test.sum()
+    assert df_test.sum() == df.sum()
 
 
