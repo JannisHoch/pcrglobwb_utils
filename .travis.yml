@@ -21,7 +21,7 @@ deploy:
   distributions: sdist bdist_wheel
   user: JannisHoch
   password:
-    secure: PLEASE_REPLACE_ME
+    secure: VPiRNu8X-TAG77q
   on:
     tags: true
     repo: JannisHoch/pcrglobwb_utils
