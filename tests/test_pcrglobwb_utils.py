@@ -6,6 +6,7 @@ import pytest
 
 import pcrglobwb_utils
 import pandas as pd
+import os
 
 
 @pytest.fixture
@@ -37,6 +38,8 @@ def test_content(response):
 def test_daily2monthly():
 
     df = '../examples/example_data/Obidos_data.csv'
+    print(os.getcwd())
+    df = os.path.join(os.getcwd(), df)
 
     csv_obj = pcrglobwb_utils.obs_data.other_data(df)
 
