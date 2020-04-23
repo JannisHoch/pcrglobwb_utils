@@ -19,6 +19,7 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    authors
    history
    API Docs <api/index>
+   license
 
 Indices and tables
 ==================
