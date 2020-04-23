@@ -1,5 +1,0 @@
-Retrieving timeseries
-=========================
-
-empty
-    

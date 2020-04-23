@@ -6,10 +6,10 @@ From GRDC data
 
 For reading GRDC data, working with a python-object can be done like this.
 
-.. currentmodule:: get_obs_data
+.. currentmodule:: obs_data
 .. autoclass:: grdc_data
 
-.. currentmodule:: get_obs_data.grdc_data
+.. currentmodule:: obs_data.grdc_data
 
 With these methods:
 
@@ -25,10 +25,10 @@ From other sources
 
 For reading other data sources
 
-.. currentmodule:: get_obs_data
+.. currentmodule:: obs_data
 .. autoclass:: other_data
 
-.. currentmodule:: get_obs_data.other_data
+.. currentmodule:: obs_data.other_data
 
 With these methods:
 

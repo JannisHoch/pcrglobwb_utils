@@ -15,5 +15,13 @@ And others to read timeseries from nc-files:
 .. toctree::
     :maxdepth: 1
 
-    timeseries.rst
+    nc_data.rst
+
+For assessments of temporal statistics and aggregation:
+
+.. toctree::
+    :maxdepth: 1
+
+    time_funcs.rst
+    
     

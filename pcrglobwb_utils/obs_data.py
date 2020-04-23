@@ -103,8 +103,8 @@ class grdc_data:
         
         Returns
         -------
-            df_out: dataframe
-                dataframe containing datetime objects as index and observations as column values
+        df_out: dataframe
+            dataframe containing datetime objects as index and observations as column values
         """
 
         f = open(self.fo)
@@ -135,8 +135,10 @@ class grdc_data:
             
         if plot == True:
             df_out.plot(title=plot_title, legend=True)
+
+        self.df = df_out
         
-        return df_out
+        return self.df
 
 class other_data:
     """Retrieve, re-work and visualize data from other data sources than GRDC files.
@@ -203,4 +205,6 @@ class other_data:
         if plot == True:
             df[v_col].plot(title=plot_title, legend=True)
         
-        return df
+        self.df = df
+
+        return self.df
