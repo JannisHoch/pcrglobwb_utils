@@ -5,7 +5,8 @@ from . import obs_data
 from . import time_funcs
 from . import utils
 from . import plotting 
+from . import water_balance
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.1.2.1'
+__version__ = '0.1.3'
