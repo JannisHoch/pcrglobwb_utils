@@ -60,32 +60,42 @@ Get Started!
 Ready to contribute? Here's how to set up `pcrglobwb_utils` for local development.
 
 1. Fork the `pcrglobwb_utils` repo on GitHub.
-2. Clone your fork locally::
+2. Clone your fork locally
+
+.. code-block:: console
 
     $ git clone git@github.com:your_name_here/pcrglobwb_utils.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development
+
+.. code-block:: console
 
     $ mkvirtualenv pcrglobwb_utils
     $ cd pcrglobwb_utils/
     $ python setup.py develop
 
-4. Create a branch for local development::
+4. Create a branch for local development
+
+.. code-block:: console
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
-   Now you can make your changes locally.
+Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass flake8 and the
-   tests, including testing other Python versions with tox::
+   tests, including testing other Python versions with tox
+
+.. code-block:: console
 
     $ flake8 pcrglobwb_utils tests
     $ python setup.py test or pytest
     $ tox
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+To get flake8 and tox, just pip install them into your virtualenv.
 
-6. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub:
+
+.. code-block:: console
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
@@ -102,16 +112,18 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5, 3.6, 3.7 and 3.8, and for PyPy. Check
+3. The pull request should work for Python 3.6, 3.7 and 3.8, and for PyPI. Check
    https://travis-ci.com/JannisHoch/pcrglobwb_utils/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
 ----
 
-To run a subset of tests::
+To run a subset of tests:
 
-$ pytest tests.test_pcrglobwb_utils
+.. code-block:: console
+
+    $ pytest tests.test_pcrglobwb_utils
 
 
 Deploying
@@ -119,10 +131,12 @@ Deploying
 
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
+Then run:
 
-$ bump2version patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+.. code-block:: console
+
+    $ bump2version patch # possible: major / minor / patch
+    $ git push
+    $ git push --tags
 
 Travis will then deploy to PyPI if tests pass.
