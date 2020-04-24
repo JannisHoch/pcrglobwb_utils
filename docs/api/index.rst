@@ -23,5 +23,12 @@ For assessments of temporal statistics and aggregation:
     :maxdepth: 1
 
     time_funcs.rst
+
+For analysing the water balance components:
+
+.. toctree::
+    :maxdepth: 1
+
+    water_balance.rst
     
     
