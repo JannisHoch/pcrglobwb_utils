@@ -25,7 +25,7 @@ def calc_montly_avg(df_in, var_name=None):
         df = df_in
     
     # group values by month and then calculate mean
-    df_out = df.groupby(df.index.month).mean().to_frame()
+    df_out = df.groupby(df.index.month).mean()
     
     return df_out
 
