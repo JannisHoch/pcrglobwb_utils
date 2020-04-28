@@ -7,7 +7,7 @@ import spotpy as sp
 import csv
 import os, sys
 
-class nc_data:
+class from_nc:
     """Retrieving and working with timeseries data from a nc-file.
 
     Parameters
@@ -192,3 +192,56 @@ class nc_data:
         if plot: self.df.plot.hist()
 
         return stats
+
+class ensembles():
+    """[summary]
+    """    
+
+
+    def __init__(self, dfs):
+        """[summary]
+
+        Arguments:
+            dfs {[type]} -- [description]
+        """        
+
+        self.df = pd.concat([dfs], axis=1)
+
+    def calc_stats(self):
+        """[summary]
+
+        Returns:
+            [type] -- [description]
+        """        
+
+        self.df_stats = self.df.copy()
+
+        self.df_stats['mean'] = self.df_stats.mean()
+        self.df_stats['max'] = self.df_stats.max()
+        self.df_stats['min'] = self.df_stats.min()
+
+        return self.df_stats
+
+    def plot_bounds(self, **kwargs):
+        """[summary]
+        """        
+
+        figsize = kwargs.get('figsize', (20,10))
+
+        ax = self.df_stats['mean'].plot(figsize=figsize,
+                                        color='r',
+                                        legend=True)
+        self.df_stats['max'].plot(ax=ax,
+                                  color='r',
+                                  style=':',
+                                  alpha=0.5)
+        self.df_stats['min'].plot(ax=ax
+                                  color='r',
+                                  style=':',
+                                  alpha=0.5)
+
+    def plot_monthly_avgs(self):
+        """[summary]
+        """        
+
+        pass
