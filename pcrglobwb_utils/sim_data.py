@@ -235,7 +235,7 @@ class ensembles():
                                   color='r',
                                   style=':',
                                   alpha=0.5)
-        self.df_stats['min'].plot(ax=ax
+        self.df_stats['min'].plot(ax=ax,
                                   color='r',
                                   style=':',
                                   alpha=0.5)
