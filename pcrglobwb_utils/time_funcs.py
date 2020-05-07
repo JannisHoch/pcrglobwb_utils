@@ -34,6 +34,7 @@ def daily2monthly(df_in, averaging=True, volumetric=False, volumetric_factor=864
         df_in (dataframe): dataframe containing daily values
 
     Keyword Arguments:
+        averaging (bool) : whether or not to compute monthly average or not; if False, the monthly aggregate is computed (default: True)
         volumetric (bool): whether flux is converted to volume (e.g. m3/s to m3) (default: False)
         volumetric_factor (int): factor to convert flux to volume if specified (default: 86400)
         plot (bool): whether or not to plot the monthly timeseries (default: False)
@@ -53,13 +54,14 @@ def daily2monthly(df_in, averaging=True, volumetric=False, volumetric_factor=864
 
     return df_out
 
-def daily2yearly(df_in, volumetric=False, volumetric_factor=86400, plot=False):
+def daily2yearly(df_in, averaging=True, volumetric=False, volumetric_factor=86400, plot=False):
     """Aggregates daily values to yearly values. Note that the unit is not changed (m3/s) unless volumetric is True.
 
     Arguments:
         df_in (dataframe): dataframe containing daily values
 
     Keyword Arguments:
+        averaging (bool) : whether or not to compute monthly average or not; if False, the monthly aggregate is computed (default: True)
         volumetric (bool): whether flux is converted to volume (e.g. m3/s to m3) (default: False)
         volumetric_factor (int): factor to convert flux to volume if specified (default: 86400)
         plot (bool): whether or not to plot the monthly timeseries (default: False)

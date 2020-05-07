@@ -10,7 +10,5 @@ Of particular interest are timeseries of, for instance, discharge to validate mo
 
 .. autoclass:: sim_data.from_nc
     :members:
-    :special-members:
-    :exclude-members: __weakref__
 
     

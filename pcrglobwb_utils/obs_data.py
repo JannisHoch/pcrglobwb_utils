@@ -11,15 +11,12 @@ import os, sys
 class grdc_data:
     """Retrieve, re-work and visualize data from a GRDC-file.
 
-    Returns:
-        object: python object of GRDC data source
+    Arguments:
+        fo (str): path to file with GRDC data
     """
 
     def __init__(self, fo):
         """Initiates grdc_data object.
-
-        Arguments:
-            fo (str): path to file with GRDC data
         """
 
         self.fo = fo
@@ -129,15 +126,12 @@ class grdc_data:
 class other_data:
     """Retrieve, re-work and visualize data from other data sources than GRDC files
 
-    Returns:
-        object: python object of data source
+    Arguments:
+        fo (str): path to text file containing data
     """
 
     def __init__(self, fo):
         """Initializing class.
-
-        Arguments:
-            fo (str): path to text file containing data
         """        
 
         self.fo = fo

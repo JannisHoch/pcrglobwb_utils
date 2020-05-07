@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import glob
 
 class water_balance:
-    """Annual water balance information of a PCR-GLOBWB run. Data is retrieved from the log-file of tis run.
+    """Annual water balance information of a PCR-GLOBWB run. Data is retrieved from the log-file of this run.
+
+    Arguments:
+        fo (str): path to log-file
     """
 
     def __init__(self, fo):
         """Initiates water balance object based on PCR-GLOBWB log-file.
-
-        Arguments:
-            fo (str): path to log-file
         """
 
         self.pcr_log_file = fo

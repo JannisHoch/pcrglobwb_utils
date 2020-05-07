@@ -6,5 +6,3 @@ While the water balance computations are not direct output of PCR-GLOBWB, their 
 
 .. autoclass:: water_balance.water_balance
     :members:
-    :special-members:
-    :exclude-members: __weakref__
