@@ -17,6 +17,13 @@ And others to read timeseries from nc-files:
 
     nc_data.rst
 
+To ensemble an ensemble of timeseries:
+
+.. toctree::
+    :maxdepth: 1
+
+    ensemble.rst
+
 For assessments of temporal statistics and aggregation:
 
 .. toctree::

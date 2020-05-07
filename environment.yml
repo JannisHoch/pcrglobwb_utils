@@ -11,6 +11,7 @@ dependencies:
   - numpy>=1.16.5
   - matplotlib>=3.2.0
   - ipython
+  - nbconvert
   - notebook
   - click
   - scipy

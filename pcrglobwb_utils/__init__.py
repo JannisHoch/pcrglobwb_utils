@@ -1,6 +1,6 @@
 """Top-level package for pcrglobwb_utils."""
 
-from . import nc_data
+from . import sim_data
 from . import obs_data
 from . import time_funcs
 from . import utils

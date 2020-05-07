@@ -3,16 +3,14 @@ import matplotlib.pyplot as plt
 import glob
 
 class water_balance:
-    """This object contains annual water balance information of a PCR-GLOBWB run. Data is retrieved from the log-file of tis run.
+    """Annual water balance information of a PCR-GLOBWB run. Data is retrieved from the log-file of this run.
+
+    Arguments:
+        fo (str): path to log-file
     """
 
     def __init__(self, fo):
         """Initiates water balance object based on PCR-GLOBWB log-file.
-
-        Parameters
-        ----------
-        fo: str
-            path to log-file
         """
 
         self.pcr_log_file = fo
@@ -20,10 +18,8 @@ class water_balance:
     def get_annual_values(self):
         """Get annual values for a range of water balance components by parsing the log-file.
 
-        Returns
-        -------
-        self.df: dataframe
-            dataframe containing annual values of water balance components
+        Returns:
+            dataframe: dataframe containing annual values of water balance components
         """
 
         varData = {
@@ -71,13 +67,7 @@ class water_balance:
         return self.df
 
     def bar_plot(self, **kwargs):
-        """Creates a bar plot of water balance components per year.
-        This adds to the regular plotting options with pandas dataframes.
-
-        Parameters
-        ----------
-        **kwargs: optional
-            additional matplotlib key word arguments
+        """Creates a bar plot of water balance components per year. This adds to the regular plotting options with pandas dataframes.
         """
 
         xlabel = kwargs.get('xlabel', "m3")

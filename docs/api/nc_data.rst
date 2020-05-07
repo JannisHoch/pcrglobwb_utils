@@ -8,9 +8,7 @@ PCR-GLOBWB writes output to netCDF4-files. It is thus necessary to have the righ
 
 Of particular interest are timeseries of, for instance, discharge to validate model output.
 
-.. autoclass:: nc_data.nc_data
+.. autoclass:: sim_data.from_nc
     :members:
-    :special-members:
-    :exclude-members: __weakref__
 
     
