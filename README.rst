@@ -22,7 +22,9 @@ Overview
    :alt: License
 
 
-Handy functions to work with PCR-GLOBWB input and output
+
+
+Handy functions to work with PCR-GLOBWB input and output.
 
 
 * Free software: GNU General Public License v3
@@ -32,8 +34,11 @@ Handy functions to work with PCR-GLOBWB input and output
 Features
 --------
 
-* allows evaluation of timeseries simulated by PCR-GLOBWB with observations
-* currently limited to PCR-GLOBWB discharge and GRDC observations only
+* evaluation of timeseries simulated by PCR-GLOBWB with observations
+* extraction of timeseries from GRDC-files or csv-files
+* aggregating and averaging over time scales
+* water balance assessments of PCR-GLOBWB runs
+* statistical analyses
 
 Credits
 -------

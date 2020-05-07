@@ -47,7 +47,7 @@ def test_daily2monthly():
     df = pd.DataFrame({'test': days, 'col2': data})
     df = df.set_index('test')
 
-    df_test = pcrglobwb_utils.time_funcs.daily2monthly(df)
+    df_test = pcrglobwb_utils.time_funcs.daily2monthly(df, averaging=False)
 
     assert float(df_test.sum()) == float(df.sum())
 
@@ -61,7 +61,7 @@ def test_daily2yearly():
     df = pd.DataFrame({'test': days, 'col2': data})
     df = df.set_index('test')
 
-    df_test = pcrglobwb_utils.time_funcs.daily2yearly(df)
+    df_test = pcrglobwb_utils.time_funcs.daily2yearly(df, averaging=False)
 
     assert float(df_test.sum()) == float(df.sum())
 

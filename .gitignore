@@ -106,3 +106,4 @@ ENV/
 
 # example output folders
 /scripts/OUT/
+/examples/_OUT/

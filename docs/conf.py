@@ -63,10 +63,10 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel']
 
-napoleon_google_docstring = False
-napoleon_numpy_docstring = True
-napoleon_use_param = False
-napoleon_use_ivar = True
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+# napoleon_use_param = False
+# napoleon_use_ivar = True
 
 todo_include_todos=True
 
@@ -125,6 +125,7 @@ autosummary_generate = True
 #
 html_theme = 'pydata_sphinx_theme'
 # html_theme = 'alabaster'
+# html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -137,7 +138,7 @@ html_theme = 'pydata_sphinx_theme'
 html_theme_options = {}
 
 autosummary_generate = True
-numpydoc_show_class_members = False
+# numpydoc_show_class_members = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = True

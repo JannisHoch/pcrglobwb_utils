@@ -7,20 +7,16 @@ import spotpy as sp
 import os, sys
 
 def find_indices_from_coords(fo, lon, lat):
-    """
-    Read in georeferenced 2D file (e.g. tiff or nc-file) and 
-    get row and column indices corresponding to given longitude and latitude information.
-    
-    input:
-    ------
-    fo {str} = georeferenced 2D file
-    lon {float} = longitude of point
-    lat {float} = latitude of point
-    
-    output:
-    -------
-    row {float} = row corresponding to longitude
-    col {float} = column corresponding to latitude
+    """Read in georeferenced 2D file (e.g. tiff or nc-file) and get row and column indices corresponding to given longitude and latitude information.
+
+    Arguments:
+        fo (str): georeferenced 2D file
+        lon (float): longitude of point
+        lat (float): latitude of point
+
+    Returns:
+        float: row corresponding to longitude
+        float: column corresponding to latitude
     """
     
     # open file

@@ -38,5 +38,26 @@ Installation of the package is then possible:
 
     $ python path/to/pcrglobwb_utils/setup.py develop
 
+Alternatively, you can use:
+
+.. code-block:: console
+
+    $ pip install -e path/to/pcrglobwb_utils
+
+From pip
+--------
+
+pcrglobwb_utils can also be installed from PyPI. To do so, use this command:
+
+.. code-block:: console
+
+    $ pip install pcrglobwb-utils
+
+If a specific version is required, then the command would need to look like this:
+
+.. code-block:: console
+
+    $ pip install pcrglobwb-utils==version
+
 
 .. _Github repo: https://github.com/JannisHoch/pcrglobwb_utils

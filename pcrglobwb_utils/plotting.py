@@ -8,15 +8,15 @@ import os, sys
 
 def plot_var_at_timestep(fo, var_name, time, savefig=False, outdir=None):
     """Plots variable at a given timestep from 2D netcdf file.
-    
+
     Arguments:
-        fo {str} -- path to nc-file
-        var_name {str} -- variable name to be plotted
-        time {str} -- time at which variable is to be plotted
-    
+        fo (str): path to nc-file
+        var_name (str): variable name to be plotted
+        time (str): time at which variable is to be plotted
+
     Keyword Arguments:
-        savefig {bool} -- whether or not to save the figure (default: {False})
-        outdir {str} -- path to location where figure is to be stored (default: {None})
+        savefig (bool): whether or not to save the figure (default: False)
+        outdir (str): path to location where figure is to be stored (default: None)
     """
     
     if savefig == True and outdir == None:
