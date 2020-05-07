@@ -2,6 +2,11 @@
 History
 =======
 
+**0.1.3 (2020-05-07)**
+
+* Analysing the water balance components of a PCR-GLOBWB run
+* Calculating statistics of ensemble output and plotting it
+
 **0.1.2 (2020-04-23)**
 
 Additional functionality.
