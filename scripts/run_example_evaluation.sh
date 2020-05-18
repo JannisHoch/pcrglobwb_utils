@@ -5,4 +5,4 @@ grdc_file='..\examples\example_data\3629000_Obidos.day'
 out_dir='OUT'
 
 # execute script
-python $path_to_script/evaluate_output.py $nc_file $grdc_file $out_dir
+python $path_to_script/evaluate_output.py $nc_file $out_dir -g $grdc_file

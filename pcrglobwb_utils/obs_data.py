@@ -136,16 +136,10 @@ class other_data:
 
         self.fo = fo
 
-    def get_values_from_csv(self, t_col, v_col, sep=';', datetime_format='%Y-%m-%d', remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
-        """Reads simple csv file containing of multiple columns with at least one containing time information, and returns dataframe for dates and selected column.
-
-        Arguments:
-            t_col (str): header of column containing time information.
-            v_col (str): header of column containing values.
+    def get_values_from_csv(self, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+        """Reads simple two-column csv file and returns dataframe for dates and selected column.
 
         Keyword Arguments:
-            sep (str): column separator (default: ';')
-            datetime_format (str): datetime format used in csv file (default: '%Y-%m-%d')
             remove_mv (bool): whether or not to remove missing values (default: True)
             mv_val (int): placeholder value of missing values (default: -999)
             print_head (bool): whether or not to print the header of dataframe (default: False)
@@ -156,20 +150,22 @@ class other_data:
             dataframe: dataframe containing datetime objects as index and observations as column values
         """
         
-        df = pd.read_csv(self.fo, sep=sep)
-        
-        df.set_index(pd.to_datetime(df[t_col], format=datetime_format), inplace=True)
+        df = pd.read_csv(self.fo, sep=None, engine='python', parse_dates=[0], index_col=0)
+
+        # print(df)
+ 
+        # df.set_index(pd.to_datetime(date_col, format=datetime_format), inplace=True)
 
         if remove_mv == True:
             df.replace(mv_val, np.nan, inplace=True)
         
-        del df[t_col]
+        # del date_col
             
         if print_head == True:
             print(df.head())
             
         if plot == True:
-            df[v_col].plot(title=plot_title, legend=True)
+            df.plot(title=plot_title, legend=True)
         
         self.df = df
 
