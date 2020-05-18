@@ -17,8 +17,6 @@ def cli():
 @click.option('-c', '--csv-file', default=None, help='path to CSV file',)
 @click.option('-lat', '--latitude', default=None, help='latitude in degree',type=float)
 @click.option('-lon', '--longitude', default=None, help='longitude in degree',type=float)
-# @click.option('-o', '--out-dir', default=None, help='directory to save model outputs', type=click.Path(), show_default=True)
-
 
 def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=None):
     """
