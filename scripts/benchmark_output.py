@@ -60,7 +60,7 @@ for i, file in enumerate(ncfiles_list):
     # get row/col from lon/lat
     row, col = pcrglobwb_utils.utils.find_indices_from_coords(nc_file, lon, lat)
 
-    pcr_data = pcrglobwb_utils.nc_data.nc_data(nc_file)
+    pcr_data = pcrglobwb_utils.sim_data.from_nc(nc_file)
 
     # extract information at a certain row/col
     q_sim = pcr_data.read_values_at_indices(row,
