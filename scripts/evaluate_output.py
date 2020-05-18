@@ -27,7 +27,20 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
         NCF: netcdf-file
 
         OUT_DIR: path to output directory
-    """    
+    """   
+
+    ## OUTPUT DIRECTORY ##
+    # check whether output path provided is absolute or relative
+    if os.path.isabs(out_dir):
+        pass
+    else:
+        out_dir = os.path.join(os.getcwd(), out_dir)
+
+    # check whether output path already exists, if not make a new folder
+    if os.path.exists(out_dir):
+        pass
+    else:
+        os.mkdir(out_dir) 
 
     # initiate logging
     sys.stdout = open(os.path.join(out_dir, 'logfile.log'), 'w')
@@ -83,19 +96,6 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
     if csv_file is not None:
 
         df_obs = obs_data.get_values_from_csv()
-
-    ## OUTPUT DIRECTORY ##
-    # check whether output path provided is absolute or relative
-    if os.path.isabs(out_dir):
-        pass
-    else:
-        out_dir = os.path.join(os.getcwd(), out_dir)
-
-    # check whether output path already exists, if not make a new folder
-    if os.path.exists(out_dir):
-        pass
-    else:
-        os.mkdir(out_dir)
 
     ## NC FILE ##
     #NOTE: tested with 1 file so far only
