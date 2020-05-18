@@ -82,7 +82,7 @@ for file in ncfiles_list:
                                                               grdc_props['longitude'], 
                                                               grdc_props['latitude'])
 
-    pcr_data = pcrglobwb_utils.nc_data.nc_data(nc_file)
+    pcr_data = pcrglobwb_utils.sim_data.from_nc(nc_file)
 
     q_sim = pcr_data.read_values_at_indices(row,
                                             col,
