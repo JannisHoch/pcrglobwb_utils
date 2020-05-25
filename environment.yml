@@ -16,6 +16,7 @@ dependencies:
   - click
   - scipy
   - xlrd
+  - pip
   - pip:
     - spotpy>=1.5.8
     - netCDF4
