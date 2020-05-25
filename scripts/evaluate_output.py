@@ -17,8 +17,10 @@ def cli():
 @click.option('-c', '--csv-file', default=None, help='path to CSV file',)
 @click.option('-lat', '--latitude', default=None, help='latitude in degree',type=float)
 @click.option('-lon', '--longitude', default=None, help='longitude in degree',type=float)
+@click.option('-m', '--monthly-analysis', default=False, help='resampling all data to monthly average values',type=bool)
+@click.option('-y', '--yearly-analysis', default=False, help='resampling all data to yearly average values',type=bool)
 
-def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=None):
+def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=None, monthly_analysis=False, yearly_analysis=False):
     """
     Arguments:
 
@@ -114,6 +116,19 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
     q_sim = pcr_data.read_values_at_indices(row,
                                             col,
                                             plot_var_name=new_var_name_sim)
+
+    if monthly_analysis:
+        print('resampling to monthly average values' + os.linesep)
+        df_obs = df_obs.resample('M').mean()
+        pcr_data.daily2monthly()
+
+    if yearly_analysis:
+        print('resampling to yearly average values' + os.linesep)
+        df_obs = df_obs.resample('Y').mean()
+        pcr_data.daily2yearly()
+
+    if monthly_analysis and yearly_analysis:
+        raise ValueError('not possible to resampling to both monthly and yearly values - please specify only one option as True')
 
     df_eval, eval_dic = pcr_data.validate_results(df_obs,
                                                 out_dir,
