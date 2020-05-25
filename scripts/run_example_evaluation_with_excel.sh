@@ -1,6 +1,7 @@
 # paths to files and dirs
 path_to_script='.'
 nc_file='..\examples\example_data\DUMMY_discharge_dailyTot_output.nc'
+grdc_file='..\examples\example_data\3629000_Obidos.day'
 excel_file='..\examples\example_data\Obidos_data.xlsx'
 latitude=-1.9472
 longitude=-55.5111

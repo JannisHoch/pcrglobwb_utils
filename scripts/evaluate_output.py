@@ -45,8 +45,7 @@ def main(ncf, out_dir, grdc_file=None, excel_file=None, latitude=None, longitude
     # initiate logging
     sys.stdout = open(os.path.join(out_dir, 'logfile.log'), 'w')
 
-    print(datetime.datetime.now())
-    print('')
+    print('start logging at {}'.format(datetime.datetime.now()) + os.linesep)
 
     ## OBSERVED DATA ##
     # getting and checking files and settings for observed data (GRDC or Excel)
@@ -55,20 +54,22 @@ def main(ncf, out_dir, grdc_file=None, excel_file=None, latitude=None, longitude
     elif excel_file is not None:
         obs_file = excel_file
         if (latitude is None) or (longitude is None):
-            print('if you use a Excel file, you may want to specify latitude/longitude of observation station!')
-    elif (grdc_file is not None) and (excel_file is not None):
-        sys.exit('you cannot specify both a GRDC file and Excel file - choose your poison!')
-    else:
-        sys.exit('specify either a GRDC or Excel file containing observed values - if Excel value is used, also specify latitude and longitude!')
+            raise Warning('if you use a Excel file, you may want to specify latitude/longitude of observation station!')
 
+    if (grdc_file is not None) and (excel_file is not None):
+        raise ValueError('you cannot specify both a GRDC file and Excel file - choose your poison!')
+    elif (grdc_file is None) and (excel_file is None):
+        raise ValueError('specify either a GRDC or Excel file containing observed values - if Excel value is used, also specify latitude and longitude!')
+
+    # getting absolute path to file with observations
     if os.path.isabs(obs_file):
         pass
     else:
         obs_file = os.path.join(os.getcwd(), obs_file)
 
-    print('getting observed data from file', os.path.abspath(obs_file))
-    print('')
+    print('getting observed data from file {}'.format(os.path.abspath(obs_file)) + os.linesep)
 
+    # initializing data objects
     if grdc_file is not None:
         obs_data = pcrglobwb_utils.obs_data.grdc_data(obs_file)
     if excel_file is not None:
@@ -103,13 +104,13 @@ def main(ncf, out_dir, grdc_file=None, excel_file=None, latitude=None, longitude
 
     ## NC FILE ##
     #NOTE: tested with 1 file so far only
+    # getting absolute path to nc-file
     if os.path.isabs(ncf):
         pass
     else:
         ncf = os.path.join(os.getcwd(), ncf)
 
-    print('reading from nc-file', os.path.abspath(ncf))
-    print('')
+    print('reading from nc-file {}'.format(os.path.abspath(ncf)) + os.linesep)
 
     row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
                                                               longitude, 
