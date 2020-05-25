@@ -65,6 +65,28 @@ class from_nc:
         
         return self.df
 
+    def daily2monthly(self):
+        """Averaging values to monthly time scale.
+
+        Returns:
+            dataframe: dataframe containing monthly average values
+        """        
+
+        self.df = self.df.resample('M').mean()
+
+        return self.df
+
+    def daily2yearly(self):
+        """Averaging values to monthly time scale.
+
+        Returns:
+            dataframe: dataframe containing monthly average values
+        """        
+
+        self.df = self.df.resample('Y').mean()
+
+        return self.df
+
     def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
         """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
@@ -149,7 +171,7 @@ class from_nc:
         
         return both, evaluation
 
-    def calc_stats(self, plot=False):
+    def calc_stats(self, out_dir, plot=False):
         """Calculates statistics for nc-data object.
 
         Keyword Arguments:
@@ -166,6 +188,12 @@ class from_nc:
                  'q10': int(self.df.quantile(q=0.1)),
                  'q50': int(self.df.quantile(q=0.5)),
                  'q90': int(self.df.quantile(q=0.9))}
+
+        # save dict to csv
+        out_fo = os.path.join(out_dir, 'nc_stats.csv')
+        w = csv.writer(open(out_fo, "w"))
+        for key, val in stats.items():
+            w.writerow([key, val])
 
         if plot: self.df.plot.hist()
 

@@ -14,13 +14,13 @@ def cli():
 @click.argument('ncf',)
 @click.argument('out_dir',)
 @click.option('-g', '--grdc-file', default=None, help='path to GRDC file')
-@click.option('-c', '--csv-file', default=None, help='path to CSV file',)
+@click.option('-e', '--excel-file', default=None, help='path to Excel file',)
 @click.option('-lat', '--latitude', default=None, help='latitude in degree',type=float)
 @click.option('-lon', '--longitude', default=None, help='longitude in degree',type=float)
 @click.option('-m', '--monthly-analysis', default=False, help='resampling all data to monthly average values',type=bool)
 @click.option('-y', '--yearly-analysis', default=False, help='resampling all data to yearly average values',type=bool)
 
-def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=None, monthly_analysis=False, yearly_analysis=False):
+def main(ncf, out_dir, grdc_file=None, excel_file=None, latitude=None, longitude=None, monthly_analysis=False, yearly_analysis=False):
     """
     Arguments:
 
@@ -49,17 +49,17 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
     print('')
 
     ## OBSERVED DATA ##
-    # getting and checking files and settings for observed data (GRDC or CSV)
+    # getting and checking files and settings for observed data (GRDC or Excel)
     if grdc_file is not None:
         obs_file = grdc_file
-    elif csv_file is not None:
-        obs_file = csv_file
+    elif excel_file is not None:
+        obs_file = excel_file
         if (latitude is None) or (longitude is None):
-            print('if you use a CSV file, you may want to specify latitude/longitude of observation station!')
-    elif (grdc_file is not None) and (csv_file is not None):
-        sys.exit('you cannot specify both a GRDC file and CSV file - choose your poison!')
+            print('if you use a Excel file, you may want to specify latitude/longitude of observation station!')
+    elif (grdc_file is not None) and (excel_file is not None):
+        sys.exit('you cannot specify both a GRDC file and Excel file - choose your poison!')
     else:
-        sys.exit('specify either a GRDC or CSV file containing observed values - if CSV value is used, also specify latitude and longitude!')
+        sys.exit('specify either a GRDC or Excel file containing observed values - if Excel value is used, also specify latitude and longitude!')
 
     if os.path.isabs(obs_file):
         pass
@@ -71,7 +71,7 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
 
     if grdc_file is not None:
         obs_data = pcrglobwb_utils.obs_data.grdc_data(obs_file)
-    if csv_file is not None:
+    if excel_file is not None:
         obs_data = pcrglobwb_utils.obs_data.other_data(obs_file)
 
     # provding plot names 
@@ -92,10 +92,14 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
         df_obs = obs_data.get_grdc_station_values(var_name=new_var_name_obs,
                                                 plot=False)
 
-    # get observed data from CSV file
-    if csv_file is not None:
+        # getting lat/lon information from GRDC station properties
+        latitude = grdc_props['latitude']
+        longitude = grdc_props['longitude']
 
-        df_obs = obs_data.get_values_from_csv()
+    # get observed data from Excel file
+    if excel_file is not None:
+
+        df_obs = obs_data.get_values_from_excel(var_name=new_var_name_obs)
 
     ## NC FILE ##
     #NOTE: tested with 1 file so far only
@@ -108,14 +112,16 @@ def main(ncf, out_dir, grdc_file=None, csv_file=None, latitude=None, longitude=N
     print('')
 
     row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
-                                                            grdc_props['longitude'], 
-                                                            grdc_props['latitude'])
+                                                              longitude, 
+                                                              latitude)
 
     pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
 
-    q_sim = pcr_data.read_values_at_indices(row,
-                                            col,
-                                            plot_var_name=new_var_name_sim)
+    pcr_data.read_values_at_indices(row,
+                                    col,
+                                    plot_var_name=new_var_name_sim)
+
+    pcr_stats = pcr_data.calc_stats(out_dir)
 
     if monthly_analysis:
         print('resampling to monthly average values' + os.linesep)
