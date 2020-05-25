@@ -16,6 +16,7 @@ with open('HISTORY.rst') as history_file:
 requirements = ['Click>=7.0', 
                 'xarray>=0.15.0',
                 'pandas>=0.25.1',
+                'xlrd>=1.2.0',
                 'rasterio>=1.0.21',
                 'spotpy>=1.5.8',
                 'numpy>=1.16.5']
@@ -55,6 +56,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://pcrglobwb-utils.readthedocs.io/',
-    version='0.1.4.2',
+    version='0.1.4.3',
     zip_safe=False,
 )

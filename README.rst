@@ -39,11 +39,13 @@ Features
 * aggregating and averaging over time scales
 * water balance assessments of PCR-GLOBWB runs
 * statistical analyses
+* ensemble analysis
+* command line scripts
 
 Credits
 -------
 
-Contributions from Jannis M. Hoch and many more to come...
+Contributions from Jannis M. Hoch (j.m.hoch@uu.nl).
 
 The package structure was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 

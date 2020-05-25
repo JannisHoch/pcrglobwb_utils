@@ -136,8 +136,11 @@ class other_data:
 
         self.fo = fo
 
-    def get_values_from_csv(self, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+    def get_values_from_csv(self, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
         """Reads simple two-column csv file and returns dataframe for dates and selected column.
+
+        Arguments:
+            var_name (str): user-specified column name
 
         Keyword Arguments:
             remove_mv (bool): whether or not to remove missing values (default: True)
@@ -152,14 +155,10 @@ class other_data:
         
         df = pd.read_csv(self.fo, sep=None, engine='python', parse_dates=[0], index_col=0)
 
-        # print(df)
- 
-        # df.set_index(pd.to_datetime(date_col, format=datetime_format), inplace=True)
+        df = df.rename(columns={df.columns.values[0]: var_name})
 
         if remove_mv == True:
             df.replace(mv_val, np.nan, inplace=True)
-        
-        # del date_col
             
         if print_head == True:
             print(df.head())
@@ -167,6 +166,22 @@ class other_data:
         if plot == True:
             df.plot(title=plot_title, legend=True)
         
+        self.df = df
+
+        return self.df
+
+    def get_values_from_excel(self, var_name, remove_mv=True, mv_val=-999, plot=False, plot_title=None):
+
+        df = pd.read_excel(self.fo, index_col=0)
+
+        df = df.rename(columns={df.columns.values[0]: var_name})
+
+        if remove_mv == True:
+            df.replace(mv_val, np.nan, inplace=True)
+
+        if plot == True:
+            df.plot(title=plot_title, legend=True)
+
         self.df = df
 
         return self.df
