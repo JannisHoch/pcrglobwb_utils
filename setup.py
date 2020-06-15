@@ -14,12 +14,14 @@ with open('HISTORY.rst') as history_file:
 #     requirements = requirements_file.read()
 
 requirements = ['Click>=7.0', 
-                'xarray>=0.15.0',
-                'pandas>=0.25.1',
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
                 'xlrd>=1.2.0',
-                'rasterio>=1.0.21',
+                'rasterio>=1.1',
                 'spotpy>=1.5.8',
-                'numpy>=1.16.5']
+                'numpy>=1.16.5',
+                'geopandas>=0.7',
+                'rioxarray>=0.0.26']
 
 setup_requirements = ['pytest-runner', ]
 
