@@ -87,7 +87,7 @@ class from_nc:
 
         return self.df
 
-    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, plot=False, save_fig=True):
+    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None):
         """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
         Arguments:
@@ -97,8 +97,6 @@ class from_nc:
         Keyword Arguments:
             var_name_obs (str): header name of column in df_obs whose values are to be used (default: None)
             var_name_sim (str): header name of column in df_sim whose values are to be used (default: None)
-            plot (bool): whether or not to show the figure (default: False)
-            save_fig (bool): whether or not to save the figure (default: True)
 
         Raises:
             error: if df_obs and df_sim do not overlap in time, an error is thrown.
@@ -126,27 +124,10 @@ class from_nc:
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
         both_noMV = both.dropna()
-        both_fillMV = both.fillna(np.nan)
-        
+
         # raise error if there is no common time period
         if both.empty:
             os.sys.exit('no common time period of observed and simulated values found in dataframes!')
-
-        if save_fig == True:
-            if os.path.isdir(out_dir) == True:
-                pass
-            else:
-                os.mkdir(out_dir)
-        
-        # plot if specified
-        if plot == True:
-            both_fillMV.plot()
-            plt.show()
-            if save_fig == True:
-                plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
-        if save_fig == True:
-            both_fillMV.plot()
-            plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
         
         # convert to np-arrays
         obs = both_noMV[both_noMV.columns[0]].to_numpy()
