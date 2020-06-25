@@ -126,7 +126,7 @@ class from_nc:
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
         both_noMV = both.dropna()
-        both_fillMV = both_noMV.fillna(np.nan)
+        both_fillMV = both.fillna(np.nan)
         
         # raise error if there is no common time period
         if both.empty:
