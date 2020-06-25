@@ -125,7 +125,8 @@ class from_nc:
         both = pd.concat([df_obs, df_sim], axis=1)
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
-        both = both.dropna()
+        both_noMV = both.dropna()
+        both_fillMV = both_noMV.fillna(np.nan)
         
         # raise error if there is no common time period
         if both.empty:
@@ -139,17 +140,17 @@ class from_nc:
         
         # plot if specified
         if plot == True:
-            both.plot()
+            both_fillMV.plot()
             plt.show()
             if save_fig == True:
                 plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
         if save_fig == True:
-            both.plot()
+            both_fillMV.plot()
             plt.savefig(os.path.join(out_dir, 'evaluated_timeseries.png'), dpi=300)
         
         # convert to np-arrays
-        obs = both[both.columns[0]].to_numpy()
-        sim = both[both.columns[1]].to_numpy()
+        obs = both_noMV[both_noMV.columns[0]].to_numpy()
+        sim = both_noMV[both_noMV.columns[1]].to_numpy()
         
         # apply objective functions
         kge = sp.objectivefunctions.kge(obs, sim)
