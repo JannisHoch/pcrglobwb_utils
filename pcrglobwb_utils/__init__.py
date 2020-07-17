@@ -6,6 +6,7 @@ from . import time_funcs
 from . import utils
 from . import plotting 
 from . import water_balance
+from . import spatial_validation
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
