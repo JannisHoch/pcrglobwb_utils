@@ -9,6 +9,8 @@ import datetime
 import spotpy
 import os, sys
 
+#TODO: make this object-based
+
 def validate_with_GLEAM(PCR_nc_fo, GLEAM_nc_fo, shp_fo, PCR_var_name='land_surface_evaporation', GLEAM_var_name='E', convFactor=1000, crs='epsg:4326', plot=False, out_dir=None):
     """With this function, simulated land surface evaporation (or another evaporation output) from PCR-GLOBWB can be validated against evaporation data from GLEAM (or any other evaporation data in GLEAM).
     Area averages are computed per time step. The area of interest is specified with a shapefile.
@@ -25,7 +27,7 @@ def validate_with_GLEAM(PCR_nc_fo, GLEAM_nc_fo, shp_fo, PCR_var_name='land_surfa
         out_dir (str, optional): Path to folder where figures will be stored. If 'None', no output will be stored. Defaults to None.
 
     Returns:
-        list: list containing computed values for R (correlation coefficient) and RMSE (root mean square error) computed with PCR-GLOBWB and GLEAM timeseries.
+        list: list containing computed values for R (correlation coefficient) and RMSE (root mean square error) computed with PCR-GLOBWB and GLEAM timeseries
         dataframe: dataframe containing the timeseries including missing values (NaN)
     """    
 
