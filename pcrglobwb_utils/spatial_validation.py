@@ -11,6 +11,7 @@ import os, sys
 from shapely.geometry import mapping
 
 #TODO: make this object-based
+#TODO: remove all stupid print statements
 
 class validate_per_shape:
 
@@ -62,11 +63,17 @@ def validate_with_GLEAM(PCR_nc_fo, GLEAM_nc_fo, shp_fo, PCR_var_name='land_surfa
     extent_gdf = gpd.read_file(shp_fo, crs=crs)
 
     print('clipping nc-files to extent of shp-file')
-    GLEAM_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    try:
+        GLEAM_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        GLEAM_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     GLEAM_data.rio.write_crs(crs, inplace=True)
     GLEAM_data = GLEAM_data.rio.clip(extent_gdf.geometry, extent_gdf.crs, drop=True)
 
-    PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    try:
+        PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        PCR_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     PCR_data.rio.write_crs(crs, inplace=True)
     PCR_data = PCR_data.rio.clip(extent_gdf.geometry, extent_gdf.crs, drop=True)
 
@@ -108,11 +115,10 @@ def validate_with_GLEAM(PCR_nc_fo, GLEAM_nc_fo, shp_fo, PCR_var_name='land_surfa
     final_df = pd.concat([GLEAM_df, PCR_df], axis=1)
     final_df_noNaN = pd.concat([GLEAM_df, PCR_df], axis=1).dropna()
 
-    r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN[GLEAM_var_name].values, _final_df_noNaNdf[PCR_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(final_df_noNaN_df[GLEAM_var_name].values, final_df_noNaN_df[PCR_var_name].values)
+    r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
+    rmse = spotpy.objectivefunctions.rmse(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
 
-    print('...correlation coefficient is {}'.format(r))
-    print('...RMSE is {}'.format(rmse))
+    print('done')
 
     if plot:
         print('plotting timeseries...')
@@ -155,11 +161,17 @@ def validate_with_GRACE(PCR_nc_fo, GRACE_nc_fo, shp_fo, PCR_var_name='total_thic
     extent_gdf = gpd.read_file(shp_fo, crs=crs)
 
     print('clipping nc-files to extent of shp-file')
-    GRACE_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    try:
+        GRACE_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        GRACE_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     GRACE_data.rio.write_crs(crs, inplace=True)
     GRACE_data = GRACE_data.rio.clip(extent_gdf.geometry, extent_gdf.crs, drop=True)
 
-    PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    try:
+        PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        PCR_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     PCR_data.rio.write_crs(crs, inplace=True)
     PCR_data = PCR_data.rio.clip(extent_gdf.geometry, extent_gdf.crs, drop=True)
 
@@ -188,11 +200,10 @@ def validate_with_GRACE(PCR_nc_fo, GRACE_nc_fo, shp_fo, PCR_var_name='total_thic
     final_df = pd.concat([GRACE_df, PCR_df], axis=1)
     final_df_noNaN = pd.concat([GRACE_df, PCR_df], axis=1).dropna()
 
-    r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN[GLEAM_var_name].values, _final_df_noNaNdf[PCR_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(final_df_noNaN_df[GLEAM_var_name].values, final_df_noNaN_df[PCR_var_name].values)
+    r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN['GRACE data'].values, final_df_noNaN['PCR data'].values)
+    rmse = spotpy.objectivefunctions.rmse(final_df_noNaN['GRACE data'].values, final_df_noNaN['PCR data'].values)
 
-    print('...correlation coefficient is {}'.format(r))
-    print('...RMSE is {}'.format(rmse))
+    print('done')
 
     if plot:
         print('plotting timeseries...')
