@@ -153,6 +153,10 @@ htmlhelp_basename = 'pcrglobwb_utils_doc'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "_static/logo.jpg"
+
 
 # -- Options for HTMLHelp output ---------------------------------------
 
