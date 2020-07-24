@@ -92,6 +92,9 @@ class grdc_data:
             dataframe: dataframe containing datetime objects as index and observations as column values
         """
 
+        #TODO: this function should also work if get_grdc_station_properties() was not executed before;
+        #TODO: because, if not executed before, self.props is no attribute yet and function exists with error
+
         f = open(self.fo)
 
         for i, line in enumerate(f):
