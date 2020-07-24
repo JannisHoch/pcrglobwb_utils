@@ -7,6 +7,7 @@ from . import utils
 from . import plotting 
 from . import water_balance
 from . import spatial_validation
+from . import ensembles
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'

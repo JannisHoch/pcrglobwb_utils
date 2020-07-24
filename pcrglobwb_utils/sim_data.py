@@ -65,29 +65,55 @@ class from_nc:
         
         return self.df
 
-    def daily2monthly(self):
-        """Averaging values to monthly time scale.
+    def resample2monthly(self, stat_func='mean', suffix='_monthly'):
+        """Resampling values to monthly time scale.
+
+        Keyword Arguments:
+            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
+            suffix (str): suffix to be added to column name (default: _monthly)
 
         Returns:
             dataframe: dataframe containing monthly average values
         """        
 
-        self.df = self.df.resample('M').mean()
+        if stat_func == 'mean':
+            self.df_monthly = self.df.resample('M').mean()
+        elif stat_func == 'max':
+            self.df_monthly = self.df.resample('M').max()
+        elif stat_func == 'min':
+            self.df_monthly = self.df.resample('M').min()
+        else:
+            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-        return self.df
+        self.df_monthly = self.df_monthly.rename(columns={self.df_monthly.columns.values[0]: self.df_monthly.columns.values[0] + suffix + '_' + stat_func})
 
-    def daily2yearly(self):
-        """Averaging values to monthly time scale.
+        return self.df_monthly
+
+    def resample2yearly(self, stat_func='mean', suffix='_yearly'):
+        """Resampling values to monthly time scale.
+
+        Keyword Arguments:
+            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
+            suffix (str): suffix to be added to column name (default: _monthly)
 
         Returns:
             dataframe: dataframe containing monthly average values
         """        
 
-        self.df = self.df.resample('Y').mean()
+        if stat_func == 'mean':
+            self.df_yearly = self.df.resample('Y').mean()
+        elif stat_func == 'max':
+            self.df_yearly = self.df.resample('Y').max()
+        elif stat_func == 'min':
+            self.df_yearly = self.df.resample('Y').min()
+        else:
+            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-        return self.df
+        self.df_yearly = self.df_yearly.rename(columns={self.df_yearly.columns.values[0]: self.df_yearly.columns.values[0] + suffix + '_' + stat_func})
 
-    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None):
+        return self.df_yearly
+
+    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
         """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
         Arguments:
@@ -97,6 +123,7 @@ class from_nc:
         Keyword Arguments:
             var_name_obs (str): header name of column in df_obs whose values are to be used (default: None)
             var_name_sim (str): header name of column in df_sim whose values are to be used (default: None)
+            return_all_KGE (bool): whether or not to return all KGE components (default: False)
 
         Raises:
             error: if df_obs and df_sim do not overlap in time, an error is thrown.
@@ -120,13 +147,13 @@ class from_nc:
             df_sim = self.df
         
         # concatenate both dataframes
-        both = pd.concat([df_obs, df_sim], axis=1)
+        self.both = pd.concat([df_obs, df_sim], axis=1)
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
-        both_noMV = both.dropna()
+        both_noMV = self.both.dropna()
 
         # raise error if there is no common time period
-        if both.empty:
+        if self.both.empty:
             os.sys.exit('no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
@@ -134,7 +161,7 @@ class from_nc:
         sim = both_noMV[both_noMV.columns[1]].to_numpy()
         
         # apply objective functions
-        kge = sp.objectivefunctions.kge(obs, sim)
+        kge = sp.objectivefunctions.kge(obs, sim, return_all=return_all_KGE)
         nse = sp.objectivefunctions.nashsutcliffe(obs, sim)
         rmse = sp.objectivefunctions.rmse(obs, sim)
         r2 = sp.objectivefunctions.rsquared(obs, sim)
@@ -151,123 +178,24 @@ class from_nc:
         for key, val in evaluation.items():
             w.writerow([key, val])
         
-        return both, evaluation
+        return self.both, evaluation
 
     def calc_stats(self, out_dir, plot=False):
-        """Calculates statistics for nc-data object.
+        """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
 
         Keyword Arguments:
             plot (bool): whether or not to plot the histogram (default: False)
 
         Returns:
-            dict: dictionary containing statistical values
+            dataframe: dataframe containing statistical values
         """        
 
-        stats = {'mean': int(self.df.mean()),
-                 'median': int(self.df.median()),
-                 'max': int(self.df.max()),
-                 'min': int(self.df.min()),
-                 'q10': int(self.df.quantile(q=0.1)),
-                 'q50': int(self.df.quantile(q=0.5)),
-                 'q90': int(self.df.quantile(q=0.9))}
+        stats = self.both.describe()
 
         # save dict to csv
         out_fo = os.path.join(out_dir, 'nc_stats.csv')
-        w = csv.writer(open(out_fo, "w"))
-        for key, val in stats.items():
-            w.writerow([key, val])
+        stats.to_csv(out_fo)
 
-        if plot: self.df.plot.hist()
+        if plot: self.both.plot.hist()
 
         return stats
-
-class ensembles():
-    """Analyzing and visualizing ensemble time series.
-
-    Arguments:
-        *arg: list of pandas dataframe with matching datetime index
-    """
-
-    def __init__(self, *arg):
-        """Creates object based on an ensemble of input dataframes.
-        """        
-
-        temp = []
-        for argument in arg:
-            temp.append(argument)
-        
-        self.df_ens = pd.concat(temp, axis=1)
-
-    def calc_stats(self):
-        """Calculates mean, max, and min from ensemble object.
-
-        Returns:
-            dataframe: dataframe containing the input dataframes as well as columsn with mean, max, and min
-        """        
-
-        self.df_stats = self.df_ens.copy()
-
-        self.df_stats['mean'] = self.df_stats.mean(axis=1)
-        self.df_stats['max'] = self.df_stats.max(axis=1)
-        self.df_stats['min'] = self.df_stats.min(axis=1)
-
-        return self.df_stats
-
-    def plot_bounds(self, **kwargs):   
-        """Plots the mean, max, and min columns of the time series to visualize the range of values.
-
-        Keyword Arguments:
-            **kwargs: additional keyword arguments for plotting
-        """          
-
-        figsize = kwargs.get('figsize', (20,10))
-        title = kwargs.get('title', 'Ensemble plot')
-
-        ax = self.df_stats['mean'].plot(figsize=figsize,
-                                        color='r',
-                                        legend=True)
-        self.df_stats['max'].plot(ax=ax,
-                                  color='r',
-                                  style=':',
-                                  alpha=0.5)
-        self.df_stats['min'].plot(ax=ax,
-                                  color='r',
-                                  style=':',
-                                  alpha=0.5)
-        ax.set_title(title)
-
-    def monthly_avgs(self, plot=False, **kwargs):
-        """Calculates the long-term average per month as well as mean, max, and min thereof.
-
-        Keyword Arguments:
-            plot (bool): whether or not to plot mean, max, min (default: False)
-
-        Returns:
-            dataframe: dataframe containing the long-term monthly averages as well as their mean, max, and min
-        """        
-
-        figsize = kwargs.get('figsize', (20,10))
-        title = kwargs.get('title', 'Ensemble plot')
-
-        self.test = self.df_ens.groupby(self.df_ens.index.month).mean()
-        self.test['mean'] = self.test.mean(axis=1)
-        self.test['max'] = self.test.max(axis=1)
-        self.test['min'] = self.test.min(axis=1)
-
-        if plot:
-
-            ax = self.test['mean'].plot(figsize=figsize,
-                                            color='r',
-                                            legend=True)
-            self.test['max'].plot(ax=ax,
-                                    color='r',
-                                    style=':',
-                                    alpha=0.5)
-            self.test['min'].plot(ax=ax,
-                                    color='r',
-                                    style=':',
-                                    alpha=0.5)
-            ax.set_title(title)
-            ax.set_xlabel('month')
-
-        return self.test
