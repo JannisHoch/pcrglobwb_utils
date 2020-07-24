@@ -13,16 +13,16 @@ from shapely.geometry import mapping
 #TODO: remove all stupid print statements
 
 class validate_per_shape:
+    """Initializing object for validating output for area provided by shp-file.
+
+    Args:
+        shp_fo (str): Path to shp-file defining the area extent for validation
+        crs (str, optional): Definition of projection system in which validation takes place. Defaults to 'epsg:4326'.
+        out_dir (str, optional): Path to output directory. In None, then no output is stored. Defaults to None.
+    """      
 
     def __init__(self, shp_fo, crs='epsg:4326', out_dir=None):
-        """Initializing object for validating output for area provided by shp-file.
-
-        Args:
-            shp_fo (str): Path to shp-file defining the area extent for validation
-            crs (str, optional): Definition of projection system in which validation takes place. Defaults to 'epsg:4326'.
-            out_dir (str, optional): Path to output directory. In None, then no output is stored. Defaults to None.
-        """        
-
+  
         self.shp_fo = shp_fo
         self.crs = crs
         self.out_dir = out_dir
