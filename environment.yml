@@ -20,6 +20,7 @@ dependencies:
   - xlrd
   - pip
   - descartes
+  - cartopy
   - pip:
     - spotpy>=1.5.8
     - netCDF4
