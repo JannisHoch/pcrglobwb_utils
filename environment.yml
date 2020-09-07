@@ -19,6 +19,7 @@ dependencies:
   - scipy
   - xlrd
   - pip
+  - descartes
   - pip:
     - spotpy>=1.5.8
     - netCDF4
