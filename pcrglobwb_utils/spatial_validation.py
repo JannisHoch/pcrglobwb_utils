@@ -28,15 +28,16 @@ class validate_per_shape:
         self.shp_fo = shp_fo
         self.key = shp_key
         self.crs = crs
+        self.out_dir = out_dir
 
         print('reading shp-file {}'.format(os.path.abspath(self.shp_fo)))
         self.extent_gdf = gpd.read_file(self.shp_fo, crs=self.crs)
 
         if self.out_dir != None:
-            self.out_dir = os.path.abspath(out_dir)
-            if os.path.isdir(out_dir):
-                rmtree(out_dir)
-            os.makedirs(out_dir)
+            self.out_dir = os.path.abspath(self.out_dir)
+            if os.path.isdir(self.out_dir):
+                rmtree(self.out_dir)
+            os.makedirs(self.out_dir)
             print('saving output to {}'.format(self.out_dir))
 
     def against_GLEAM(self, PCR_nc_fo, GLEAM_nc_fo, PCR_var_name='total_evaporation', GLEAM_var_name='E', convFactor=1000, plot=False):
@@ -165,7 +166,7 @@ class validate_per_shape:
         
         print('reading GRACE file {}'.format(os.path.abspath(GRACE_nc_fo)))
         GRACE_ds = xr.open_dataset(GRACE_nc_fo)
-        print('reading PCR-GLOBWB file {1}'.format(os.path.abspath(PCR_nc_fo)))
+        print('reading PCR-GLOBWB file {}'.format(os.path.abspath(PCR_nc_fo)))
         PCR_ds = xr.open_dataset(PCR_nc_fo)
 
         print('extract raw data from nc-files')
