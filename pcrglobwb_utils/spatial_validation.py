@@ -3,6 +3,8 @@ import xarray as xr
 import numpy as np
 import geopandas as gpd
 import rasterio
+import cartopy
+from shutil import rmtree
 import rioxarray as rio
 import matplotlib.pyplot as plt
 import datetime
@@ -21,18 +23,20 @@ class validate_per_shape:
         out_dir (str, optional): Path to output directory. In None, then no output is stored. Defaults to None.
     """      
 
-    def __init__(self, shp_fo, crs='epsg:4326', out_dir=None):
+    def __init__(self, shp_fo, shp_key, crs='epsg:4326', out_dir=None):
   
         self.shp_fo = shp_fo
+        self.key = shp_key
         self.crs = crs
-        self.out_dir = out_dir
 
         print('reading shp-file {}'.format(os.path.abspath(self.shp_fo)))
         self.extent_gdf = gpd.read_file(self.shp_fo, crs=self.crs)
 
         if self.out_dir != None:
-            if not os.path.isdir(os.path.abspath(self.out_dir)):
-                os.makedirs(os.path.abspath(self.out_dir))
+            self.out_dir = os.path.abspath(out_dir)
+            if os.path.isdir(out_dir):
+                rmtree(out_dir)
+            os.makedirs(out_dir)
             print('saving output to {}'.format(self.out_dir))
 
     def against_GLEAM(self, PCR_nc_fo, GLEAM_nc_fo, PCR_var_name='total_evaporation', GLEAM_var_name='E', convFactor=1000, plot=False):
@@ -159,8 +163,9 @@ class validate_per_shape:
             dataframe: dataframe containing the timeseries including missing values (NaN).
         """        
         
-        print('reading files for GRACE {0} and PCR-GLOBWB {1}'.format(os.path.abspath(GRACE_nc_fo), os.path.abspath(PCR_nc_fo)))
+        print('reading GRACE file {}'.format(os.path.abspath(GRACE_nc_fo)))
         GRACE_ds = xr.open_dataset(GRACE_nc_fo)
+        print('reading PCR-GLOBWB file {1}'.format(os.path.abspath(PCR_nc_fo)))
         PCR_ds = xr.open_dataset(PCR_nc_fo)
 
         print('extract raw data from nc-files')
@@ -168,60 +173,98 @@ class validate_per_shape:
         PCR_data = PCR_ds[PCR_var_name] # m
         PCR_data = PCR_data  * convFactor # m * 100 = cm
 
+        GRACE_idx = pd.to_datetime(pd.to_datetime(GRACE_ds.time.values).strftime('%Y-%m'))
+        PCR_idx = pd.to_datetime(pd.to_datetime(PCR_ds.time.values).strftime('%Y-%m'))
+
         print('clipping nc-files to extent of shp-file')
+        #- GRACE
         try:
             GRACE_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
         except:
             GRACE_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
         GRACE_data.rio.write_crs(self.crs, inplace=True)
-        GRACE_data = GRACE_data.rio.clip(self.extent_gdf.geometry, self.extent_gdf.crs, drop=True)
-
+        #- PCR-GLOBWB
         try:
             PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
         except:
             PCR_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
         PCR_data.rio.write_crs(self.crs, inplace=True)
-        PCR_data = PCR_data.rio.clip(self.extent_gdf.geometry, self.extent_gdf.crs, drop=True)
 
-        print('calculating mean per timestep over clipped area')
-        GRACE_arr = []
-        for time in GRACE_data.time.values:
-            mean = float(GRACE_data.sel(time=time).mean(skipna=True))
-            GRACE_arr.append(mean)
-        PCR_arr = []
-        for time in PCR_ds.time.values:
-            mean = float(PCR_data.sel(time=time).mean(skipna=True))
-            PCR_arr.append(mean)
+        out_dict = {}
 
-        GRACE_idx = pd.to_datetime(pd.to_datetime(GRACE_ds.time.values).strftime('%Y-%m'))
-        PCR_idx = pd.to_datetime(pd.to_datetime(PCR_ds.time.values).strftime('%Y-%m'))
+        for ID in self.extent_gdf[self.key].unique():
 
-        print('calculate anomaly from time series')
-        GRACE_arr = GRACE_arr - np.mean(GRACE_arr)
-        PCR_arr = PCR_arr - np.mean(PCR_arr)
+            poly = self.extent_gdf.loc[self.extent_gdf[self.key] == ID]
+            dest_bounds = poly.total_bounds
+            dest_srs = poly.crs
 
-        print('creating pandas dataframes')
-        GRACE_df = pd.DataFrame(data=GRACE_arr, index=GRACE_idx, columns=['GRACE data'])
-        PCR_df = pd.DataFrame(data=PCR_arr, index=PCR_idx, columns=['PCR data'])
+            print('computing R and RMSE for polygon with key identifier {} {}'.format(self.key, ID))
 
-        print('concatenating dataframes')
-        final_df = pd.concat([GRACE_df, PCR_df], axis=1)
-        final_df_noNaN = pd.concat([GRACE_df, PCR_df], axis=1).dropna()
+            # clipping GRACE data-array to shape extent
+            GRACE_data_c = GRACE_data.rio.clip(poly.geometry, poly.crs, drop=True)
+            # clipping PCR data-array to shape extent
+            PCR_data_c = PCR_data.rio.clip(poly.geometry, poly.crs, drop=True)
 
-        r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN['GRACE data'].values, final_df_noNaN['PCR data'].values)
-        rmse = spotpy.objectivefunctions.rmse(final_df_noNaN['GRACE data'].values, final_df_noNaN['PCR data'].values)
+            mean_val_timestep_GRACE = list()
+            mean_val_timestep_PCR = list()
 
-        print('done')
+            # compute mean per time step in clipped data-array and append to array
+            for time in GRACE_ds.time.values:
+                mean = float(GRACE_data_c.sel(time=time).mean(skipna=True))
+                mean_val_timestep_GRACE.append(mean)
+            for time in PCR_ds.time.values:
+                mean = float(PCR_data_c.sel(time=time).mean(skipna=True))
+                mean_val_timestep_PCR.append(mean)
+
+            # get anomaly
+            GRACE_anomaly = mean_val_timestep_GRACE - np.mean(mean_val_timestep_GRACE)
+            PCR_anomaly = mean_val_timestep_PCR - np.mean(mean_val_timestep_PCR)
+
+            # create pandas dataframe from data and index arrays
+            GRACE_df = pd.DataFrame(data=GRACE_anomaly, index=GRACE_idx, columns=['GRACE data'])
+            PCR_df = pd.DataFrame(data=PCR_anomaly, index=PCR_idx, columns=['PCR data'])
+
+            # accounting for missing values in time series (and thus missing index values!)
+            GRACE_df = GRACE_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+            PCR_df = PCR_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+
+            GRACE_df = GRACE_df.loc[GRACE_df.index >= PCR_df.index.min()]
+            GRACE_df = GRACE_df.loc[GRACE_df.index <= PCR_df.index.max()]
+
+            # concatenating both dataframes to drop rows with missing values in one of the columns
+            # dropping rows with missing values is import because time extents of both files probably do not match
+            final_df = pd.concat([GRACE_df, PCR_df], axis=1).dropna()
+
+            r = spotpy.objectivefunctions.correlationcoefficient(final_df['GRACE data'].values, final_df['PCR data'].values)
+            rmse = spotpy.objectivefunctions.rmse(final_df['GRACE data'].values, final_df['PCR data'].values)
+
+            poly_skill_dict = {'R':round(r, 2),
+                       'RMSE': round(rmse, 2)}
+
+            out_dict[ID] = poly_skill_dict
+
+        out_df = pd.DataFrame().from_dict(out_dict).T
+        out_df.index.name = self.key
+
+        self.gdf_grace_out = self.extent_gdf.merge(out_df, on=self.key)
 
         if plot:
-            print('plotting timeseries...')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            final_df.plot(ax=ax, legend=True)
-            ax.set_title('monthly spatially averaged TWS anomaly')
-            ax.set_ylabel('TWS anomaly [cm]')
-            ax.text(0.88, 0.05, 'r={}'.format(round(r, 2)), transform=ax.transAxes)
-            ax.text(0.88, 0.02, 'rmse={}'.format(round(rmse, 2)), transform=ax.transAxes)
+            fig, axes = plt.subplots(1, 2, figsize=(20,10), sharey=True, subplot_kw={'projection': cartopy.crs.PlateCarree()})
+            self.gdf_grace_out.plot(column='R', ax=axes[0], legend=True, cmap='Reds', legend_kwds={'label': "correlation R", 'orientation': "horizontal"})
+            axes[0].set_title('R')
+            self.gdf_grace_out.plot(column='RMSE', ax=axes[1], legend=True, legend_kwds={'label': "Root Mean Square Error RMSE", 'orientation': "horizontal"})
+            axes[1].set_title('RMSE')
+            for ax in axes:
+                self.gdf_grace_out.boundary.plot(ax=ax, color='k')
+                ax.add_feature(cartopy.feature.LAND)
+                ax.add_feature(cartopy.feature.OCEAN)
+                ax.add_feature(cartopy.feature.COASTLINE)
+                ax.add_feature(cartopy.feature.BORDERS, linestyle=':')
+                ax.set_ylabel('longitude')
+                ax.set_xlabel('latitude')
+                ax.set_xlim(self.gdf_grace_out.total_bounds[0], self.gdf_grace_out.total_bounds[2])
+                ax.set_ylim(self.gdf_grace_out.total_bounds[1], self.gdf_grace_out.total_bounds[3])
             if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'timeseries_monthly_spatial_mean_{0}_and_{1}_GRACE_validation.png'.format(GRACE_var_name, PCR_var_name)), dpi=300)
+                plt.savefig(os.path.join(self.out_dir, 'evaluation_per_polygon.png'), dpi=300)
 
-        return [r, rmse], final_df
+        return self.gdf_grace_out
