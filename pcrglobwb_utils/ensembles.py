@@ -49,9 +49,11 @@ class ensemble_data():
         figsize = kwargs.get('figsize', (20,10))
         title = kwargs.get('title', 'Ensemble plot')
 
-        ax = self.df_stats['mean'].plot(figsize=figsize,
-                                        color='r',
-                                        legend=True)
+        fig, ax = plt.subplots(1, 1)
+        self.df_stats['mean'].plot(figsize=figsize,
+                                   color='r',
+                                   legend=True,
+                                   ax=ax)
         self.df_stats['max'].plot(ax=ax,
                                   color='r',
                                   style=':',
@@ -61,6 +63,8 @@ class ensemble_data():
                                   style=':',
                                   alpha=0.5)
         ax.set_title(title)
+
+        return ax
 
     def climatology(self, plot=False, **kwargs):
         """Calculates the long-term average per month as well as mean, max, and min thereof.
@@ -95,5 +99,6 @@ class ensemble_data():
                                     alpha=0.5)
             ax.set_title(title)
             ax.set_xlabel('month')
+            ax.set_ylabel('discharge [m3/s]')
 
         return self.test
