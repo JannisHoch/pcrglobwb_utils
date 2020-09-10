@@ -63,8 +63,10 @@ class ensemble_data():
                                   style=':',
                                   alpha=0.5)
         ax.set_title(title)
+        ax.set_xlabel(None)
+        ax.set_ylabel('discharge [m3/s]')
 
-        return ax
+        return
 
     def climatology(self, plot=False, **kwargs):
         """Calculates the long-term average per month as well as mean, max, and min thereof.
@@ -79,21 +81,21 @@ class ensemble_data():
         figsize = kwargs.get('figsize', (20,10))
         title = kwargs.get('title', 'Climatology')
 
-        self.test = self.df_ens.groupby(self.df_ens.index.month).mean()
-        self.test['mean'] = self.test.mean(axis=1)
-        self.test['max'] = self.test.max(axis=1)
-        self.test['min'] = self.test.min(axis=1)
+        df_out = self.df_ens.groupby(self.df_ens.index.month).mean()
+        df_out['mean'] = df_out.mean(axis=1)
+        df_out['max'] = df_out.max(axis=1)
+        df_out['min'] = df_out.min(axis=1)
 
         if plot:
 
-            ax = self.test['mean'].plot(figsize=figsize,
+            ax = df_out['mean'].plot(figsize=figsize,
                                             color='r',
                                             legend=True)
-            self.test['max'].plot(ax=ax,
+            df_out['max'].plot(ax=ax,
                                     color='r',
                                     style=':',
                                     alpha=0.5)
-            self.test['min'].plot(ax=ax,
+            df_out['min'].plot(ax=ax,
                                     color='r',
                                     style=':',
                                     alpha=0.5)
@@ -101,4 +103,4 @@ class ensemble_data():
             ax.set_xlabel('month')
             ax.set_ylabel('discharge [m3/s]')
 
-        return self.test
+        return df_out
