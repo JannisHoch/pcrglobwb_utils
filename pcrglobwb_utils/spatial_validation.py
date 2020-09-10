@@ -57,95 +57,108 @@ class validate_per_shape:
             dataframe: dataframe containing the timeseries including missing values (NaN).
         """        
 
-        #TODO: make this work with multiple polygons stored in the shape file, e.g. by going through all rows in gpd-object
-        #TODO: or, if no shp_fo is specified, by clipping it to extent (xmin, ymin, xmax, ymax) of PCR-GLOBWB nc-file
-
-        print('reading files for GLEAM {0} and PCR-GLOBWB {1}'.format(os.path.abspath(GLEAM_nc_fo), os.path.abspath(PCR_nc_fo)))
+        print('reading GLEAM file {}'.format(os.path.abspath(GLEAM_nc_fo)))
         GLEAM_ds = xr.open_dataset(GLEAM_nc_fo)
+        print('reading PCR-GLOBWB file {}'.format(os.path.abspath(PCR_nc_fo)))
         PCR_ds = xr.open_dataset(PCR_nc_fo)
 
         print('extract raw data from nc-files')
         GLEAM_data = GLEAM_ds[GLEAM_var_name] # mm
         PCR_data = PCR_ds[PCR_var_name] # m
-
-        print('clipping nc-files to extent of shp-file')
-        try:
-            GLEAM_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
-        except:
-            GLEAM_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
-        GLEAM_data.rio.write_crs(self.crs, inplace=True)
-        GLEAM_data = GLEAM_data.rio.clip(self.extent_gdf.geometry, self.extent_gdf.crs, drop=True)
-
-        try:
-            PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
-        except:
-            PCR_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
-        PCR_data.rio.write_crs(self.crs, inplace=True)
-        PCR_data = PCR_data.rio.clip(self.extent_gdf.geometry, self.extent_gdf.crs, drop=True)
-
-        print('multiplying PCR data with 1000 to convert from [m] to [mm]')
-        PCR_data = PCR_data * convFactor # m * 1000 = mm
-
-        print('calculating mean per timestep over clipped area')
-        GLEAM_arr = []
-        for time in GLEAM_data.time.values:
-            mean = float(GLEAM_data.T.sel(time=time).mean(skipna=True))
-            GLEAM_arr.append(mean)
-        PCR_arr = []
-        for time in PCR_ds.time.values:
-            mean = float(PCR_data.sel(time=time).mean(skipna=True))
-            PCR_arr.append(mean)
-
-        print('creating datetime indices for dataframes')
+        PCR_data = PCR_data  * convFactor # m * 100 = cm
+        
         GLEAM_idx = pd.to_datetime(pd.to_datetime(GLEAM_ds.time.values).strftime('%Y-%m'))
         GLEAM_daysinmonth = GLEAM_idx.daysinmonth.values
 
         PCR_idx = pd.to_datetime(pd.to_datetime(PCR_ds.time.values).strftime('%Y-%m'))
         PCR_daysinmonth = PCR_idx.daysinmonth.values
 
-        print('creating dataframe for GLEAM')
-        GLEAM_tuples = list(zip(GLEAM_arr, GLEAM_daysinmonth))
-        GLEAM_df = pd.DataFrame(GLEAM_tuples, index=GLEAM_idx, columns=[GLEAM_var_name, 'GLEAM_daysinmonth'])
-        print('...dividing monthly aggregated data by days per month to get average monthly values')
-        GLEAM_df[GLEAM_var_name] = GLEAM_df[GLEAM_var_name].divide(GLEAM_df['GLEAM_daysinmonth'])
-        del GLEAM_df['GLEAM_daysinmonth']
+        print('clipping nc-files to extent of shp-file')
+        #- GLEAM
+        try:
+            GLEAM_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+        except:
+            GLEAM_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
+        GLEAM_data.rio.write_crs(self.crs, inplace=True)
+        #- PCR-GLOBWB
+        try:
+            PCR_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+        except:
+            PCR_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
+        PCR_data.rio.write_crs(self.crs, inplace=True)
 
-        print('creating dataframe for PCR')
-        PCR_tuples = list(zip(PCR_arr, PCR_daysinmonth))
-        PCR_df = pd.DataFrame(data=PCR_tuples, index=PCR_idx, columns=[PCR_var_name, 'PCR_daysinmonth'])
-        print('...dividing monthly aggregated data by days per month to get average monthly values')
-        PCR_df[PCR_var_name] = PCR_df[PCR_var_name].divide(PCR_df['PCR_daysinmonth'])
-        del PCR_df['PCR_daysinmonth']
+        out_dict = {}
 
-        print('concatenating dataframes')
-        final_df = pd.concat([GLEAM_df, PCR_df], axis=1)
-        final_df_noNaN = pd.concat([GLEAM_df, PCR_df], axis=1).dropna()
+        for ID in self.extent_gdf[self.key].unique():
 
-        r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
-        rmse = spotpy.objectivefunctions.rmse(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
+            poly = self.extent_gdf.loc[self.extent_gdf[self.key] == ID]
+            dest_bounds = poly.total_bounds
+            dest_srs = poly.crs
 
-        print('done')
+            print('computing R and RMSE for polygon with key identifier {} {}'.format(self.key, ID))
+
+            # clipping GRACE data-array to shape extent
+            GLEAM_data_c = GLEAM_data.rio.clip(poly.geometry, poly.crs, drop=True)
+            # clipping PCR data-array to shape extent
+            PCR_data_c = PCR_data.rio.clip(poly.geometry, poly.crs, drop=True)
+
+            mean_val_timestep_GLEAM = list()
+            mean_val_timestep_PCR = list()
+
+            # compute mean per time step in clipped data-array and append to array
+            for time in GLEAM_ds.time.values:
+                mean = float(GLEAM_data_c.sel(time=time).mean(skipna=True))
+                mean_val_timestep_GLEAM.append(mean)
+            for time in PCR_ds.time.values:
+                mean = float(PCR_data_c.sel(time=time).mean(skipna=True))
+                mean_val_timestep_PCR.append(mean)
+
+            GLEAM_tuples = list(zip(mean_val_timestep_GLEAM, GLEAM_daysinmonth))
+            GLEAM_df = pd.DataFrame(GLEAM_tuples, index=GLEAM_idx, columns=[GLEAM_var_name, 'GLEAM_daysinmonth'])
+            GLEAM_df[GLEAM_var_name] = GLEAM_df[GLEAM_var_name].divide(GLEAM_df['GLEAM_daysinmonth'])
+            del GLEAM_df['GLEAM_daysinmonth']
+
+            PCR_tuples = list(zip(mean_val_timestep_PCR, PCR_daysinmonth))
+            PCR_df = pd.DataFrame(data=PCR_tuples, index=PCR_idx, columns=[PCR_var_name, 'PCR_daysinmonth'])
+            PCR_df[PCR_var_name] = PCR_df[PCR_var_name].divide(PCR_df['PCR_daysinmonth'])
+            del PCR_df['PCR_daysinmonth']
+
+            final_df = pd.concat([GLEAM_df, PCR_df], axis=1)
+            final_df_noNaN = pd.concat([GLEAM_df, PCR_df], axis=1).dropna()
+
+            r = spotpy.objectivefunctions.correlationcoefficient(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
+            rmse = spotpy.objectivefunctions.rmse(final_df_noNaN[GLEAM_var_name].values, final_df_noNaN[PCR_var_name].values)
+
+            poly_skill_dict = {'R':round(r, 2),
+                               'RMSE': round(rmse, 2)}
+
+            out_dict[ID] = poly_skill_dict
+
+        out_df = pd.DataFrame().from_dict(out_dict).T
+        out_df.index.name = self.key
+
+        self.gdf_gleam_out = self.extent_gdf.merge(out_df, on=self.key)
 
         if plot:
-            print('plotting timeseries...')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            final_df.plot(ax=ax, legend=True)
-            ax.set_title('monthly spatially averaged evapotranspiration')
-            ax.set_ylabel('evapotranspiration [mm]')
-            ax.text(0.88, 0.05, 'r={}'.format(round(r, 2)), transform=ax.transAxes)
-            ax.text(0.88, 0.02, 'rmse={}'.format(round(rmse, 2)), transform=ax.transAxes)
+            fig, axes = plt.subplots(1, 2, figsize=(20,10), sharey=True, subplot_kw={'projection': cartopy.crs.PlateCarree()})
+            self.gdf_gleam_out.plot(column='R', ax=axes[0], legend=True, cmap='Reds', legend_kwds={'label': "correlation R", 'orientation': "horizontal"})
+            axes[0].set_title('R')
+            self.gdf_gleam_out.plot(column='RMSE', ax=axes[1], legend=True, legend_kwds={'label': "Root Mean Square Error RMSE", 'orientation': "horizontal"})
+            axes[1].set_title('RMSE')
+            for ax in axes:
+                self.gdf_gleam_out.boundary.plot(ax=ax, color='k')
+                ax.add_feature(cartopy.feature.LAND)
+                ax.add_feature(cartopy.feature.OCEAN)
+                ax.add_feature(cartopy.feature.COASTLINE)
+                ax.add_feature(cartopy.feature.BORDERS, linestyle=':')
+                ax.set_ylabel('longitude')
+                ax.set_xlabel('latitude')
+                ax.set_xlim(self.gdf_gleam_out.total_bounds[0], self.gdf_gleam_out.total_bounds[2])
+                ax.set_ylim(self.gdf_gleam_out.total_bounds[1], self.gdf_gleam_out.total_bounds[3])
             if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'timeseries_monthly_spatial_mean_{0}_and_{1}_GLEAM_validation.png'.format(GLEAM_varName, PCR_varName)), dpi=300)
+                plt.savefig(os.path.join(self.out_dir, 'GLEAM_evaluation_per_polygon.png'), dpi=300)
 
-            print('...and bias')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            (final_df[GLEAM_var_name] - final_df[PCR_var_name]).plot(ax=ax)
-            ax.set_title('BIAS monthly spatially averaged evapotranspiration (GLEAM - PCR-GLOBWB)')
-            ax.set_ylabel('evapotranspiration BIAS [mm]')
-            if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'timeseries_monthly_spatial_mean_{0}_and_{1}_GLEAM_validation_BIAS.png'.format(GLEAM_varName, PCR_varName)), dpi=300)
-
-        return [r, rmse], final_df
+        return self.gdf_gleam_out
 
     def against_GRACE(self, PCR_nc_fo, GRACE_nc_fo, PCR_var_name='total_thickness_of_water_storage', GRACE_var_name='lwe_thickness', convFactor=100, plot=False):
         """With this function, simulated totalWaterStorage output from PCR-GLOBWB can be validated against GRACE-FO observations. Yields timeseries of anomalies.
@@ -266,6 +279,6 @@ class validate_per_shape:
                 ax.set_xlim(self.gdf_grace_out.total_bounds[0], self.gdf_grace_out.total_bounds[2])
                 ax.set_ylim(self.gdf_grace_out.total_bounds[1], self.gdf_grace_out.total_bounds[3])
             if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'evaluation_per_polygon.png'), dpi=300)
+                plt.savefig(os.path.join(self.out_dir, 'GRACE_evaluation_per_polygon.png'), dpi=300)
 
         return self.gdf_grace_out

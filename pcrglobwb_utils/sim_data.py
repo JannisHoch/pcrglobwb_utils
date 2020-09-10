@@ -180,7 +180,7 @@ class from_nc:
         
         return self.both, evaluation
 
-    def calc_stats(self, out_dir, plot=False):
+    def calc_stats(self, out_dir, add_obs=False):
         """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
 
         Keyword Arguments:
@@ -189,13 +189,12 @@ class from_nc:
         Returns:
             dataframe: dataframe containing statistical values
         """        
-
-        stats = self.both.describe()
+        if not add_obs:
+            stats = self.df.describe()
+        if add_obs:
+            stats = self.both.describe()
 
         # save dict to csv
-        out_fo = os.path.join(out_dir, 'nc_stats.csv')
-        stats.to_csv(out_fo)
-
-        if plot: self.both.plot.hist()
+        stats.to_csv(os.path.join(out_dir, 'stats.csv'))
 
         return stats
