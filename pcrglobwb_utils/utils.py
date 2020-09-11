@@ -29,3 +29,9 @@ def find_indices_from_coords(fo, lon, lat):
     ds.close()
     
     return row, col
+
+def get_idx_as_strftime(df, strftime_format='%Y-%m-%d'):
+
+    idx = df.index.strftime(strftime_format)
+
+    return idx
