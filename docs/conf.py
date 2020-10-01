@@ -15,17 +15,17 @@
 import os
 import sys
 
-from mock import Mock as MagicMock
+# from mock import Mock as MagicMock
 
-class Mock(MagicMock):
-    __all__ = []
-    __version__ = "1.6"
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
+# class Mock(MagicMock):
+#     __all__ = []
+#     __version__ = "1.6"
+#     @classmethod
+#     def __getattr__(cls, name):
+#             return Mock()
 
-# Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = ['cartopy']
+# # Mock modules so that we can build on readthedocs.org
+# MOCK_MODULES = ['cartopy']
 
 # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
