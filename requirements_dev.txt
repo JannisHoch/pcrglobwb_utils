@@ -23,5 +23,5 @@ rioxarray==0.0.26
 xarray==0.15.1
 xlrd==1.2.0
 geopandas==0.8
-cartopy==0.18.0
 proj==7.0.0
+cartopy==0.18.0
