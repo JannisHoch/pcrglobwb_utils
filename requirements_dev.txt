@@ -24,5 +24,6 @@ xarray==0.15.1
 xlrd==1.2.0
 pyproj==2.6.1
 pyshp==2.1
+proj=4.9.0
 geopandas==0.8
 cartopy==0.18.0
