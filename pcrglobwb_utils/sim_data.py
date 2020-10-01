@@ -65,12 +65,11 @@ class from_nc:
         
         return self.df
 
-    def resample2monthly(self, stat_func='mean', suffix='_monthly'):
+    def resample2monthly(self, stat_func='mean'):
         """Resampling values to monthly time scale.
 
         Keyword Arguments:
             stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
 
         Returns:
             dataframe: dataframe containing monthly average values
@@ -85,16 +84,13 @@ class from_nc:
         else:
             raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-        self.df_monthly = self.df_monthly.rename(columns={self.df_monthly.columns.values[0]: self.df_monthly.columns.values[0] + suffix + '_' + stat_func})
-
         return self.df_monthly
 
-    def resample2yearly(self, stat_func='mean', suffix='_yearly'):
+    def resample2yearly(self, stat_func='mean'):
         """Resampling values to monthly time scale.
 
         Keyword Arguments:
             stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
 
         Returns:
             dataframe: dataframe containing monthly average values
@@ -108,8 +104,6 @@ class from_nc:
             self.df_yearly = self.df.resample('Y').min()
         else:
             raise ValueError('no supported statistical function provided - choose between mean, max, and min')
-
-        self.df_yearly = self.df_yearly.rename(columns={self.df_yearly.columns.values[0]: self.df_yearly.columns.values[0] + suffix + '_' + stat_func})
 
         return self.df_yearly
 
