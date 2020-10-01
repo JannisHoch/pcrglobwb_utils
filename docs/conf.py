@@ -25,7 +25,7 @@ class Mock(MagicMock):
             return Mock()
 
 # Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = ['proj']
+MOCK_MODULES = ['cartopy']
 
 # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
