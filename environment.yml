@@ -18,9 +18,9 @@ dependencies:
   - click
   - scipy
   - xlrd
-  - pip
   - descartes
-  - cartopy
+  - cartopy==0.18.0
+  - pip
   - pip:
     - spotpy>=1.5.8
     - netCDF4
