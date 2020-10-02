@@ -61,6 +61,10 @@ class from_nc:
         # close file
         ds.close()
 
+        if (pd.infer_freq(df.index) == 'M') or (pd.infer_freq(df.index) == 'MS'):
+            print('changing index strftime to %Y-%m')
+            df.index = df.index.strftime('%Y-%m')
+
         self.df = df
         
         return self.df
@@ -141,18 +145,18 @@ class from_nc:
             df_sim = self.df
         
         # concatenate both dataframes
-        self.both = pd.concat([df_obs, df_sim], axis=1)
+        both = pd.concat([df_obs, df_sim], axis=1)
+        # raise error if there is no common time period
+        if both.empty:
+            os.sys.exit('no common time period of observed and simulated values found in dataframes!')
+            
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
-        both_noMV = self.both.dropna()
-
-        # raise error if there is no common time period
-        if self.both.empty:
-            os.sys.exit('no common time period of observed and simulated values found in dataframes!')
+        self.both_noMV = both.dropna()
         
         # convert to np-arrays
-        obs = both_noMV[both_noMV.columns[0]].to_numpy()
-        sim = both_noMV[both_noMV.columns[1]].to_numpy()
+        obs = self.both_noMV[self.both_noMV.columns[0]].to_numpy()
+        sim = self.both_noMV[self.both_noMV.columns[1]].to_numpy()
         
         # apply objective functions
         kge = sp.objectivefunctions.kge(obs, sim, return_all=return_all_KGE)
@@ -172,7 +176,7 @@ class from_nc:
         for key, val in evaluation.items():
             w.writerow([key, val])
         
-        return self.both, evaluation
+        return self.both_noMV, evaluation
 
     def calc_stats(self, out_dir, add_obs=False):
         """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
