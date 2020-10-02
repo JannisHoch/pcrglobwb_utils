@@ -3,14 +3,12 @@ import xarray as xr
 import numpy as np
 import geopandas as gpd
 import rasterio
-import cartopy
 from shutil import rmtree
 import rioxarray as rio
 import matplotlib.pyplot as plt
 import datetime
 import spotpy
 import os, sys
-from shapely.geometry import mapping
 
 #TODO: remove all stupid print statements
 
