@@ -24,3 +24,4 @@ dependencies:
   - pip:
     - spotpy>=1.5.8
     - netCDF4
+    - git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
