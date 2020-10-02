@@ -61,6 +61,10 @@ class from_nc:
         # close file
         ds.close()
 
+        if (pd.infer_freq(df.index) == 'M') or (pd.infer_freq(df.index) == 'MS'):
+            print('changing index strftime to %Y-%m')
+            df.index = df.index.strftime('%Y-%m')
+
         self.df = df
         
         return self.df
@@ -147,8 +151,8 @@ class from_nc:
             os.sys.exit('no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
-        obs = both_noMV[both_noMV.columns[0]].to_numpy()
-        sim = both_noMV[both_noMV.columns[1]].to_numpy()
+        obs = self.both_noMV[self.both_noMV.columns[0]].to_numpy()
+        sim = self.both_noMV[self.both_noMV.columns[1]].to_numpy()
         
         # apply objective functions
         kge = sp.objectivefunctions.kge(obs, sim, return_all=return_all_KGE)

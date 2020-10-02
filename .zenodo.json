@@ -1,6 +1,6 @@
 {
     "description": "handy tools for analysing output from PCR-GLOBWB",
-    "license": "GNU GPL v3",
+    "license": "AGPL-3.0",
     "title": "pcrglobwb_utils",
     "upload_type": "software",
     "creators": [
