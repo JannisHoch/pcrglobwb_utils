@@ -102,15 +102,15 @@ class grdc_data:
                 break
 
         df = pd.read_csv(self.fo, skiprows=stopline, sep=';')
-            
-        try:
+
+        try: 
+            print('... reading column Original')
+            df[var_name] = df[' Original'].copy()
+            del df[' Original']
+        except:
             print('... reading column Calculated')
             df[var_name] = df[' Calculated'].copy()
             del df[' Calculated']
-        except:
-            print('... falling back on column Original')
-            df[var_name] = df[' Original'].copy()
-            del df[' Original']
 
         df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
         df.set_index(df['date'], inplace=True)
