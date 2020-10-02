@@ -14,11 +14,14 @@ with open('HISTORY.rst') as history_file:
 #     requirements = requirements_file.read()
 
 requirements = ['Click>=7.0', 
-                'xarray>=0.15.0',
-                'pandas>=0.25.1',
-                'rasterio>=1.0.21',
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
+                'xlrd>=1.2.0',
+                'rasterio>=1.1',
                 'spotpy>=1.5.8',
-                'numpy>=1.16.5']
+                'numpy>=1.16.5',
+                'geopandas>=0.7',
+                'rioxarray>=0.0.26']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -29,7 +32,7 @@ setup(
     author_email='j.m.hoch@uu.nl',
     python_requires='>=3.6',
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
@@ -55,6 +58,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://pcrglobwb-utils.readthedocs.io/',
-    version='0.1.4.2',
+    version='0.1.4.4',
     zip_safe=False,
 )

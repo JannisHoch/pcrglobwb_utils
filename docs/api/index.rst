@@ -38,4 +38,11 @@ For analysing the water balance components:
 
     water_balance.rst
     
+For validating against a range of datasets (GLEAM, GRACE):
+
+.. toctree::
+    :maxdepth: 1
+
+    validation.rst
+
     

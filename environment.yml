@@ -5,16 +5,21 @@ channels:
 
 dependencies:
   - python>=3.6
-  - rasterio>=1.0.21
-  - xarray>=0.15.0
-  - pandas>=0.25.1
+  - rasterio>=1.1
+  - xarray>=0.15.1
+  - pandas>=1.0.3
   - numpy>=1.16.5
   - matplotlib>=3.2.0
+  - geopandas>=0.7
+  - rioxarray>=0.0.26
   - ipython
   - nbconvert
   - notebook
   - click
   - scipy
+  - xlrd
+  - descartes
+  - pip
   - pip:
     - spotpy>=1.5.8
     - netCDF4
