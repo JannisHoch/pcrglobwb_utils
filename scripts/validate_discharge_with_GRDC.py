@@ -33,6 +33,8 @@ def main(sim, obs, out, longitude=None, latitude=None):
     """
 
     print('\n\n\n')
+    print(pcrglobwb_utils.__version__)
+    print('')
 
     ### OUTPUT DIR ###
 
