@@ -18,7 +18,8 @@ class validate_per_shape:
     """Initializing object for validating output for area provided by shp-file.
 
     Args:
-        shp_fo (str): Path to shp-file defining the area extent for validation
+        shp_fo (str): Path to shp-file defining the area extent for validation.
+        shp_key (str): Column name in shp-file to be used as unique identifier per entry in shp-file.
         crs (str, optional): Definition of projection system in which validation takes place. Defaults to 'epsg:4326'.
         out_dir (str, optional): Path to output directory. In None, then no output is stored. Defaults to None.
     """      
@@ -40,7 +41,7 @@ class validate_per_shape:
             os.makedirs(self.out_dir)
             print('saving output to {}'.format(self.out_dir))
 
-    def against_GLEAM(self, PCR_nc_fo, GLEAM_nc_fo, PCR_var_name='total_evaporation', GLEAM_var_name='E', convFactor=1000, plot=False):
+    def against_GLEAM(self, PCR_nc_fo, GLEAM_nc_fo, PCR_var_name='total_evaporation', GLEAM_var_name='E', convFactor=1000):
         """With this function, simulated land surface evaporation (or another evaporation output) from PCR-GLOBWB can be validated against evaporation data from GLEAM (or any other evaporation data in GLEAM).
         Works with monthly totals and computes monthly area averages per time step from it.
 
@@ -50,11 +51,9 @@ class validate_per_shape:
             PCR_var_name (str, optional): netCDF variable name in PCR-GLOBWB output. Defaults to 'land_surface_evaporation'.
             GLEAM_var_name (str, optional): netCDF variable name in GLEAM data. Defaults to 'E'.
             convFactor (int, optional): conversion factor to convert PCR-GLOBWB units to GLEAM units. Defaults to 1000.
-            plot (bool, optional): Whether or not to plot the resulting timeseries. Defaults to False.
 
         Returns:
-            list: list containing computed values for R (correlation coefficient) and RMSE (root mean square error) computed with PCR-GLOBWB and GLEAM timeseries.
-            dataframe: dataframe containing the timeseries including missing values (NaN).
+            geo-dataframe: containing data of shp-file appended with columns for R and RMSE per entry.
         """        
 
         print('reading GLEAM file {}'.format(os.path.abspath(GLEAM_nc_fo)))
@@ -139,28 +138,9 @@ class validate_per_shape:
 
         self.gdf_gleam_out = self.extent_gdf.merge(out_df, on=self.key)
 
-        if plot:
-            fig, axes = plt.subplots(1, 2, figsize=(20,10), sharey=True, subplot_kw={'projection': cartopy.crs.PlateCarree()})
-            self.gdf_gleam_out.plot(column='R', ax=axes[0], legend=True, cmap='Reds', legend_kwds={'label': "correlation R", 'orientation': "horizontal"})
-            axes[0].set_title('R')
-            self.gdf_gleam_out.plot(column='RMSE', ax=axes[1], legend=True, legend_kwds={'label': "Root Mean Square Error RMSE", 'orientation': "horizontal"})
-            axes[1].set_title('RMSE')
-            for ax in axes:
-                self.gdf_gleam_out.boundary.plot(ax=ax, color='k')
-                ax.add_feature(cartopy.feature.LAND)
-                ax.add_feature(cartopy.feature.OCEAN)
-                ax.add_feature(cartopy.feature.COASTLINE)
-                ax.add_feature(cartopy.feature.BORDERS, linestyle=':')
-                ax.set_ylabel('longitude')
-                ax.set_xlabel('latitude')
-                ax.set_xlim(self.gdf_gleam_out.total_bounds[0], self.gdf_gleam_out.total_bounds[2])
-                ax.set_ylim(self.gdf_gleam_out.total_bounds[1], self.gdf_gleam_out.total_bounds[3])
-            if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'GLEAM_evaluation_per_polygon.png'), dpi=300)
-
         return self.gdf_gleam_out
 
-    def against_GRACE(self, PCR_nc_fo, GRACE_nc_fo, PCR_var_name='total_thickness_of_water_storage', GRACE_var_name='lwe_thickness', convFactor=100, plot=False):
+    def against_GRACE(self, PCR_nc_fo, GRACE_nc_fo, PCR_var_name='total_thickness_of_water_storage', GRACE_var_name='lwe_thickness', convFactor=100):
         """With this function, simulated totalWaterStorage output from PCR-GLOBWB can be validated against GRACE-FO observations. Yields timeseries of anomalies.
         Works with monthly averages and computes monthly area averages per time step from it.
 
@@ -170,11 +150,9 @@ class validate_per_shape:
             PCR_var_name (str, optional): netCDF variable name in PCR-GLOBWB output. Defaults to 'total_thickness_of_water_storage'.
             GRACE_var_name (str, optional): netCDF variable name in GRACE-FO data. Defaults to 'lwe_thickness'.
             convFactor (int, optional): conversion factor to convert PCR-GLOBWB units to GRACE-FO units. Defaults to 100.
-            plot (bool, optional): Whether or not to plot the resulting timeseries. Defaults to False.
 
         Returns:
-            list: list containing computed values for R (correlation coefficient) and RMSE (root mean square error) computed with PCR-GLOBWB and GLEAM timeseries.
-            dataframe: dataframe containing the timeseries including missing values (NaN).
+            geo-dataframe: containing data of shp-file appended with columns for R and RMSE per entry.
         """        
         
         print('reading GRACE file {}'.format(os.path.abspath(GRACE_nc_fo)))
@@ -261,24 +239,5 @@ class validate_per_shape:
         out_df.index.name = self.key
 
         self.gdf_grace_out = self.extent_gdf.merge(out_df, on=self.key)
-
-        if plot:
-            fig, axes = plt.subplots(1, 2, figsize=(20,10), sharey=True, subplot_kw={'projection': cartopy.crs.PlateCarree()})
-            self.gdf_grace_out.plot(column='R', ax=axes[0], legend=True, cmap='Reds', legend_kwds={'label': "correlation R", 'orientation': "horizontal"})
-            axes[0].set_title('R')
-            self.gdf_grace_out.plot(column='RMSE', ax=axes[1], legend=True, legend_kwds={'label': "Root Mean Square Error RMSE", 'orientation': "horizontal"})
-            axes[1].set_title('RMSE')
-            for ax in axes:
-                self.gdf_grace_out.boundary.plot(ax=ax, color='k')
-                ax.add_feature(cartopy.feature.LAND)
-                ax.add_feature(cartopy.feature.OCEAN)
-                ax.add_feature(cartopy.feature.COASTLINE)
-                ax.add_feature(cartopy.feature.BORDERS, linestyle=':')
-                ax.set_ylabel('longitude')
-                ax.set_xlabel('latitude')
-                ax.set_xlim(self.gdf_grace_out.total_bounds[0], self.gdf_grace_out.total_bounds[2])
-                ax.set_ylim(self.gdf_grace_out.total_bounds[1], self.gdf_grace_out.total_bounds[3])
-            if self.out_dir != None:
-                plt.savefig(os.path.join(self.out_dir, 'GRACE_evaluation_per_polygon.png'), dpi=300)
 
         return self.gdf_grace_out
