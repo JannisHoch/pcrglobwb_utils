@@ -40,6 +40,7 @@ Features
 * water balance assessments of PCR-GLOBWB runs
 * statistical analyses
 * ensemble analysis
+* functions to validate against GRACE and GLEAM data
 * command line scripts
 
 Credits
