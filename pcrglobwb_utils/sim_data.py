@@ -121,10 +121,6 @@ class from_nc:
 
         Raises:
             error: if df_obs and df_sim do not overlap in time, an error is thrown.
-
-        Returns:
-            dataframe: pandas dataframe containing evaluated values for overlapping time period
-            dict: dictionary containing results of objective functions KGE, RMSE, NSE and R2
         """ 
 
         # if variable name is not None, then pick values from specified column
@@ -141,13 +137,13 @@ class from_nc:
             df_sim = self.df
         
         # concatenate both dataframes
-        self.both = pd.concat([df_obs, df_sim], axis=1)
+        both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
-        both_noMV = self.both.dropna()
+        both_noMV = both.dropna()
 
         # raise error if there is no common time period
-        if self.both.empty:
+        if both.empty:
             os.sys.exit('no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
@@ -167,12 +163,8 @@ class from_nc:
                     'R2': r2}
 
         # save dict to csv
-        out_fo = os.path.join(out_dir, 'evaluation.csv')
-        w = csv.writer(open(out_fo, "w"))
-        for key, val in evaluation.items():
-            w.writerow([key, val])
-        
-        return self.both, evaluation
+        df_out = pd.DataFrame().from_dict(evaluation)
+        df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
 
     def calc_stats(self, out_dir, add_obs=False):
         """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
@@ -183,10 +175,8 @@ class from_nc:
         Returns:
             dataframe: dataframe containing statistical values
         """        
-        if not add_obs:
-            stats = self.df.describe()
-        if add_obs:
-            stats = self.both.describe()
+
+        stats = self.df.describe()
 
         # save dict to csv
         stats.to_csv(os.path.join(out_dir, 'stats.csv'))
