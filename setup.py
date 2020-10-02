@@ -32,7 +32,7 @@ setup(
     author_email='j.m.hoch@uu.nl',
     python_requires='>=3.6',
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
@@ -58,6 +58,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://pcrglobwb-utils.readthedocs.io/',
-    version='0.1.4.4b1',
+    version='0.1.4.4',
     zip_safe=False,
 )
