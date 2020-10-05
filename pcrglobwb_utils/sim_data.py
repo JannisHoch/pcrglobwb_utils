@@ -165,7 +165,7 @@ class from_nc:
         r2 = sp.objectivefunctions.rsquared(obs, sim)
         
         # fill dict
-        evaluation = {'KGE': kge,
+        evaluation = {'KGE': [kge],
                     'NSE': nse,
                     'RMSE': rmse,
                     'R2': r2}
