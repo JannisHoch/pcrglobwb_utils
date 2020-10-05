@@ -125,7 +125,9 @@ def main(shp, sim, obs, out, grace_varname='lwe_thickness', pcrglobwb_varname='t
     GRACE_df = GRACE_df.loc[GRACE_df.index <= PCR_df.index.max()]
 
     print('calculating accuracy of PCR-GLOBWB data')
-    final_df = pd.concat([GRACE_df, PCR_df], axis=1).dropna()
+    final_df = pd.concat([GRACE_df, PCR_df], axis=1)
+    final_df.to_csv(os.path.join(out, 'evaluated_timeseries.csv'))
+    final_df = final_df.dropna()
 
     r = spotpy.objectivefunctions.correlationcoefficient(final_df[grace_varname].values, final_df[pcrglobwb_varname].values)
     rmse = spotpy.objectivefunctions.rmse(final_df[grace_varname].values, final_df[pcrglobwb_varname].values)

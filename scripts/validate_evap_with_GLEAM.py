@@ -128,7 +128,9 @@ def main(shp, sim, obs, out, gleam_varname='E', pcrglobwb_varname='land_surface_
     del PCR_df['PCR_daysinmonth']
 
     print('calculating accuracy of PCR-GLOBWB data')
-    final_df = pd.concat([GLEAM_df, PCR_df], axis=1).dropna()
+    final_df = pd.concat([GLEAM_df, PCR_df], axis=1)
+    final_df.to_csv(os.path.join(out, 'evaluated_timeseries.csv'))
+    final_df = final_df.dropna()
 
     r = spotpy.objectivefunctions.correlationcoefficient(final_df[gleam_varname].values, final_df[pcrglobwb_varname].values)
     rmse = spotpy.objectivefunctions.rmse(final_df[gleam_varname].values, final_df[pcrglobwb_varname].values)
