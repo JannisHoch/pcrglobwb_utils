@@ -109,7 +109,7 @@ class validate_per_shape:
                 mean = float(GLEAM_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_GLEAM.append(mean)
             for i in range(len(PCR_data_c.time.values)):
-                time = GLEAM_data_c.time[i]
+                time = PCR_data_c.time[i]
                 t = pd.to_datetime(time.values)
                 mean = float(PCR_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_PCR.append(mean)
@@ -135,7 +135,7 @@ class validate_per_shape:
 
             out_dict[ID] = poly_skill_dict
 
-        out_df = pd.DataFrame(columns=['GLEAM validation']).from_dict(out_dict).T
+        out_df = pd.DataFrame().from_dict(out_dict).T
         out_df.index.name = self.key
 
         gdf_gleam_out = self.extent_gdf.merge(out_df, on=self.key)
@@ -239,7 +239,7 @@ class validate_per_shape:
 
             out_dict[ID] = poly_skill_dict
 
-        out_df = pd.DataFrame(columns='GRACE validation').from_dict(out_dict).T
+        out_df = pd.DataFrame().from_dict(out_dict).T
         
         out_df.index.name = self.key
         gdf_grace_out = self.extent_gdf.merge(out_df, on=self.key)
