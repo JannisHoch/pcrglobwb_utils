@@ -93,7 +93,8 @@ def main(sim, obs, out, longitude=None, latitude=None):
     ### PLOTTING ###
 
     fig, ax = plt.subplots(1, 1, figsize=(20,10))
-    both.plot(ax=ax)
+    both['Q$sim$ PCR-GLOBWB (1km)'].plot(ax=ax, c='r', marker='o')
+    both['Q$obs$ GRDC'].plot(ax=ax, c='k', marker='o')
     ax.set_title('station {0} / lat {1:0.2f} / lon {2:0.2f}'.format(props['station'], latitude, longitude))
     ax.set_ylabel('discharge [m3/s]')
     plt.legend()
