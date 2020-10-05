@@ -63,6 +63,7 @@ class validate_per_shape:
 
         print('extract raw data from nc-files')
         GLEAM_data = GLEAM_ds[GLEAM_var_name] # mm
+        GLEAM_data = GLEAM_data.T
         PCR_data = PCR_ds[PCR_var_name] # m
         PCR_data = PCR_data  * convFactor # m * 1000 = mm
         
