@@ -167,8 +167,10 @@ class from_nc:
                     'R2': r2}
 
         # save dict to csv
-        df_out = pd.DataFrame().from_dict(evaluation)
+        df_out = pd.DataFrame().from_dict(evaluation, orient='index')
         df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
+
+        return both, df_out
 
     def calc_stats(self, out_dir, add_obs=False):
         """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
