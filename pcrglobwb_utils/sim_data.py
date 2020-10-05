@@ -124,7 +124,10 @@ class from_nc:
             return_all_KGE (bool): whether or not to return all KGE components (default: False)
 
         Raises:
-            error: if df_obs and df_sim do not overlap in time, an error is thrown.
+            ValueError: if df_obs and df_sim do not overlap in time, an error is thrown.
+
+        Returns:
+            dataframes: dataframe containing scores.
         """ 
 
         # if variable name is not None, then pick values from specified column
@@ -148,7 +151,7 @@ class from_nc:
 
         # raise error if there is no common time period
         if both.empty:
-            os.sys.exit('no common time period of observed and simulated values found in dataframes!')
+            raise ValueError('no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
         obs = both_noMV[both_noMV.columns[0]].to_numpy()
@@ -170,7 +173,7 @@ class from_nc:
         df_out = pd.DataFrame().from_dict(evaluation, orient='index')
         df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
 
-        return both, df_out
+        return df_out
 
     def calc_stats(self, out_dir, add_obs=False):
         """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
