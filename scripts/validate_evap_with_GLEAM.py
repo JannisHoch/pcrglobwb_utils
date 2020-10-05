@@ -23,7 +23,7 @@ from osgeo import gdal
 @click.argument('obs',)
 @click.argument('out',)
 @click.option('-gvar', '--gleam-varname', default='E', help='variable name in GLEAM file', type=str)
-@click.option('-pvar', '--pcrglobwb-varname', default='land_surface_evaporation', help='variable name in PCR-GLOBWB file', type=str)
+@click.option('-pvar', '--pcrglobwb-varname', default='total_evaporation', help='variable name in PCR-GLOBWB file', type=str)
 @click.option('-cf', '--conversion-factor', default=1000, help='conversion factor to align variable units', type=int)
 
 def main(shp, sim, obs, out, gleam_varname='E', pcrglobwb_varname='land_surface_evaporation', conversion_factor=1000):
@@ -31,7 +31,7 @@ def main(shp, sim, obs, out, gleam_varname='E', pcrglobwb_varname='land_surface_
 
     Computes r and RMSE for a give area (as defined by the shp-file) between simulated evaporation from PCR-GLOBWB and GLEAM data.
     Returns a plot of clipped mean values and timeseries of mean values plus bias. Also returns scores of r and rmse as dataframe.
-    By default variables 'land_surface_evaporation' and 'E' are used, but this can be replaced depending on user needs. 
+    By default variables 'total_evaporation' and 'E' are used, but this can be replaced depending on user needs. 
     Note that in this case the conversion factor may have to be changed as well.
 
     shp: path to shp-file
