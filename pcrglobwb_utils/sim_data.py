@@ -145,6 +145,7 @@ class from_nc:
         
         # concatenate both dataframes
         both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
+        both.to_csv(os.path.join(out_dir, 'evaluated_timeseries.csv'))
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
         both_noMV = both.dropna()
@@ -170,7 +171,10 @@ class from_nc:
                     'R2': r2}
 
         # save dict to csv
-        df_out = pd.DataFrame().from_dict(evaluation, orient='index')
+        try:
+            df_out = pd.DataFrame().from_dict(evaluation, orient='index')
+        except:
+            df_out = pd.DataFrame().from_dict(evaluation)
         df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
 
         return df_out
