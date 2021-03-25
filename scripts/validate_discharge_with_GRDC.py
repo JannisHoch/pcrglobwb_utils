@@ -19,8 +19,9 @@ def cli():
 @click.argument('out',)
 @click.option('-lon', '--longitude', default=None, help='longitude in degree', type=float)
 @click.option('-lat', '--latitude', default=None, help='latitude in degree', type=float)
+@click.option('-day', '--daily-values', default=False, help='can be set to True if daily GRDC data is supplied', type=bool)
 
-def main(sim, obs, out, longitude=None, latitude=None):
+def main(sim, obs, out, longitude=None, latitude=None, daily_values=False):
     """Validates discharge from PCR-GLOBWB with GRDC observations at a location.
 
     If longitude or latitude are  not provided in command line, coordinates are retrieved from GRDC file.
@@ -32,25 +33,30 @@ def main(sim, obs, out, longitude=None, latitude=None):
     OUT (str): path to output folder.
     """
 
-    print('\n\n\n')
-    print(pcrglobwb_utils.__version__)
-    print('')
+    click.echo('\n\n\n')
+    click.echo(pcrglobwb_utils.__version__)
+    click.echo('')
 
     ### OUTPUT DIR ###
 
     if not os.path.isdir(out):
         os.makedirs(out)
-    print('saving output to folder {}'.format(os.path.abspath(out)))
+    click.echo('saving output to folder {}'.format(os.path.abspath(out)))
 
     ### GRDC DATA ###
 
-    print('reading observed data from file {}'.format(os.path.abspath(obs)))
+    click.echo('reading observed data from file {}'.format(os.path.abspath(obs)))
 
     # create object from GRDC file
     grdc_obj = pcrglobwb_utils.obs_data.grdc_data(obs)
     plot_title, props = grdc_obj.get_grdc_station_properties()
     # reading values from GRDC station text file and providing a variable name
     df_GRDC, props = grdc_obj.get_grdc_station_values(var_name='Q$obs$ GRDC')
+
+    if daily_values:
+        click.echo('resampling daily to monthly GRDC values')
+        df_GRDC = df_GRDC.resample('M').mean()
+        df_GRDC.index = df_GRDC.index.strftime('%Y-%m')
 
     fig, ax = plt.subplots(1, 1, figsize=(20, 10))
     df_GRDC.plot(ax=ax)
@@ -59,14 +65,14 @@ def main(sim, obs, out, longitude=None, latitude=None):
 
     ### PCR-GLOBWB DATA ###
 
-    print('reading model data from file {}'.format(sim))
+    click.echo('reading model data from file {}'.format(sim))
 
     if longitude == None:
         longitude = props['longitude']
-        print('no longitude provided, setting it to {} according to GRDC file'.format(props['longitude']))
+        click.echo('no longitude provided, setting it to {} according to GRDC file'.format(props['longitude']))
     if latitude == None:
         latitude = props['latitude']
-        print('no latitude provided, setting it to {} according to GRDC file'.format(props['latitude']))
+        click.echo('no latitude provided, setting it to {} according to GRDC file'.format(props['latitude']))
 
     # based on lon/lat information of input or GRDC station, find corresponding row/col indices in nc-file
     row, col = pcrglobwb_utils.utils.find_indices_from_coords(sim, longitude, latitude)
@@ -101,7 +107,7 @@ def main(sim, obs, out, longitude=None, latitude=None):
     plt.savefig(os.path.join(out, 'timeseries_'+str(props['station'])+'.png'), dpi=300, bbox_inches='tight')
     plt.close()
 
-    print('\n\n\n')
+    click.echo('\n\n\n')
 
 if __name__ == '__main__':
     main()

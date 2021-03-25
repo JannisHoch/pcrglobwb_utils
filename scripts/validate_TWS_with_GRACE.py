@@ -11,6 +11,8 @@ import xarray as xr
 import numpy as np
 import geopandas as gpd
 import rioxarray as rio
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import datetime
 import spotpy
