@@ -9,7 +9,7 @@ Sphinx==3.0.1
 twine==1.14.0
 pytest==4.6.5
 pytest-runner==5.1
-click==7.1.1
+click>=7.1.1
 matplotlib==3.2.1
 numpy>=1.20
 packaging==20.3
@@ -20,5 +20,6 @@ spotpy>=1.5.8
 rasterio>=1.1
 rioxarray>=0.4
 xarray>=0.18
-xlrd==1.2.0
+xlrd>=2.0
+openpyxl>=3.0.7
 geopandas>=0.9

@@ -15,9 +15,10 @@ dependencies:
   - ipython
   - nbconvert
   - notebook
-  - click
+  - click>=7.1.1
   - scipy
-  - xlrd
+  - xlrd>=2.0
+  - openpyxl>=3.0.7
   - descartes
   - spotpy>=1.5.8
   - netcdf4
