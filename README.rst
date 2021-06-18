@@ -21,6 +21,10 @@ Overview
    :target: https://www.gnu.org/licenses/gpl-3.0
    :alt: License
 
+.. image:: https://codecov.io/gh/JannisHoch/pcrglobwb_utils/branch/dev/graph/badge.svg?token=61HVIA952S
+   :target: https://codecov.io/gh/JannisHoch/pcrglobwb_utils
+   :alt: Codecov
+ 
 
 
 
