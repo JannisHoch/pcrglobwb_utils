@@ -1,17 +1,8 @@
-About PCRGLOBWB_UTILS
+About
 ======================
-
-Authors
----------
 
 .. include:: ./authors.rst
 
-Contributing
--------------
-
 .. include:: ./contributing.rst
-
-License
----------
 
 .. include:: ../LICENSE.rst
