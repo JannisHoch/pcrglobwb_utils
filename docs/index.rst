@@ -15,7 +15,7 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
    readme
    installation
    usage
-   Examples <examples/index>
+   examples
    history
    API Docs <api/index>
    about
