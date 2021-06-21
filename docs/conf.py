@@ -14,6 +14,7 @@
 
 import os
 import sys
+from datetime import datetime
 
 # from mock import Mock as MagicMock
 
@@ -61,7 +62,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel']
+    'sphinx.ext.autosectionlabel',
+    'nbsphinx',
+    'nbsphinx_link']
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
@@ -84,7 +87,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pcrglobwb_utils'
-copyright = "2020, Jannis M. Hoch"
+copyright = f"2020-{datetime.now().year}"
 author = "Jannis M. Hoch"
 
 # The version info for the project you're documenting, acts as replacement
