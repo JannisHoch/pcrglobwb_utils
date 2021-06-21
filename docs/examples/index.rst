@@ -9,4 +9,4 @@ Here two examples how *pcrglobwb_utils* can be used.
     :numbered:
     :glob:
 
-    ./*.ipynb.nblink
+    ./*
