@@ -53,7 +53,6 @@ def main(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, c
     click.echo('\n')
     click.echo('INFO: validating variable {} from file {}'.format(sim_var_name, sim))
     click.echo('INFO: with variable {} from file {}\n'.format(obs_var_name, obs))
-    # pcrglobwb_utils.utils.print_versions() # only if verbose (TODO)
 
     # get full path name of output-dir and create it if not there yet
     out = os.path.abspath(out)

@@ -16,16 +16,20 @@ def cli():
 @click.argument('out_dir',)
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-g', '--grdc-file', default=None, help='path to GRDC file.', type=str)
-@click.option('-e', '--excel-file', default=None, help='path to Excel file.', type=str)
-@click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC/Excel-files.', type=str)
+@click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC-files.', type=str)
 @click.option('-lat', '--latitude', default=None, help='latitude in degree', type=float)
 @click.option('-lon', '--longitude', default=None, help='longitude in degree', type=float)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ncf, out_dir, var_name, grdc_file, excel_file, yaml_file, latitude, longitude, time_scale, plot, verbose):
+def main(ncf, out_dir, var_name, grdc_file, yaml_file, latitude, longitude, time_scale, plot, verbose):
 
+    # print some info at the beginning
+    click.echo('\n')
+    click.echo('INFO: validating variable {} from file {}'.format(var_name, ncf))
+    click.echo('INFO: with observations from file {}\n'.format(grdc_file))
+    
     # get full path name of output-dir and create it if not there yet
     out_dir = os.path.abspath(out_dir)
     if not os.path.isdir(out_dir):
