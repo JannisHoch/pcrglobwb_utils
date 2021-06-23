@@ -6,9 +6,6 @@ Overview
 .. image:: https://img.shields.io/pypi/v/pcrglobwb_utils.svg
         :target: https://pypi.python.org/pypi/pcrglobwb_utils
 
-.. image:: https://img.shields.io/travis/JannisHoch/pcrglobwb_utils.svg
-        :target: https://travis-ci.com/JannisHoch/pcrglobwb_utils
-
 .. image:: https://readthedocs.org/projects/pcrglobwb-utils/badge/?version=latest
         :target: https://pcrglobwb-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
