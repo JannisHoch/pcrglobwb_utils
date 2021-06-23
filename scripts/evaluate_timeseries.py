@@ -26,6 +26,12 @@ def cli():
 
 def main(ncf, out_dir, var_name, grdc_file, excel_file, yaml_file, latitude, longitude, time_scale, plot, verbose):
 
+    # get full path name of output-dir and create it if not there yet
+    out_dir = os.path.abspath(out_dir)
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    click.echo('INFO: saving output to folder {}'.format(out_dir))
+    
     click.echo('INFO: loading GRDC data from file {}.'.format(grdc_file))
     grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
 
@@ -76,8 +82,10 @@ def main(ncf, out_dir, var_name, grdc_file, excel_file, yaml_file, latitude, lon
         ax.set_ylabel('discharge [m3/s]')
         ax.set_xlabel(None)
         plt.legend()
-        plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
-        
+        if time_scale != None:
+            plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
+        else:
+            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 if __name__ == '__main__':
     main()
 
