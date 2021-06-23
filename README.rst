@@ -6,9 +6,6 @@ Overview
 .. image:: https://img.shields.io/pypi/v/pcrglobwb_utils.svg
         :target: https://pypi.python.org/pypi/pcrglobwb_utils
 
-.. image:: https://img.shields.io/travis/JannisHoch/pcrglobwb_utils.svg
-        :target: https://travis-ci.com/JannisHoch/pcrglobwb_utils
-
 .. image:: https://readthedocs.org/projects/pcrglobwb-utils/badge/?version=latest
         :target: https://pcrglobwb-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
@@ -21,6 +18,10 @@ Overview
    :target: https://www.gnu.org/licenses/gpl-3.0
    :alt: License
 
+.. image:: https://codecov.io/gh/JannisHoch/pcrglobwb_utils/branch/dev/graph/badge.svg?token=61HVIA952S
+   :target: https://codecov.io/gh/JannisHoch/pcrglobwb_utils
+   :alt: Codecov
+ 
 
 
 

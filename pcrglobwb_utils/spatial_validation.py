@@ -13,7 +13,9 @@ import os, sys
 #TODO: remove all stupid print statements
 
 class validate_per_shape:
-    """Initializing object for validating output for area provided by shp-file.
+    """Initializing object for validating output for area(s) provided by shp-file.
+    If the shp-file contains multiptle (polygon) geometries, validation is performed per individual geometry.
+    Per geometry, r and RMSE are determined.
 
     Args:
         shp_fo (str): Path to shp-file defining the area extent for validation.
@@ -61,8 +63,9 @@ class validate_per_shape:
 
         print('extract raw data from nc-files')
         GLEAM_data = GLEAM_ds[GLEAM_var_name] # mm
+        GLEAM_data = GLEAM_data.T
         PCR_data = PCR_ds[PCR_var_name] # m
-        PCR_data = PCR_data  * convFactor # m * 100 = cm
+        PCR_data = PCR_data  * convFactor # m * 1000 = mm
         
         GLEAM_idx = pd.to_datetime(pd.to_datetime(GLEAM_ds.time.values).strftime('%Y-%m'))
         GLEAM_daysinmonth = GLEAM_idx.daysinmonth.values
@@ -89,8 +92,6 @@ class validate_per_shape:
         for ID in self.extent_gdf[self.key].unique():
 
             poly = self.extent_gdf.loc[self.extent_gdf[self.key] == ID]
-            dest_bounds = poly.total_bounds
-            dest_srs = poly.crs
 
             print('computing R and RMSE for polygon with key identifier {} {}'.format(self.key, ID))
 
@@ -103,11 +104,15 @@ class validate_per_shape:
             mean_val_timestep_PCR = list()
 
             # compute mean per time step in clipped data-array and append to array
-            for time in GLEAM_ds.time.values:
-                mean = float(GLEAM_data_c.sel(time=time).mean(skipna=True))
+            for i in range(len(GLEAM_data_c.time.values)):
+                time = GLEAM_data_c.time[i]
+                t = pd.to_datetime(time.values)
+                mean = float(GLEAM_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_GLEAM.append(mean)
-            for time in PCR_ds.time.values:
-                mean = float(PCR_data_c.sel(time=time).mean(skipna=True))
+            for i in range(len(PCR_data_c.time.values)):
+                time = PCR_data_c.time[i]
+                t = pd.to_datetime(time.values)
+                mean = float(PCR_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_PCR.append(mean)
 
             GLEAM_tuples = list(zip(mean_val_timestep_GLEAM, GLEAM_daysinmonth))
@@ -134,9 +139,9 @@ class validate_per_shape:
         out_df = pd.DataFrame().from_dict(out_dict).T
         out_df.index.name = self.key
 
-        self.gdf_gleam_out = self.extent_gdf.merge(out_df, on=self.key)
+        gdf_gleam_out = self.extent_gdf.merge(out_df, on=self.key)
 
-        return self.gdf_gleam_out
+        return gdf_gleam_out
 
     def against_GRACE(self, PCR_nc_fo, GRACE_nc_fo, PCR_var_name='total_thickness_of_water_storage', GRACE_var_name='lwe_thickness', convFactor=100):
         """With this function, simulated totalWaterStorage output from PCR-GLOBWB can be validated against GRACE-FO observations. Yields timeseries of anomalies.
@@ -185,8 +190,6 @@ class validate_per_shape:
         for ID in self.extent_gdf[self.key].unique():
 
             poly = self.extent_gdf.loc[self.extent_gdf[self.key] == ID]
-            dest_bounds = poly.total_bounds
-            dest_srs = poly.crs
 
             print('computing R and RMSE for polygon with key identifier {} {}'.format(self.key, ID))
 
@@ -199,11 +202,15 @@ class validate_per_shape:
             mean_val_timestep_PCR = list()
 
             # compute mean per time step in clipped data-array and append to array
-            for time in GRACE_ds.time.values:
-                mean = float(GRACE_data_c.sel(time=time).mean(skipna=True))
+            for i in range(len(GRACE_data_c.time)):
+                time = GRACE_data_c.time[i]
+                t = pd.to_datetime(time.values)
+                mean = float(GRACE_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_GRACE.append(mean)
-            for time in PCR_ds.time.values:
-                mean = float(PCR_data_c.sel(time=time).mean(skipna=True))
+            for i in range(len(PCR_data_c.time.values)):
+                time = PCR_data_c.time[i]
+                t = pd.to_datetime(time.values)
+                mean = float(PCR_data_c.sel(time=t).mean(skipna=True))
                 mean_val_timestep_PCR.append(mean)
 
             # get anomaly
@@ -234,8 +241,8 @@ class validate_per_shape:
             out_dict[ID] = poly_skill_dict
 
         out_df = pd.DataFrame().from_dict(out_dict).T
+        
         out_df.index.name = self.key
+        gdf_grace_out = self.extent_gdf.merge(out_df, on=self.key)
 
-        self.gdf_grace_out = self.extent_gdf.merge(out_df, on=self.key)
-
-        return self.gdf_grace_out
+        return gdf_grace_out

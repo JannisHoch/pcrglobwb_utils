@@ -75,18 +75,15 @@ class grdc_data:
 
         return plot_title, self.props
 
-    def get_grdc_station_values(self, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+    def get_grdc_station_values(self, var_name, remove_mv=True, mv_val=-999):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
 
         Arguments:
             var_name (str): user-specified variable name to be given to time series
 
         Keyword Arguments:
-            remove_mv (bool): whether or not remove missing values in timeseries (default: True)
-            mv_val (int): missing value in timeseries (default: -999)
-            print_head (bool): whether or not to print the pandas dataframe head (default: False)
-            plot (bool): whether or not to plot the timeseries (default: False)
-            plot_title (str): user-specified title for plot of timeseries (default: None)
+            remove_mv (bool): whether or not remove missing values in timeseries (default: True).
+            mv_val (int): missing value in timeseries (default: -999).
 
         Returns:
             dataframe: dataframe containing datetime objects as index and observations as column values
@@ -105,10 +102,16 @@ class grdc_data:
                 break
 
         df = pd.read_csv(self.fo, skiprows=stopline, sep=';')
-            
-        df[var_name] = df[' Original'].copy()
-        del df[' Original']
-        
+
+        try: 
+            print('... reading column Original')
+            df[var_name] = df[' Original'].copy()
+            del df[' Original']
+        except:
+            print('... reading column Calculated')
+            df[var_name] = df[' Calculated'].copy()
+            del df[' Calculated']
+
         df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
         df.set_index(df['date'], inplace=True)
 
@@ -117,12 +120,10 @@ class grdc_data:
         
         if remove_mv == True:
             df_out.replace(mv_val, np.nan, inplace=True)
-        
-        if print_head == True:
-            print(df_out.head())
-            
-        if plot == True:
-            df_out.plot(title=plot_title, legend=True)
+
+        if (pd.infer_freq(df_out.index) == 'M') or (pd.infer_freq(df_out.index) == 'MS'):
+            print('changing index strftime to %Y-%m')
+            df_out.index = df_out.index.strftime('%Y-%m')
 
         self.df = df_out
 
@@ -179,7 +180,6 @@ class grdc_data:
 
         return self.df_yearly
 
-class other_data:
     """Retrieve, re-work and visualize data from other data sources than GRDC files
 
     Arguments:
