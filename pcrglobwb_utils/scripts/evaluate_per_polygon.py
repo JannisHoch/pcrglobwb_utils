@@ -6,11 +6,9 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import geopandas as gpd
-import rioxarray as rio
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import datetime
 import spotpy
 import os
 
@@ -29,7 +27,7 @@ import os
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot fo results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def cli(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -198,10 +196,6 @@ def main(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, c
         plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
 
     click.echo('INFO: finished.')
-
-if __name__ == '__main__':
-
-    main()
 
 
 
