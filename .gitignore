@@ -106,6 +106,6 @@ ENV/
 
 # example output folders
 /examples/_OUT/
-/scripts/eval_GRDC/
-/scripts/eval_GLEAM/
-/scripts/eval_GRACE/
+/tests/scripts/eval_GRDC/
+/tests/scripts/eval_GLEAM/
+/tests/scripts/eval_GRACE/
