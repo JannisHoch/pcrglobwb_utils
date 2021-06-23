@@ -180,7 +180,6 @@ class grdc_data:
 
         return self.df_yearly
 
-class other_data:
     """Retrieve, re-work and visualize data from other data sources than GRDC files
 
     Arguments:
