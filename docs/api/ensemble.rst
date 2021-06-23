@@ -5,7 +5,7 @@ If we have output at one location from various runs, for example for future clim
 Also, one may want to vizualize it.
 Besides, it is also possible to determine the long-term monthly average and plot it.
 
-.. autoclass:: sim_data.ensembles
+.. autoclass:: ensembles.ensemble_data
     :members:
 
     
