@@ -107,3 +107,6 @@ ENV/
 # example output folders
 /scripts/OUT/
 /examples/_OUT/
+/scripts/benchmark_out/
+/scripts/validation_out_with_excel/
+/scripts/validation_out_with_grdc/
