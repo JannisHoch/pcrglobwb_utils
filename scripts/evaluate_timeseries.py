@@ -86,6 +86,7 @@ def main(ncf, out_dir, var_name, grdc_file, excel_file, yaml_file, latitude, lon
             plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
         else:
             plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+
 if __name__ == '__main__':
     main()
 
