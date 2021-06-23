@@ -6,8 +6,6 @@
 Installation
 ============
 
-.. note:: Currently, it is not possible to install this package via pip or conda
-
 From source
 ------------
 
@@ -36,16 +34,18 @@ Installation of the package is then possible:
 
 .. code-block:: console
 
-    $ python path/to/pcrglobwb_utils/setup.py develop
+    $ cd path/to/pcrglobwb_utils
+    $ python setup.py develop
 
 Alternatively, you can use:
 
 .. code-block:: console
 
+    $ cd path/to/pcrglobwb_utils    
     $ pip install -e path/to/pcrglobwb_utils
 
-From pip
---------
+From PyPI
+----------
 
 pcrglobwb_utils can also be installed from PyPI. To do so, use this command:
 

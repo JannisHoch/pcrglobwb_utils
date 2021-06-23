@@ -8,10 +8,6 @@ import matplotlib.pyplot as plt
 import yaml
 import os
 
-@click.group()
-def cli():
-    pass
-
 @click.command()
 @click.argument('ncf',)
 @click.argument('out',)
@@ -21,7 +17,21 @@ def cli():
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
+def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
+    """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
+    with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
+    need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
+    which will supersede those provided by GRDC.
+    The script faciliates resampling to other temporal resolutions.
+
+    Returns a csv-file with the evaluated time series (OBS and SIM), 
+    a csv-file with the resulting scores (KGE, r, RMSE, NSE), 
+    and if specified a simple plot of the time series.
+
+    NCF: Path to the netCDF-file with simulations.
+        
+    OUT: Main output directory. Per station, a sub-directory will be created.
+    """    
 
     # get path to yml-file containing GRDC station info
     yaml_file = os.path.abspath(yaml_file)
@@ -112,7 +122,3 @@ def main(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
                 plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
             else:
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
-
-if __name__ == '__main__':
-    main()
-
