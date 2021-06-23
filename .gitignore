@@ -105,5 +105,7 @@ ENV/
 .vscode/
 
 # example output folders
-/scripts/OUT/
 /examples/_OUT/
+/scripts/eval_GRDC/
+/scripts/eval_GLEAM/
+/scripts/eval_GRACE/

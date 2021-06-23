@@ -127,8 +127,8 @@ class grdc_data:
 
         self.df = df_out
 
-        # self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
-        # self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
+        self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
+        self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
 
         return self.df, self.props
         
@@ -180,7 +180,6 @@ class grdc_data:
 
         return self.df_yearly
 
-class other_data:
     """Retrieve, re-work and visualize data from other data sources than GRDC files
 
     Arguments:

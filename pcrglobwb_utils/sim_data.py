@@ -111,7 +111,7 @@ class from_nc:
 
         return self.df_yearly
 
-    def validate_results(self, df_obs, out_dir, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
+    def validate_results(self, df_obs, out_dir, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
         """Validates simulated values with observations. Computes KGE, NSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
         Arguments:
@@ -119,6 +119,7 @@ class from_nc:
             out_dir (str): user-specified output directory for validation output
 
         Keyword Arguments:
+            suffix (str): suffix to be added at end of output files. Defaults to 'None'.
             var_name_obs (str): header name of column in df_obs whose values are to be used (default: None)
             var_name_sim (str): header name of column in df_sim whose values are to be used (default: None)
             return_all_KGE (bool): whether or not to return all KGE components (default: False)
@@ -145,7 +146,10 @@ class from_nc:
         
         # concatenate both dataframes
         both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
-        both.to_csv(os.path.join(out_dir, 'evaluated_timeseries.csv'))
+        if suffix != None:
+            both.to_csv(os.path.join(out_dir, 'evaluated_timeseries_{}.csv'.format(suffix)))
+        else:
+            both.to_csv(os.path.join(out_dir, 'evaluated_timeseries.csv'))
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
         both_noMV = both.dropna()
@@ -175,7 +179,11 @@ class from_nc:
             df_out = pd.DataFrame().from_dict(evaluation, orient='index')
         except:
             df_out = pd.DataFrame().from_dict(evaluation)
-        df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
+
+        if suffix != None:
+            df_out.to_csv(os.path.join(out_dir, 'evaluation_{}.csv'.format(suffix)))
+        else:
+            df_out.to_csv(os.path.join(out_dir, 'evaluation.csv'))
 
         return df_out
 

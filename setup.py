@@ -10,18 +10,8 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-# with open('requirements_dev.txt') as requirements_file:
-#     requirements = requirements_file.read()
-
-requirements = ['Click>=7.0', 
-                'xarray>=0.18',
-                'pandas>=1.2',
-                'xlrd>=1.2.0',
-                'rasterio>=1.1',
-                'spotpy>=1.5.8',
-                'numpy>=1.20',
-                'geopandas>=0.9',
-                'rioxarray>=0.4']
+with open('requirements_dev.txt') as requirements_file:
+    requirements = requirements_file.read()
 
 setup_requirements = ['pytest-runner', ]
 
