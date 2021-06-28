@@ -49,6 +49,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://pcrglobwb-utils.readthedocs.io/',
-    version='version='0.2.1'',
+    version='0.2.1',
     zip_safe=False,
 )
