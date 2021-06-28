@@ -35,14 +35,20 @@ Handy functions to work with PCR-GLOBWB input and output.
 Features
 --------
 
-* evaluation of timeseries simulated by PCR-GLOBWB with observations
-* extraction of timeseries from GRDC-files or csv-files
-* aggregating and averaging over time scales
-* water balance assessments of PCR-GLOBWB runs
-* statistical analyses
-* ensemble analysis
-* functions to validate against GRACE and GLEAM data
-* command line scripts
+Most mature: 
+
+* evaluation of timeseries simulated by PCR-GLOBWB with observations from GRDC.
+  * multiple GRDC-stations and properties can be provided via a yml-file.
+  * using command line functions and wide range of user-defined options.
+* command line functions to validate model output against GRACE and GLEAM data for multiple polygons.
+
+Other:
+
+* aggregating and averaging over time scales.
+* water balance assessments of PCR-GLOBWB runs.
+* statistical analyses.
+* ensemble analysis.
+
 
 Credits
 -------
