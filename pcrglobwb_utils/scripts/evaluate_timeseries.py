@@ -4,6 +4,8 @@
 import pcrglobwb_utils
 import click
 import pandas as pd
+from shapely.geometry import Point
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import yaml
 import os
@@ -14,10 +16,11 @@ import os
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC-files.', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
+@click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
+def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -27,6 +30,7 @@ def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
     Returns a csv-file with the evaluated time series (OBS and SIM), 
     a csv-file with the resulting scores (KGE, r, RMSE, NSE), 
     and if specified a simple plot of the time series.
+    If specified, it also returns a geojson-file containing KGE values per station evaluated.
 
     NCF: Path to the netCDF-file with simulations.
         
@@ -42,8 +46,16 @@ def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
     # get location of yml-file
     yaml_root = os.path.dirname(yaml_file)
 
+    if geojson:
+        click.echo('INFO: preparing geo-dict for GeoJSON output')
+        geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
+
     # validate data at each station specified in yml-file
     for station in data.keys():
+
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+            geo_dict['station'].append(station)
 
         # construct path to GRDC-file for this station
         grdc_file = os.path.join(yaml_root, data[str(station)]['file'])
@@ -81,6 +93,10 @@ def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
             click.echo('INFO: overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
             props['longitude'] = data[str(station)]['lon']
 
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
+            geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
+
         # get row/col combination for cell corresponding to lon/lat combination
         click.echo('INFO: getting row/column combination from longitude/latitude.')
         row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
@@ -107,7 +123,11 @@ def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
 
         # compute scores
         click.echo('INFO: computing scores.')
-        pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+        scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
+            geo_dict['KGE'].append(scores['KGE'][0])
 
         # make as simple plot of time series if specified and save
         if plot:
@@ -122,3 +142,11 @@ def cli(ncf, out, var_name, yaml_file, time_scale, plot, verbose):
                 plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
             else:
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+
+    if geojson:
+        click.echo('\nINFO: creating geo-dataframe')
+        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+        if time_scale != None:
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+        else:
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
