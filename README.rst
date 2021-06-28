@@ -38,8 +38,10 @@ Features
 Most mature: 
 
 * evaluation of timeseries simulated by PCR-GLOBWB with observations from GRDC.
+  
   * multiple GRDC-stations and properties can be provided via a yml-file.
   * using command line functions and wide range of user-defined options.
+  
 * command line functions to validate model output against GRACE and GLEAM data for multiple polygons.
 
 Other:
