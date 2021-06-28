@@ -3,7 +3,6 @@
 
 import pcrglobwb_utils
 import click
-import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -37,9 +36,11 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
     OUT: Main output directory. Per station, a sub-directory will be created.
     """    
 
+    click.echo(click.style('INFO: starting evaluation with pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
+
     # get path to yml-file containing GRDC station info
     yaml_file = os.path.abspath(yaml_file)
-    click.echo('INFO: parsing GRDC station information from file {}'.format(yaml_file))
+    click.echo(click.style('INFO: parsing GRDC station information from file {}'.format(yaml_file), fg='red'))
     # get content of yml-file
     with open(yaml_file, 'r') as file:
         data = yaml.safe_load(file)
@@ -61,8 +62,7 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
         grdc_file = os.path.join(yaml_root, data[str(station)]['file'])
 
         # print some info at the beginning
-        click.echo('\n')
-        click.echo('INFO: validating station {}.'.format(station))
+        click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
         click.echo('INFO: validating variable {} from file {}'.format(var_name, ncf))
         click.echo('INFO: with observations from file {}.'.format(grdc_file))
         
@@ -79,7 +79,10 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
         plot_title, props = grdc_data.get_grdc_station_properties()
 
         # retrieving values from GRDC file
-        df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS')
+        if 'column' in data[str(station)].keys():
+            df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name='OBS', verbose=verbose)
+        else:
+            df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS', verbose=verbose)
 
         click.echo('INFO: loading simulated data from {}.'.format(ncf))
         pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
@@ -144,9 +147,11 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
     if geojson:
-        click.echo('\nINFO: creating geo-dataframe')
+        click.echo('INFO: creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
         if time_scale != None:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
+    
+    click.echo(click.style('INFO: done.', fg='green'))
