@@ -22,11 +22,7 @@ Overview
    :target: https://codecov.io/gh/JannisHoch/pcrglobwb_utils
    :alt: Codecov
  
-
-
-
 Handy functions to work with PCR-GLOBWB input and output.
-
 
 * Free software: GNU General Public License v3
 * Documentation: https://pcrglobwb-utils.readthedocs.io.
