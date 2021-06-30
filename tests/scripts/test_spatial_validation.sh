@@ -7,7 +7,7 @@ out='./eval_GRACE'
 echo
 echo VALIDATING WITH GRACE
 
-$script -o lwe_thickness -s total_thickness_of_water_storage -cf 100 -id watprovID --plot --anomaly $shp $sim $obs $out
+$script -o lwe_thickness -s total_thickness_of_water_storage -cf 100 -id watprovID --plot --anomaly --verbose $shp $sim $obs $out
 
 obs='../../examples/example_data/GLEAM/GLEAM_data_2010_Tanzania.nc'
 sim='../../examples/example_data/GLEAM/totalEvaporation_monthTot_output_2010_Tanzania.nc'

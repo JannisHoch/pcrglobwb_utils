@@ -163,13 +163,16 @@ def cli(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, co
 
         # computing evaluation metrics
         r = spotpy.objectivefunctions.correlationcoefficient(final_df[obs_var_name].values, final_df[sim_var_name].values)
+        mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
         rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
         if verbose: click.echo('INFO: correlation coefficient is {}'.format(r))
-        if verbose: click.echo('INFO: RMSE is {}'.format(rmse))
+        if verbose: click.echo('INFO: Mean Squared Error is {}'.format(mse))
+        if verbose: click.echo('INFO: Root Mean Squared Error is {}'.format(rmse))
 
         # save metrics to polygon-specific dict
-        poly_skill_dict = {'R':round(r, 3),
-                           'RMSE': round(rmse, 0)}
+        poly_skill_dict = {'R': round(r, 3),
+                           'MSE': round(mse, 1),
+                           'RMSE': round(rmse, 1)}
 
         # add polygon-specific dict to 'master' dict
         out_dict[ID] = poly_skill_dict
@@ -188,11 +191,13 @@ def cli(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, co
     # plot if specified
     if plot:
         click.echo('INFO: plotting evaluation metrics per polygon.')
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 10))
         gdf_out.plot(ax=ax1, column='R', legend=True)
         ax1.set_title('R')
-        gdf_out.plot(ax=ax2, column='RMSE', legend=True)
-        ax2.set_title('RMSE')
+        gdf_out.plot(ax=ax2, column='MSE', legend=True)
+        ax2.set_title('MSE')
+        gdf_out.plot(ax=ax3, column='RMSE', legend=True)
+        ax3.set_title('RMSE')
         plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
 
     click.echo('INFO: finished.')
