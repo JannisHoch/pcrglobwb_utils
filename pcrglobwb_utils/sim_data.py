@@ -156,7 +156,7 @@ class from_nc:
 
         # raise error if there is no common time period
         if both.empty:
-            raise ValueError('no common time period of observed and simulated values found in dataframes!')
+            raise Warning('WARNING: no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
         obs = both_noMV[both_noMV.columns[0]].to_numpy()

@@ -3,6 +3,7 @@
 
 import pcrglobwb_utils
 import click
+import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -83,7 +84,7 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
             df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name='OBS', verbose=verbose)
         else:
             df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS', verbose=verbose)
-        # df_obs.index = df_obs.index.strftime('%Y-%m-%d')
+        df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
 
         click.echo('INFO: loading simulated data from {}.'.format(ncf))
         pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
@@ -110,7 +111,7 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
         # retrieving values at that cell
         click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
         df_sim = pcr_data.read_values_at_indices(row, col, var_name=var_name, plot_var_name='SIM')
-        # df_sim.index = df_sim.index.strftime('%Y-%m-%d')
+        df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
         # resample if specified to other time scales
         if time_scale == 'month':
