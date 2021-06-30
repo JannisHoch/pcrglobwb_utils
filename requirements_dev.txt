@@ -14,3 +14,4 @@
   netcdf4
   setuptools>=49.6
   jinja2==2.11.3
+  pyyaml
