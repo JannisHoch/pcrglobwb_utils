@@ -75,14 +75,14 @@ class grdc_data:
 
         return plot_title, self.props
 
-    def get_grdc_station_values(self, var_name, col_name='Calculated', remove_mv=True, mv_val=-999, verbose=False):
+    def get_grdc_station_values(self, var_name, col_name='Value', remove_mv=True, mv_val=-999, verbose=False):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
 
         Arguments:
             var_name (str): user-specified variable name to be given to time series
 
         Keyword Arguments:
-            col_name (str): name of column in GRDC-file to be read.
+            col_name (str): name of column in GRDC-file to be read. Defaults to ' Value'.
             remove_mv (bool): whether or not remove missing values in timeseries (default: True).
             mv_val (int): missing value in timeseries (default: -999).
             verbose (bool): verbose mode on or off. Defaults to False.
@@ -110,12 +110,12 @@ class grdc_data:
             df[var_name] = df[str(col_name)].copy()
             del df[str(col_name)]
         except:
-            if col_name == ' Calculated':
+            if col_name == ' Value':
                 raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
             else:
-                print('WARNING: column {} not found, falling back to column Calculated'.format(col_name))
-                df[var_name] = df[' Calculated'].copy()
-                del df[' Calculated']
+                print('WARNING: column {} not found, falling back to column Value'.format(col_name))
+                df[var_name] = df[' Value'].copy()
+                del df[' Value']
 
         df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
         df.set_index(df['date'], inplace=True)

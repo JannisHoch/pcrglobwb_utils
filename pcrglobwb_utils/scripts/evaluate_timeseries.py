@@ -113,15 +113,21 @@ def cli(ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
         # resample if specified to other time scales
         if time_scale == 'month':
             click.echo('INFO: resampling data to monthly time scale.')
+            if verbose: click.echo('VERBOSE: first for simulated data')
             df_sim = df_sim.resample('M', convention='start').mean()
+            if verbose: click.echo('VERBOSE: then for observed data')
             df_obs = df_obs.resample('M', convention='start').mean()
         if time_scale == 'year':
             click.echo('INFO: resampling data to yearly time scale.')
+            if verbose: click.echo('VERBOSE: first for simulated data')
             df_sim = df_sim.resample('Y', convention='start').mean()
+            if verbose: click.echo('VERBOSE: then for observed data')
             df_obs = df_obs.resample('Y', convention='start').mean()
         if time_scale == 'quarter':
             click.echo('INFO: resampling data to quarterly time scale.')
+            if verbose: click.echo('VERBOSE: first for simulated data')
             df_sim = df_sim.resample('Q', convention='start').agg('mean')
+            if verbose: click.echo('VERBOSE: then for observed data')
             df_obs = df_obs.resample('Q', convention='start').agg('mean')
 
         # compute scores
