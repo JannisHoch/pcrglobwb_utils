@@ -1,6 +1,6 @@
 Obidos:
   file: '3629000_Obidos.day'
-  column: 'notExistingColumnName'
+  column: ' Calculated'
 
 Jaturana:
   file: '3627000_Jatuarana.day'
