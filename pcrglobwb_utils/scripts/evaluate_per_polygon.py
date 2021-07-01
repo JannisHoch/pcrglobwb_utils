@@ -107,9 +107,9 @@ def cli(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, co
         poly = extent_gdf.loc[extent_gdf[shp_id] == ID]
 
         # clipping obs data-array to shape extent
-        obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True)
+        obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
         # clipping sim data-array to shape extent
-        sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True)
+        sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
 
         mean_val_timestep_obs = list()
         mean_val_timestep_sim = list()
@@ -149,7 +149,7 @@ def cli(shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, co
         else:
 
             obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
-            sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=obs_idx, columns=[sim_var_name])
+            sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
 
         # accounting for missing values in time series (and thus missing index values!)
         if verbose: click.echo('VERBOSE: covering missing months in observation or simulation data.')
