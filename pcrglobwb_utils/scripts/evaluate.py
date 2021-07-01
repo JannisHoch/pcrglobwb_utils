@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import pcrglobwb_utils
+from . import funcs
 import click
 import xarray as xr
 import pandas as pd
@@ -31,13 +32,14 @@ def cli(ctx, version):
 @click.argument('out',)
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC-files.', type=str)
+@click.option('-f', '--folder', default=None, help='path to folder with GRDC-files.', type=click.Path())
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def GRDC(ctx, ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose):
+def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -52,72 +54,85 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose)
     NCF: Path to the netCDF-file with simulations.
         
     OUT: Main output directory. Per station, a sub-directory will be created.
-    """    
+    """   
 
     click.echo(click.style('INFO: start.', fg='green'))
 
-    # get path to yml-file containing GRDC station info
-    yaml_file = os.path.abspath(yaml_file)
-    click.echo(click.style('INFO: parsing GRDC station information from file {}'.format(yaml_file), fg='red'))
-    # get content of yml-file
-    with open(yaml_file, 'r') as file:
-        data = yaml.safe_load(file)
-    # get location of yml-file
-    yaml_root = os.path.dirname(yaml_file)
+    # check if data comes via yml-file or from folder
+    mode = funcs.check_mode(yaml_file, folder)
 
+    # depending on mode, data is read at different stages of this script
+    if mode == 'yml':
+        data, yaml_root = funcs.read_yml(yaml_file)
+    if mode == 'fld':
+        # note that 'data' is in fact a dictionary here!
+        data = funcs.glob_folder(folder, verbose)
+
+    # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
 
     # validate data at each station specified in yml-file
+    # or as returned from the all files in folder
     for station in data.keys():
 
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
-            geo_dict['station'].append(station)
-
-        # construct path to GRDC-file for this station
-        grdc_file = os.path.join(yaml_root, data[str(station)]['file'])
-
-        # print some info at the beginning
+        # print some info
         click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
-        click.echo('INFO: validating variable {} from file {}'.format(var_name, ncf))
-        click.echo('INFO: with observations from file {}.'.format(grdc_file))
-        
+
         # create sub-directory per station
         out_dir = os.path.abspath(out) + '/{}'.format(station)
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
         click.echo('INFO: saving output to folder {}'.format(out_dir))
 
-        click.echo('INFO: loading GRDC data.')
-        grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
+        # update geojson-file with station info
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+            geo_dict['station'].append(station)
 
-        if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
-        plot_title, props = grdc_data.get_grdc_station_properties()
+        # if data is via yml-file, the data is read here as well as are station properties
+        if mode == 'yml': 
 
-        # retrieving values from GRDC file
-        if 'column' in data[str(station)].keys():
-            df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name='OBS', verbose=verbose)
-        else:
-            df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS', verbose=verbose)
-        df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
+            # construct path to GRDC-file
+            grdc_file = os.path.join(yaml_root, data[str(station)]['file'])           
+            click.echo('INFO: validating variable {} from file {}'.format(var_name, ncf))
+            click.echo('INFO: with observations from file {}.'.format(grdc_file))
+        
+            click.echo('INFO: loading GRDC data.')
+            grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
 
-        click.echo('INFO: loading simulated data from {}.'.format(ncf))
-        pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+            if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
+            plot_title, props = grdc_data.get_grdc_station_properties()
 
-        # if 'lat' or 'lon' are specified for a station in yml-file,
-        # use this instead of GRDC coordinates
-        if 'lat' in data[str(station)].keys():
-            click.echo('INFO: overwriting GRDC latitude information {} with user input {}.'.format(props['latitude'], data[str(station)]['lat']))
-            props['latitude'] = data[str(station)]['lat']
-        if 'lon' in data[str(station)].keys():
-            click.echo('INFO: overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
-            props['longitude'] = data[str(station)]['lon']
+            # retrieving values from GRDC file
+            if 'column' in data[str(station)].keys():
+                df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name='OBS', verbose=verbose)
+            else:
+                df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS', verbose=verbose)
+            df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
 
+            # if 'lat' or 'lon' are specified for a station in yml-file,
+            # use this instead of GRDC coordinates
+            if 'lat' in data[str(station)].keys():
+                click.echo('INFO: overwriting GRDC latitude information {} with user input {}.'.format(props['latitude'], data[str(station)]['lat']))
+                props['latitude'] = data[str(station)]['lat']
+            if 'lon' in data[str(station)].keys():
+                click.echo('INFO: overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
+                props['longitude'] = data[str(station)]['lon']
+
+        # if data comes from folder, it was already read and can now be retrieved from dictionary
+        if mode == 'fld':
+            df_obs, props = data[str(station)][1], data[str(station)][0]
+
+        # update geojson-file with geometry info
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
             geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
+
+        # now get started with simulated data
+        click.echo('INFO: loading simulated data from {}.'.format(ncf))
+        pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
 
         # get row/col combination for cell corresponding to lon/lat combination
         click.echo('INFO: getting row/column combination from longitude/latitude.')
@@ -154,6 +169,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose)
         click.echo('INFO: computing scores.')
         scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
+        # update geojson-file with KGE info
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
             geo_dict['KGE'].append(scores['KGE'][0])
@@ -172,6 +188,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, time_scale, geojson, plot, verbose)
             else:
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
+    # write geojson-file to disc
     if geojson:
         click.echo('INFO: creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
