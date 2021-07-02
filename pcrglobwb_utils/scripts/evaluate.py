@@ -148,9 +148,18 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
         # resample if specified to other time scales
-        if time_scale != None:
-                df_sim = funcs.resample_timeseries(df_sim, time_scale)
-                df_obs = funcs.resample_timeseries(df_obs, time_scale)
+        if time_scale == 'month':
+            click.echo('INFO: resampling observed data to monthly time scale.')
+            df_obs = df_obs.resample('M', convention='start').mean()
+            df_sim = pcr_data.resample2monthly()
+        elif time_scale == 'year':
+            click.echo('INFO: resampling observed data to yearly time scale.')
+            df_obs = df_obs.resample('Y', convention='start').mean()
+            df_sim = pcr_data.resample2yearly()
+        elif time_scale == 'quarter':
+            click.echo('INFO: resampling observed data to quarterly time scale.')
+            df_obs = df_obs.resample('Q', convention='start').agg('mean')
+            df_sim = pcr_data.resample2quarterly()
 
         # compute scores
         click.echo('INFO: computing scores.')
@@ -206,13 +215,14 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
 @click.argument('out',)
 @click.option('-nv', '--netcdf-var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
+@click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plot, geojson, verbose):
+def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_factor, time_scale, plot, geojson, verbose):
 
     click.echo(click.style('INFO: start.', fg='green'))
     click.echo(click.style('INFO: validating variable {} from file {}'.format(netcdf_var_name, ncf), fg='red'))
@@ -282,9 +292,18 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plo
             df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
             # resample if specified to other time scales
-            if time_scale != None:
-                df_sim = funcs.resample_timeseries(df_sim, time_scale)
-                df_obs = funcs.resample_timeseries(df_obs, time_scale)
+            if time_scale == 'month':
+                click.echo('INFO: resampling observed data to monthly time scale.')
+                station_obs = station_obs.resample('M', convention='start').mean()
+                df_sim = pcr_data.resample2monthly()
+            elif time_scale == 'year':
+                click.echo('INFO: resampling observed data to yearly time scale.')
+                station_obs = station_obs.resample('Y', convention='start').mean()
+                df_sim = pcr_data.resample2yearly()
+            elif time_scale == 'quarter':
+                click.echo('INFO: resampling observed data to quarterly time scale.')
+                station_obs = station_obs.resample('Q', convention='start').agg('mean')
+                df_sim = pcr_data.resample2quarterly()
 
             # compute scores
             click.echo('INFO: computing scores.')
@@ -304,7 +323,7 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plo
                 if verbose: click.echo('VERBOSE: plotting.')
                 fig, ax = plt.subplots(1, 1, figsize=(20,10))
                 df_sim.plot(ax=ax, c='r')
-                df_obs.plot(ax=ax, c='k')
+                station_obs.plot(ax=ax, c='k')
                 ax.set_ylabel('discharge [m3/s]')
                 ax.set_xlabel(None)
                 plt.legend()
@@ -326,6 +345,8 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plo
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
+
+    click.echo(click.style('INFO: done.', fg='green'))
 #------------------------------
 
 @cli.command()
