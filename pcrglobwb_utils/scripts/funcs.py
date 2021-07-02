@@ -64,3 +64,20 @@ def glob_folder(folder, verbose):
         dd[str(props['station'])] = [props, df_obs]
 
     return dd
+
+def resample_timeseries(df_in, time_scale):
+
+    # resample if specified to other time scales
+    if time_scale == 'month':
+        click.echo('INFO: resampling data to monthly time scale.')
+        df_out = df_in.resample('M', convention='start').mean()
+    elif time_scale == 'year':
+        click.echo('INFO: resampling data to yearly time scale.')
+        df_out = df_in.resample('Y', convention='start').mean()
+    elif time_scale == 'quarter':
+        click.echo('INFO: resampling data to quarterly time scale.')
+        df_out = df_in.resample('Q', convention='start').agg('mean')
+    else:
+        raise ValueError('ERROR: either specify "month", "year", "quarter" as time scale')
+
+    return df_out

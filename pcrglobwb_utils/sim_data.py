@@ -1,11 +1,8 @@
 import xarray as xr
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import rasterio as rio
 import spotpy as sp
-import csv
-import os, sys
+import click
+import os
 
 class from_nc:
     """Retrieving and working with timeseries data from a nc-file.
@@ -76,40 +73,55 @@ class from_nc:
             stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
 
         Returns:
-            dataframe: dataframe containing monthly average values
+            dataframe: dataframe containing monthly values
         """        
 
+        click.echo('INFO: resampling simulated data to monthly time scale.')
         if stat_func == 'mean':
-            self.df_monthly = self.df.resample('M').mean()
+            self.df = self.df.resample('M', convention='start').mean()
         elif stat_func == 'max':
-            self.df_monthly = self.df.resample('M').max()
+            self.df = self.df.resample('M', convention='start').max()
         elif stat_func == 'min':
-            self.df_monthly = self.df.resample('M').min()
+            self.df = self.df.resample('M', convention='start').min()
         else:
             raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-        return self.df_monthly
+        return self.df
 
     def resample2yearly(self, stat_func='mean'):
-        """Resampling values to monthly time scale.
+        """Resampling values to annual time scale.
 
         Keyword Arguments:
             stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
 
         Returns:
-            dataframe: dataframe containing monthly average values
+            dataframe: dataframe containing monthly annual values
         """        
 
+        click.echo('INFO: resampling simulated data to yearly time scale.')
         if stat_func == 'mean':
-            self.df_yearly = self.df.resample('Y').mean()
+            self.df = self.df.resample('Y', convention='start').mean()
         elif stat_func == 'max':
-            self.df_yearly = self.df.resample('Y').max()
+            self.df = self.df.resample('Y', convention='start').max()
         elif stat_func == 'min':
-            self.df_yearly = self.df.resample('Y').min()
+            self.df = self.df.resample('Y', convention='start').min()
         else:
             raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-        return self.df_yearly
+        return self.df
+
+    def resample2quarterly(self):
+        """Resampling values to quarterly time scale.
+
+        Returns:
+            dataframe: dataframe containing quarterly average values
+        """        
+
+        click.echo('INFO: resampling simulated data to quarterly time scale.')
+        self.df = self.df.resample('Q', convention='start').agg('mean')
+
+        return self.df
+
 
     def validate_results(self, df_obs, out_dir, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
         """Validates simulated values with observations. Computes KGE, NSE, MSE, RMSE, and R^2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.

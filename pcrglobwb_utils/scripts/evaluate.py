@@ -73,6 +73,8 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         click.echo('INFO: preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
 
+    all_scores = pd.DataFrame()
+
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
     for station in data.keys():
@@ -147,28 +149,26 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
 
         # resample if specified to other time scales
         if time_scale == 'month':
-            click.echo('INFO: resampling data to monthly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('M', convention='start').mean()
-            if verbose: click.echo('VERBOSE: then for observed data')
+            click.echo('INFO: resampling observed data to monthly time scale.')
             df_obs = df_obs.resample('M', convention='start').mean()
-        if time_scale == 'year':
-            click.echo('INFO: resampling data to yearly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('Y', convention='start').mean()
-            if verbose: click.echo('VERBOSE: then for observed data')
+            df_sim = pcr_data.resample2monthly()
+        elif time_scale == 'year':
+            click.echo('INFO: resampling observed data to yearly time scale.')
             df_obs = df_obs.resample('Y', convention='start').mean()
-        if time_scale == 'quarter':
-            click.echo('INFO: resampling data to quarterly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('Q', convention='start').agg('mean')
-            if verbose: click.echo('VERBOSE: then for observed data')
+            df_sim = pcr_data.resample2yearly()
+        elif time_scale == 'quarter':
+            click.echo('INFO: resampling observed data to quarterly time scale.')
             df_obs = df_obs.resample('Q', convention='start').agg('mean')
+            df_sim = pcr_data.resample2quarterly()
 
         # compute scores
         click.echo('INFO: computing scores.')
         scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
+        # create one dataframe with scores from all stations
+        scores.index = [station]
+        all_scores = pd.concat([all_scores, scores], axis=0)
+        
         # update geojson-file with KGE info
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
@@ -188,6 +188,13 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
             else:
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
+    if time_scale != None:
+        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores_{}.csv'.format(time_scale))))
+        all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
+    else:
+        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
+        all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
+
     # write geojson-file to disc
     if geojson:
         click.echo('INFO: creating geo-dataframe')
@@ -196,7 +203,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
-    
+
     click.echo(click.style('INFO: done.', fg='green'))
 
 #------------------------------
@@ -208,12 +215,14 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
 @click.argument('out',)
 @click.option('-nv', '--netcdf-var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
+@click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
+@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, verbose):
+def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_factor, time_scale, plot, geojson, verbose):
 
     click.echo(click.style('INFO: start.', fg='green'))
     click.echo(click.style('INFO: validating variable {} from file {}'.format(netcdf_var_name, ncf), fg='red'))
@@ -236,67 +245,108 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
         click.echo('INFO: preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
 
+    all_scores = pd.DataFrame()
+    
     for name, i in zip(locs[location_id].unique(), range(len(locs))):
 
-        if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
+        if name not in df_obs.columns:
 
-        # update geojson-file with station info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
-            geo_dict['station'].append(name)
+            click.echo('WARNING: station not found in Excel-file')
 
-        # create sub-directory per station
-        out_dir = os.path.abspath(out) + '/{}'.format(name)
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
-        click.echo('INFO: saving output to folder {}'.format(out_dir))
+        else:
+        
+            if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
 
-        click.echo('INFO: retrieving data from Excel-file for column with name of station')
-        station_obs = df_obs[str(name)]
+            # update geojson-file with station info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+                geo_dict['station'].append(name)
 
-        lon = locs[locs[location_id] == name].geometry.x[i]
-        lat = locs[locs[location_id] == name].geometry.y[i]
-        click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
+            # create sub-directory per station
+            out_dir = os.path.abspath(out) + '/{}'.format(name)
+            if not os.path.isdir(out_dir):
+                os.makedirs(out_dir)
+            click.echo('INFO: saving output to folder {}'.format(out_dir))
 
-        # update geojson-file with geometry info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
-            geo_dict['geometry'].append(Point(lon, lat))
+            click.echo('INFO: retrieving data from Excel-file for column with name of station')
+            station_obs = df_obs[str(name)]
 
-        # get row/col combination for cell corresponding to lon/lat combination
-        click.echo('INFO: getting row/column combination from longitude/latitude.')
-        row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
-                                                                  lon=lon, 
-                                                                  lat=lat)
+            lon = locs[locs[location_id] == name].geometry.x[i]
+            lat = locs[locs[location_id] == name].geometry.y[i]
+            click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
 
-        # retrieving values at that cell
-        click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
-        df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
-        df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
+            # update geojson-file with geometry info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
+                geo_dict['geometry'].append(Point(lon, lat))
 
-        # compute scores
-        click.echo('INFO: computing scores.')
-        scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
+            # get row/col combination for cell corresponding to lon/lat combination
+            click.echo('INFO: getting row/column combination from longitude/latitude.')
+            row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
+                                                                    lon=lon, 
+                                                                    lat=lat)
 
-        # update geojson-file with KGE info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
-            geo_dict['KGE'].append(scores['KGE'][0])
-            click.echo('INFO: creating geo-dataframe')
-            gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+            # retrieving values at that cell
+            click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
+            df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
+            df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
+
+            # resample if specified to other time scales
+            if time_scale == 'month':
+                click.echo('INFO: resampling observed data to monthly time scale.')
+                station_obs = station_obs.resample('M', convention='start').mean()
+                df_sim = pcr_data.resample2monthly()
+            elif time_scale == 'year':
+                click.echo('INFO: resampling observed data to yearly time scale.')
+                station_obs = station_obs.resample('Y', convention='start').mean()
+                df_sim = pcr_data.resample2yearly()
+            elif time_scale == 'quarter':
+                click.echo('INFO: resampling observed data to quarterly time scale.')
+                station_obs = station_obs.resample('Q', convention='start').agg('mean')
+                df_sim = pcr_data.resample2quarterly()
+
+            # compute scores
+            click.echo('INFO: computing scores.')
+            scores = pcr_data.validate_results(station_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+
+            # create one dataframe with scores from all stations
+            scores.index = [name]
+            all_scores = pd.concat([all_scores, scores], axis=0)
+
+            # update geojson-file with KGE info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
+                geo_dict['KGE'].append(scores['KGE'][0])
+
+            # make as simple plot of time series if specified and save
+            if plot:
+                if verbose: click.echo('VERBOSE: plotting.')
+                fig, ax = plt.subplots(1, 1, figsize=(20,10))
+                df_sim.plot(ax=ax, c='r')
+                station_obs.plot(ax=ax, c='k')
+                ax.set_ylabel('discharge [m3/s]')
+                ax.set_xlabel(None)
+                plt.legend()
+                if time_scale != None:
+                    plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
+                else:
+                    plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+
+    click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
+    if time_scale != None:
+        all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
+    else:
+        all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
+
+    if geojson:
+        click.echo('INFO: creating geo-dataframe')
+        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+        if time_scale != None:
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+        else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
 
-        # make as simple plot of time series if specified and save
-        if plot:
-            if verbose: click.echo('VERBOSE: plotting.')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            df_sim.plot(ax=ax, c='r')
-            df_obs.plot(ax=ax, c='k')
-            ax.set_ylabel('discharge [m3/s]')
-            ax.set_xlabel(None)
-            plt.legend()
-            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
-
+    click.echo(click.style('INFO: done.', fg='green'))
 #------------------------------
 
 @cli.command()
