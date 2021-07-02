@@ -253,65 +253,71 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
     
     for name, i in zip(locs[location_id].unique(), range(len(locs))):
 
-        if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
+        if name not in df_obs.columns:
 
-        # update geojson-file with station info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
-            geo_dict['station'].append(name)
+            click.echo('WARNING: station not found in Excel-file')
 
-        # create sub-directory per station
-        out_dir = os.path.abspath(out) + '/{}'.format(name)
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
-        click.echo('INFO: saving output to folder {}'.format(out_dir))
+        else:
+        
+            if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
 
-        click.echo('INFO: retrieving data from Excel-file for column with name of station')
-        station_obs = df_obs[str(name)]
+            # update geojson-file with station info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+                geo_dict['station'].append(name)
 
-        lon = locs[locs[location_id] == name].geometry.x[i]
-        lat = locs[locs[location_id] == name].geometry.y[i]
-        click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
+            # create sub-directory per station
+            out_dir = os.path.abspath(out) + '/{}'.format(name)
+            if not os.path.isdir(out_dir):
+                os.makedirs(out_dir)
+            click.echo('INFO: saving output to folder {}'.format(out_dir))
 
-        # update geojson-file with geometry info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
-            geo_dict['geometry'].append(Point(lon, lat))
+            click.echo('INFO: retrieving data from Excel-file for column with name of station')
+            station_obs = df_obs[str(name)]
 
-        # get row/col combination for cell corresponding to lon/lat combination
-        click.echo('INFO: getting row/column combination from longitude/latitude.')
-        row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
-                                                                  lon=lon, 
-                                                                  lat=lat)
+            lon = locs[locs[location_id] == name].geometry.x[i]
+            lat = locs[locs[location_id] == name].geometry.y[i]
+            click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
 
-        # retrieving values at that cell
-        click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
-        df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
-        df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
+            # update geojson-file with geometry info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
+                geo_dict['geometry'].append(Point(lon, lat))
 
-        # compute scores
-        click.echo('INFO: computing scores.')
-        scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
+            # get row/col combination for cell corresponding to lon/lat combination
+            click.echo('INFO: getting row/column combination from longitude/latitude.')
+            row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
+                                                                    lon=lon, 
+                                                                    lat=lat)
 
-        # create one dataframe with scores from all stations
-        scores.index = [name]
-        all_scores = pd.concat([all_scores, scores], axis=0)
+            # retrieving values at that cell
+            click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
+            df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
+            df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
-        # update geojson-file with KGE info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
-            geo_dict['KGE'].append(scores['KGE'][0])
+            # compute scores
+            click.echo('INFO: computing scores.')
+            scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
 
-        # make as simple plot of time series if specified and save
-        if plot:
-            if verbose: click.echo('VERBOSE: plotting.')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            df_sim.plot(ax=ax, c='r')
-            df_obs.plot(ax=ax, c='k')
-            ax.set_ylabel('discharge [m3/s]')
-            ax.set_xlabel(None)
-            plt.legend()
-            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+            # create one dataframe with scores from all stations
+            scores.index = [name]
+            all_scores = pd.concat([all_scores, scores], axis=0)
+
+            # update geojson-file with KGE info
+            if geojson: 
+                if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
+                geo_dict['KGE'].append(scores['KGE'][0])
+
+            # make as simple plot of time series if specified and save
+            if plot:
+                if verbose: click.echo('VERBOSE: plotting.')
+                fig, ax = plt.subplots(1, 1, figsize=(20,10))
+                df_sim.plot(ax=ax, c='r')
+                df_obs.plot(ax=ax, c='k')
+                ax.set_ylabel('discharge [m3/s]')
+                ax.set_xlabel(None)
+                plt.legend()
+                plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
     click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
     all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
