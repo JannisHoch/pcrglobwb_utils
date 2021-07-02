@@ -199,6 +199,106 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
     
     click.echo(click.style('INFO: done.', fg='green'))
 
+#------------------------------
+
+@cli.command()
+@click.argument('ncf',)
+@click.argument('xls',)
+@click.argument('loc',)
+@click.argument('out',)
+@click.option('-nv', '--netcdf-var-name', help='variable name in netCDF-file', default='discharge', type=str)
+@click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
+@click.option('--plot/--no-plot', default=False, help='simple output plots.')
+@click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
+@click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
+@click.pass_context
+
+def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, verbose):
+
+    click.echo(click.style('INFO: start.', fg='green'))
+    click.echo(click.style('INFO: validating variable {} from file {}'.format(netcdf_var_name, ncf), fg='red'))
+    click.echo(click.style('INFO: with data from file {}'.format(xls), fg='red'))
+    click.echo(click.style('INFO: using locations from file {}'.format(loc), fg='red'))
+
+    sim = xr.open_dataset(ncf)
+
+    df_obs = pd.read_excel(xls, index_col=0)
+    df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
+
+    locs = gpd.read_file(loc, driver='GeoJSON')
+
+    # now get started with simulated data
+    click.echo('INFO: loading simulated data from {}.'.format(ncf))
+    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+
+    # prepare a geojson-file for output later (if specified)
+    if geojson:
+        click.echo('INFO: preparing geo-dict for GeoJSON output')
+        geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
+
+    for name, i in zip(locs[location_id].unique(), range(len(locs))):
+
+        if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
+
+        # update geojson-file with station info
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+            geo_dict['station'].append(name)
+
+        # create sub-directory per station
+        out_dir = os.path.abspath(out) + '/{}'.format(name)
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+        click.echo('INFO: saving output to folder {}'.format(out_dir))
+
+        click.echo('INFO: retrieving data from Excel-file for column with name of station')
+        station_obs = df_obs[str(name)]
+
+        lon = locs[locs[location_id] == name].geometry.x[i]
+        lat = locs[locs[location_id] == name].geometry.y[i]
+        click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
+
+        # update geojson-file with geometry info
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
+            geo_dict['geometry'].append(Point(lon, lat))
+
+        # get row/col combination for cell corresponding to lon/lat combination
+        click.echo('INFO: getting row/column combination from longitude/latitude.')
+        row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
+                                                                  lon=lon, 
+                                                                  lat=lat)
+
+        # retrieving values at that cell
+        click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
+        df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
+        df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
+
+        # compute scores
+        click.echo('INFO: computing scores.')
+        scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
+
+        # update geojson-file with KGE info
+        if geojson: 
+            if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
+            geo_dict['KGE'].append(scores['KGE'][0])
+            click.echo('INFO: creating geo-dataframe')
+            gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
+
+        # make as simple plot of time series if specified and save
+        if plot:
+            if verbose: click.echo('VERBOSE: plotting.')
+            fig, ax = plt.subplots(1, 1, figsize=(20,10))
+            df_sim.plot(ax=ax, c='r')
+            df_obs.plot(ax=ax, c='k')
+            ax.set_ylabel('discharge [m3/s]')
+            ax.set_xlabel(None)
+            plt.legend()
+            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+
+#------------------------------
+
 @cli.command()
 @click.argument('shp',)
 @click.argument('sim',)
@@ -390,3 +490,5 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
         plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
 
     click.echo(click.style('INFO: done.', fg='green'))
+
+#------------------------------
