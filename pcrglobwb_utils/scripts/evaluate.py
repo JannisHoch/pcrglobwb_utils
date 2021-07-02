@@ -73,6 +73,8 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         click.echo('INFO: preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
 
+    all_scores = pd.DataFrame()
+
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
     for station in data.keys():
@@ -169,6 +171,10 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         click.echo('INFO: computing scores.')
         scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
+        # create one dataframe with scores from all stations
+        scores.index = [station]
+        all_scores = pd.concat([all_scores, scores], axis=0)
+        
         # update geojson-file with KGE info
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
@@ -188,6 +194,13 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
             else:
                 plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
+    if time_scale != None:
+        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores_{}.csv'.format(time_scale))))
+        all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
+    else:
+        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
+        all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
+
     # write geojson-file to disc
     if geojson:
         click.echo('INFO: creating geo-dataframe')
@@ -196,7 +209,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
-    
+
     click.echo(click.style('INFO: done.', fg='green'))
 
 #------------------------------
@@ -236,6 +249,8 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
         click.echo('INFO: preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
 
+    all_scores = pd.DataFrame()
+    
     for name, i in zip(locs[location_id].unique(), range(len(locs))):
 
         if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
@@ -278,13 +293,14 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
         click.echo('INFO: computing scores.')
         scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
 
+        # create one dataframe with scores from all stations
+        scores.index = [name]
+        all_scores = pd.concat([all_scores, scores], axis=0)
+
         # update geojson-file with KGE info
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
             geo_dict['KGE'].append(scores['KGE'][0])
-            click.echo('INFO: creating geo-dataframe')
-            gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
-            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
 
         # make as simple plot of time series if specified and save
         if plot:
@@ -296,6 +312,14 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
             ax.set_xlabel(None)
             plt.legend()
             plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+
+    click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
+    all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
+
+    if geojson:
+        click.echo('INFO: creating geo-dataframe')
+        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+        gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
 
 #------------------------------
 
