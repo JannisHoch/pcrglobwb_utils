@@ -288,7 +288,7 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plo
 
             # compute scores
             click.echo('INFO: computing scores.')
-            scores = pcr_data.validate_results(station_obs, out_dir=out_dir, return_all_KGE=False)
+            scores = pcr_data.validate_results(station_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
             # create one dataframe with scores from all stations
             scores.index = [name]
@@ -308,16 +308,24 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plo
                 ax.set_ylabel('discharge [m3/s]')
                 ax.set_xlabel(None)
                 plt.legend()
-                plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+                if time_scale != None:
+                    plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
+                else:
+                    plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
     click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
-    all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
+    if time_scale != None:
+        all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
+    else:
+        all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
 
     if geojson:
         click.echo('INFO: creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
-        gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
-
+        if time_scale != None:
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+        else:
+            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
 #------------------------------
 
 @cli.command()
