@@ -2,8 +2,11 @@
 nc_file='..\../examples\example_data\GRDC\DUMMY_discharge_dailyTot_output.nc'
 yaml_file='../../examples/example_data/GRDC/stations.yaml'
 folder='../../examples/example_data/GRDC/files'
+excel_file='../../examples/example_data/GRDC/Obidos_data.xlsx'
+loc='../../examples/example_data/GRDC/stations.geojson'
 yml_out_dir='eval_GRDC/from_yml/'
 fld_out_dir='eval_GRDC/from_folder/'
+xls_out_dir='eval_GRDC/from_xls/'
 
 # execute script
 echo
@@ -12,7 +15,11 @@ pcr_utils_evaluate --version grdc -y $yaml_file --plot --verbose $nc_file $yml_o
 
 echo
 echo WITHOUT RESAMPLING FROM FOLDER
-pcr_utils_evaluate --version grdc -f $folder --plot $nc_file $fld_out_dir 
+pcr_utils_evaluate grdc -f $folder --plot $nc_file $fld_out_dir 
+
+echo
+echo WITHOUT RESAMPLING FROM EXCEL-FILE
+pcr_utils_evaluate excel -nv discharge -id station --plot --verbose $nc_file $excel_file $loc $xls_out_dir 
 
 echo 
 echo RESAMPLING TO MONTHLY DATA FROM YAML-FILE
