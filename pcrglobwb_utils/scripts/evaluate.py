@@ -148,24 +148,9 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
         # resample if specified to other time scales
-        if time_scale == 'month':
-            click.echo('INFO: resampling data to monthly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('M', convention='start').mean()
-            if verbose: click.echo('VERBOSE: then for observed data')
-            df_obs = df_obs.resample('M', convention='start').mean()
-        if time_scale == 'year':
-            click.echo('INFO: resampling data to yearly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('Y', convention='start').mean()
-            if verbose: click.echo('VERBOSE: then for observed data')
-            df_obs = df_obs.resample('Y', convention='start').mean()
-        if time_scale == 'quarter':
-            click.echo('INFO: resampling data to quarterly time scale.')
-            if verbose: click.echo('VERBOSE: first for simulated data')
-            df_sim = df_sim.resample('Q', convention='start').agg('mean')
-            if verbose: click.echo('VERBOSE: then for observed data')
-            df_obs = df_obs.resample('Q', convention='start').agg('mean')
+        if time_scale != None:
+                df_sim = funcs.resample_timeseries(df_sim, time_scale)
+                df_obs = funcs.resample_timeseries(df_obs, time_scale)
 
         # compute scores
         click.echo('INFO: computing scores.')
@@ -221,12 +206,13 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
 @click.argument('out',)
 @click.option('-nv', '--netcdf-var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
+@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, verbose):
+def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, time_scale, plot, geojson, verbose):
 
     click.echo(click.style('INFO: start.', fg='green'))
     click.echo(click.style('INFO: validating variable {} from file {}'.format(netcdf_var_name, ncf), fg='red'))
@@ -294,6 +280,11 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, plot, geojson, 
             click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
             df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
             df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
+
+            # resample if specified to other time scales
+            if time_scale != None:
+                df_sim = funcs.resample_timeseries(df_sim, time_scale)
+                df_obs = funcs.resample_timeseries(df_obs, time_scale)
 
             # compute scores
             click.echo('INFO: computing scores.')
