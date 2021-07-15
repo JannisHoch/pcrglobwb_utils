@@ -68,6 +68,10 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         # note that 'data' is in fact a dictionary here!
         data = funcs.glob_folder(folder, verbose)
 
+    # now get started with simulated data
+    click.echo('INFO: loading simulated data from {}.'.format(ncf))
+    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
@@ -132,15 +136,9 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
             if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
             geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
 
-        # now get started with simulated data
-        click.echo('INFO: loading simulated data from {}.'.format(ncf))
-        pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
-
         # get row/col combination for cell corresponding to lon/lat combination
         click.echo('INFO: getting row/column combination from longitude/latitude.')
-        row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
-                                                                  lon=props['longitude'], 
-                                                                  lat=props['latitude'])
+        row, col = pcr_data.find_indices_from_coords(props['longitude'], props['latitude'])
 
         # retrieving values at that cell
         click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
@@ -282,9 +280,7 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_fact
 
             # get row/col combination for cell corresponding to lon/lat combination
             click.echo('INFO: getting row/column combination from longitude/latitude.')
-            row, col = pcrglobwb_utils.utils.find_indices_from_coords(ncf, 
-                                                                    lon=lon, 
-                                                                    lat=lat)
+            row, col = pcr_data.find_indices_from_coords(lon, lat)
 
             # retrieving values at that cell
             click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))

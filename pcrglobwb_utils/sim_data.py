@@ -1,6 +1,7 @@
 import xarray as xr
 import pandas as pd
 import spotpy as sp
+import numpy as np
 import click
 import os
 
@@ -15,7 +16,22 @@ class from_nc:
         """Initializing class.
         """
 
-        self.ds = fo
+        self.ds = xr.open_dataset(fo, engine='netcdf4')
+
+    def find_indices_from_coords(self, lon, lat):
+
+        try:
+            abslat = np.abs(self.ds.lat-lat)
+            abslon = np.abs(self.ds.lon-lon)
+        except:
+            abslat = np.abs(self.ds.latitude-lat)
+            abslon = np.abs(self.ds.longitude-lon)
+
+        c = np.maximum(abslon, abslat)
+
+        ([idx_col], [idx_row]) = np.where(c == np.min(c))
+
+        return idx_row, idx_col
     
     def read_values_at_indices(self, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
         """Reading a nc-file and retrieving variable values at given column and row indices. Default setting is that discharge is extracted at this point. Resulting timeseries is stored as pandas timeframe and can be plotted with user-specified variable name and title.
@@ -33,15 +49,12 @@ class from_nc:
         Returns:
             dataframe: dataframe containing values
         """
-
-        # open file
-        ds = xr.open_dataset(self.ds)
         
         # read variable values at indices as xarray DataArray
         try:
-            dsq = ds[var_name].isel(lat=idx_row, lon=idx_col)
+            dsq = self.ds[var_name].isel(lat=idx_row, lon=idx_col)
         except:
-            dsq = ds[var_name].isel(latitude=idx_row, longitude=idx_col)
+            dsq = self.ds[var_name].isel(latitude=idx_row, longitude=idx_col)
         
         # change variable names if specified
         if plot_var_name != None:
@@ -54,9 +67,6 @@ class from_nc:
         # plot if specified
         if plot == True:
             df.plot(title=plot_title)
-        
-        # close file
-        ds.close()
 
         if (pd.infer_freq(df.index) == 'M') or (pd.infer_freq(df.index) == 'MS'):
             print('changing index strftime to %Y-%m')

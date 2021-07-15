@@ -75,7 +75,7 @@ class grdc_data:
 
         return plot_title, self.props
 
-    def get_grdc_station_values(self, var_name, col_name='Value', remove_mv=True, mv_val=-999, verbose=False):
+    def get_grdc_station_values(self, var_name, col_name=' Value', remove_mv=True, mv_val=-999, verbose=False):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
 
         Arguments:
