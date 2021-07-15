@@ -157,11 +157,19 @@ class from_nc:
             df_sim = self.df
         
         # concatenate both dataframes
-        both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
+        try:
+            both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
+        except:
+            click.echo('WARNING: concatenation did not succeed, now trying to resolve by removing duplicate indices.')
+            df_obs = df_obs[~df_obs.index.duplicated(keep='first')]
+            df_sim = df_sim[~df_sim.index.duplicated(keep='first')]
+            both = pd.concat([df_obs, df_sim], axis=1, join="inner", verify_integrity=True)
+
         if suffix != None:
             both.to_csv(os.path.join(out_dir, 'evaluated_timeseries_{}.csv'.format(suffix)))
         else:
             both.to_csv(os.path.join(out_dir, 'evaluated_timeseries.csv'))
+
         # drop all entries where any of the dataframes contains NaNs
         # this yields a dataframe containing values only for common time period
         both_noMV = both.dropna()
