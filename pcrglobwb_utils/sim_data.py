@@ -3,7 +3,7 @@ import pandas as pd
 import spotpy as sp
 import numpy as np
 import click
-import os
+import os, sys
 
 class from_nc:
     """Retrieving and working with timeseries data from a nc-file.
@@ -29,7 +29,11 @@ class from_nc:
 
         c = np.maximum(abslon, abslat)
 
-        ([idx_col], [idx_row]) = np.where(c == np.min(c))
+        try:
+            ([idx_col], [idx_row]) = np.where(c == np.min(c))
+        except:
+            idxs = np.where(c == np.min(c))
+            idx_col, idx_row = (np.min(idxs[0]), np.min(idxs[1]))
 
         return idx_row, idx_col
     
@@ -186,7 +190,7 @@ class from_nc:
 
         # raise error if there is no common time period
         if both.empty:
-            raise Warning('WARNING: no common time period of observed and simulated values found in dataframes!')
+            click.echo('WARNING: no common time period of observed and simulated values found in dataframes!')
         
         # convert to np-arrays
         obs = both_noMV[both_noMV.columns[0]].to_numpy()

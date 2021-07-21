@@ -127,13 +127,13 @@ class grdc_data:
             df_out.replace(mv_val, np.nan, inplace=True)
 
         if (pd.infer_freq(df_out.index) == 'M') or (pd.infer_freq(df_out.index) == 'MS'):
-            if verbose: print('changing index strftime to %Y-%m')
+            # if verbose: print('changing index strftime to %Y-%m')
             df_out.index = df_out.index.strftime('%Y-%m')
 
         self.df = df_out
 
-        self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
-        self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
+        # self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
+        # self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
 
         return self.df, self.props
         

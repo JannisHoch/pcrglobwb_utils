@@ -33,13 +33,14 @@ def cli(ctx, version):
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC-files.', type=str)
 @click.option('-f', '--folder', default=None, help='path to folder with GRDC-files.', type=click.Path())
+@click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, verbose):
+def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, time_scale, geojson, plot, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -66,7 +67,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, time_scale, geojson, plot, 
         data, yaml_root = funcs.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data = funcs.glob_folder(folder, verbose)
+        data = funcs.glob_folder(folder, grdc_column, verbose)
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
