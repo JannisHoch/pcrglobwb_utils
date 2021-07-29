@@ -16,7 +16,7 @@ To use pcrglobwb_utils in a project:
 
 You have then all the functions available to be used in a bespoke Python-script for output analysis.
 
-See the jupyter notebook in the examples folder for a (limited) overview of the functions and their application.
+See the jupyter notebook in the :ref:`Examples`  for more information. They also contain links to interactive versions hosted on myBinder.
 
 From command line
 ---------------------
