@@ -372,7 +372,7 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
     Returns a GeoJSON-file of r and RMSE per polygon, and if specified as simple plot. 
     Also returns scores of r and RMSE as dataframe.
     
-    SHP: path to shp-file with one or more polygons.
+    SHP: path to shp-file or geojson-file with one or more polygons.
 
     SIM: path to netCDF-file with simulated data.
 
@@ -415,8 +415,11 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
         sim_daysinmonth = sim_idx.daysinmonth.values
 
     # read shapefile with one or more polygons
-    print('INFO: reading shp-file {}'.format(os.path.abspath(shp)))
-    extent_gdf = gpd.read_file(shp, crs=coordinate_system)
+    print('INFO: reading polygons from file {}'.format(os.path.abspath(shp)))
+    try:
+        extent_gdf = gpd.read_file(shp, crs=coordinate_system)
+    except:
+        extent_gdf = gpd.read_file(shp, crs=coordinate_system, driver='GeoJSON')
 
     # align spatial settings of nc-files to be compatible with shp-file
     click.echo('INFO: setting spatial dimensions and crs of nc-files')
