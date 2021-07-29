@@ -1,9 +1,9 @@
 Obidos:
   file: './files/3629000_Obidos.day'
-  column: ' Calculated'
+  column: ' Original'
 
 Jaturana:
   file: './files/3627000_Jatuarana.day'
   lon: -59.65
   lat: -3.05
-  column: ' Original'
+  column: ' Calculated'

@@ -19,7 +19,7 @@ pcr_utils_evaluate grdc -f $folder --plot $nc_file $fld_out_dir
 
 echo
 echo WITHOUT RESAMPLING FROM EXCEL-FILE
-pcr_utils_evaluate excel -nv discharge -id station --plot --verbose $nc_file $excel_file $loc $xls_out_dir 
+pcr_utils_evaluate excel -v discharge -id station --plot --verbose $nc_file $excel_file $loc $xls_out_dir 
 
 echo 
 echo RESAMPLING TO MONTHLY DATA FROM YAML-FILE

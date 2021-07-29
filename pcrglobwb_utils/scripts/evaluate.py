@@ -212,19 +212,38 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, time_scale, ge
 @click.argument('xls',)
 @click.argument('loc',)
 @click.argument('out',)
-@click.option('-nv', '--netcdf-var-name', help='variable name in netCDF-file', default='discharge', type=str)
+@click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
-@click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_factor, time_scale, plot, geojson, verbose):
+def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, verbose):
+    """Uses pcrglobwb_utils to validate simulated time series
+    with observations for one or more stations. The station names and their locations need to be provided via geojson-file.
+    Observations are read from Excel-file and analysis will be performed for all stations with matching names in Excel-file columns and geojson-file.
+    The Excel-file must have only one sheet with first column being time stamps of observed values, and all other columns are observed values per station.
+    These columns must have a header with the station name.
+    The script faciliates resampling to other temporal resolutions.
+
+    Returns a csv-file with the evaluated time series (OBS and SIM), 
+    a csv-file with the resulting scores (KGE, r, RMSE, NSE), 
+    and if specified a simple plot of the time series.
+    If specified, it also returns a geojson-file containing KGE values per station evaluated.
+
+    NCF: Path to the netCDF-file with simulations.
+
+    XLS: Path to Excel-file containing dates and values per station.
+
+    LOC: Path to geojson-file containing location and names of stations.
+        
+    OUT: Main output directory. Per station, a sub-directory will be created.
+    """    
 
     click.echo(click.style('INFO: start.', fg='green'))
-    click.echo(click.style('INFO: validating variable {} from file {}'.format(netcdf_var_name, ncf), fg='red'))
+    click.echo(click.style('INFO: validating variable {} from file {}'.format(var_name, ncf), fg='red'))
     click.echo(click.style('INFO: with data from file {}'.format(xls), fg='red'))
     click.echo(click.style('INFO: using locations from file {}'.format(loc), fg='red'))
 
@@ -284,8 +303,8 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_fact
             row, col = pcr_data.find_indices_from_coords(lon, lat)
 
             # retrieving values at that cell
-            click.echo('INFO: reading variable {} at row {} and column {}.'.format(netcdf_var_name, row, col))
-            df_sim = pcr_data.read_values_at_indices(row, col, var_name=netcdf_var_name, plot_var_name='SIM')
+            click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
+            df_sim = pcr_data.read_values_at_indices(row, col, var_name=var_name, plot_var_name='SIM')
             df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
             # resample if specified to other time scales
@@ -347,32 +366,32 @@ def EXCEL(ctx, ncf, xls, loc, out, netcdf_var_name, location_id, conversion_fact
 #------------------------------
 
 @cli.command()
-@click.argument('shp',)
+@click.argument('ply',)
 @click.argument('sim',)
 @click.argument('obs',)
 @click.argument('out',)
-@click.option('-id', '--shp-id', help='unique identifier in shp-file.', type=str)
+@click.option('-id', '--ply-id', help='unique identifier in file containing polygons.', type=str)
 @click.option('-o', '--obs_var_name', help='variable name in observations.', type=str)
 @click.option('-s', '--sim_var_name', help='variable name in simulations.', type=str)
 @click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
 @click.option('--sum/--no-sum', default=False, help='whether or not the simulated values or monthly totals or not.')
-@click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot fo results.')
+@click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
-    Computes r and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
+    Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
     Each polygon needs to have a unique ID.
     Contains multiple options to align function settings with data and evaluation properties.
 
-    Returns a GeoJSON-file of r and RMSE per polygon, and if specified as simple plot. 
-    Also returns scores of r and RMSE as dataframe.
+    Returns a GeoJSON-file of r, MSE, and RMSE per polygon, and if specified as simple plot. 
+    Also returns scores of r, MSE, and RMSE per polygon as dataframe.
     
-    SHP: path to shp-file or geojson-file with one or more polygons.
+    PLY: path to shp-file or geojson-file with one or more polygons.
 
     SIM: path to netCDF-file with simulated data.
 
@@ -415,13 +434,13 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
         sim_daysinmonth = sim_idx.daysinmonth.values
 
     # read shapefile with one or more polygons
-    print('INFO: reading polygons from file {}'.format(os.path.abspath(shp)))
+    print('INFO: reading polygons from file {}'.format(os.path.abspath(ply)))
     try:
-        extent_gdf = gpd.read_file(shp, crs=coordinate_system)
+        extent_gdf = gpd.read_file(ply, crs=coordinate_system)
     except:
-        extent_gdf = gpd.read_file(shp, crs=coordinate_system, driver='GeoJSON')
+        extent_gdf = gpd.read_file(ply, crs=coordinate_system, driver='GeoJSON')
 
-    # align spatial settings of nc-files to be compatible with shp-file
+    # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
     click.echo('INFO: setting spatial dimensions and crs of nc-files')
     try:
         obs_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
@@ -439,11 +458,11 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
     out_dict = {}
 
     click.echo('INFO: evaluating each polygon')
-    # go through all polygons in the shp-file as identfied by a unique ID
-    for ID in extent_gdf[shp_id].unique():
+    # go through all polygons in the ply-file as identfied by a unique ID
+    for ID in extent_gdf[ply_id].unique():
 
         if verbose: click.echo('VERBOSE: computing R and RMSE for polygon with key identifier {}'.format(ID))
-        poly = extent_gdf.loc[extent_gdf[shp_id] == ID]
+        poly = extent_gdf.loc[extent_gdf[ply_id] == ID]
 
         # clipping obs data-array to shape extent
         obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
@@ -518,12 +537,12 @@ def POLY(ctx, shp, sim, obs, out, shp_id, obs_var_name, sim_var_name, sum, anoma
 
     # convert 'master' dict to dataframe and store to file
     out_df = pd.DataFrame().from_dict(out_dict).T
-    out_df.index.name = shp_id
+    out_df.index.name = ply_id
     click.echo('INFO: storing dictionary to {}.'.format(os.path.join(out, 'output_dict.csv')))
     out_df.to_csv(os.path.join(out, '{}_vs_{}.csv'.format(sim_var_name, obs_var_name)))
 
     # assign evaluation metrics per polygon to geometry and store to file
-    gdf_out = extent_gdf.merge(out_df, on=shp_id)
+    gdf_out = extent_gdf.merge(out_df, on=ply_id)
     click.echo('INFO: storing polygons to {}.'.format(os.path.join(out, 'output_polygons.geojson')))
     gdf_out.to_file(os.path.join(out, '{}_vs_{}.geojson'.format(sim_var_name, obs_var_name)), driver='GeoJSON')
 
