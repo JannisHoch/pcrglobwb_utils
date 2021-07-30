@@ -30,7 +30,10 @@ class grdc_data:
         """
         
         # open file
-        fp = open(self.fo)
+        try:
+            f = open(self.fo)
+        except:
+            f = open(self.fo, encoding='ascii')
         
         # go through lines in file
         for i, line in enumerate(fp):
@@ -94,7 +97,10 @@ class grdc_data:
         #TODO: this function should also work if get_grdc_station_properties() was not executed before;
         #TODO: because, if not executed before, self.props is no attribute yet and function exists with error
 
-        f = open(self.fo)
+        try:
+            f = open(self.fo)
+        except:
+            f = open(self.fo, encoding='ascii')
 
         for i, line in enumerate(f):
             if '#' in line:
