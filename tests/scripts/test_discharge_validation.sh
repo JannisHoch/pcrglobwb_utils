@@ -15,7 +15,7 @@ pcr_utils_evaluate --version grdc -y $yaml_file -e ascii --plot --verbose $nc_fi
 
 echo
 echo WITHOUT RESAMPLING FROM FOLDER
-pcr_utils_evaluate grdc -f $folder -e ascii --plot $nc_file $fld_out_dir 
+pcr_utils_evaluate grdc -f $folder --plot $nc_file $fld_out_dir 
 
 echo
 echo WITHOUT RESAMPLING FROM EXCEL-FILE
