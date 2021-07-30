@@ -36,7 +36,7 @@ class grdc_data:
             f = open(self.fo, encoding='ascii')
         
         # go through lines in file
-        for i, line in enumerate(fp):
+        for i, line in enumerate(f):
             
             # station name normally in line 11 of GRDC file
             if i == 10:
@@ -66,7 +66,7 @@ class grdc_data:
                 break
                 
         # close file        
-        fp.close()
+        f.close()
         
         # write station name, latitude, and longitude to dic
         self.props = dict(station=str(station_grdc), 
