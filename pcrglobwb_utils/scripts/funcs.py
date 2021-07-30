@@ -37,7 +37,7 @@ def read_yml(yaml_file):
 
     return data, yaml_root
 
-def glob_folder(folder, grdc_column, verbose):
+def glob_folder(folder, grdc_column, verbose, encoding='ISO-8859-1'):
     """Collects and reads all files within a folder.
     Assumes all files are GRDC files and retrieves station properties and values from file.
     Returns all of this info as dictionary.
@@ -50,13 +50,13 @@ def glob_folder(folder, grdc_column, verbose):
     dd = dict()
 
     for f in files:
-        click.echo('INFO: loading GRDC file {}.'.format(f))
+        click.echo('INFO: loading GRDC file {} with encoding {}.'.format(f, encoding))
         grdc_data = pcrglobwb_utils.obs_data.grdc_data(f)
         # if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
-        plot_title, props = grdc_data.get_grdc_station_properties()
+        plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)
 
         # retrieving values from GRDC file
-        df_obs, props = grdc_data.get_grdc_station_values(col_name=grdc_column, var_name='OBS', verbose=verbose)
+        df_obs, props = grdc_data.get_grdc_station_values(col_name=grdc_column, var_name='OBS', encoding=encoding, verbose=verbose)
 
         df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
 

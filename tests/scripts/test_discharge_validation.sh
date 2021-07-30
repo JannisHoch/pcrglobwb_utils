@@ -11,11 +11,11 @@ xls_out_dir='eval_GRDC/from_xls/'
 # execute script
 echo
 echo WITHOUT RESAMPLING FROM YAML-FILE
-pcr_utils_evaluate --version grdc -y $yaml_file --plot --verbose $nc_file $yml_out_dir 
+pcr_utils_evaluate --version grdc -y $yaml_file -e ascii --plot --verbose $nc_file $yml_out_dir 
 
 echo
 echo WITHOUT RESAMPLING FROM FOLDER
-pcr_utils_evaluate grdc -f $folder --plot $nc_file $fld_out_dir 
+pcr_utils_evaluate grdc -f $folder -e ascii --plot $nc_file $fld_out_dir 
 
 echo
 echo WITHOUT RESAMPLING FROM EXCEL-FILE

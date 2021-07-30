@@ -20,8 +20,8 @@ class grdc_data:
         """
 
         self.fo = fo
-
-    def get_grdc_station_properties(self):
+        
+    def get_grdc_station_properties(self, encoding='ISO-8859-1'):
         """Retrieves GRDC station properties from txt-file. Creates and returns header from those properties as well as a dictionary containt station name, lat, and lon info.
 
         Returns:
@@ -30,10 +30,7 @@ class grdc_data:
         """
         
         # open file
-        try:
-            f = open(self.fo)
-        except:
-            f = open(self.fo, encoding='ascii')
+        f = open(self.fo, encoding=encoding)
         
         # go through lines in file
         for i, line in enumerate(f):
@@ -78,7 +75,7 @@ class grdc_data:
 
         return plot_title, self.props
 
-    def get_grdc_station_values(self, var_name, col_name=' Value', remove_mv=True, mv_val=-999, verbose=False):
+    def get_grdc_station_values(self, var_name, col_name=' Value', remove_mv=True, mv_val=-999, encoding='ISO-8859-1', verbose=False):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
 
         Arguments:
@@ -97,10 +94,8 @@ class grdc_data:
         #TODO: this function should also work if get_grdc_station_properties() was not executed before;
         #TODO: because, if not executed before, self.props is no attribute yet and function exists with error
 
-        try:
-            f = open(self.fo)
-        except:
-            f = open(self.fo, encoding='ascii')
+        # open file
+        f = open(self.fo, encoding=encoding)
 
         for i, line in enumerate(f):
             if '#' in line:
