@@ -77,7 +77,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'MSE': list(), 'RMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
 
@@ -173,6 +173,8 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
             geo_dict['KGE'].append(scores['KGE'][0])
+            geo_dict['MSE'].append(scores['MSE'][0])
+            geo_dict['RMSE'].append(scores['RMSE'][0])
 
         # make as simple plot of time series if specified and save
         if plot:
