@@ -9,10 +9,14 @@ import pandas as pd
 import numpy as np
 from shapely.geometry import Point
 import geopandas as gpd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import yaml
 import spotpy
 import os
+
+
 
 @click.group()
 @click.option('--version/--no-version', default=False)
