@@ -81,7 +81,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'MSE': list(), 'RMSE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
 
@@ -177,6 +177,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
         if geojson: 
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
             geo_dict['KGE'].append(scores['KGE'][0])
+            geo_dict['R2'].append(scores['R2'][0])
             geo_dict['MSE'].append(scores['MSE'][0])
             geo_dict['RMSE'].append(scores['RMSE'][0])
 
@@ -206,9 +207,9 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
         click.echo('INFO: creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
         if time_scale != None:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
+            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
 
     click.echo(click.style('INFO: done.', fg='green'))
 
@@ -236,9 +237,9 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     The script faciliates resampling to other temporal resolutions.
 
     Returns a csv-file with the evaluated time series (OBS and SIM), 
-    a csv-file with the resulting scores (KGE, r, RMSE, NSE), 
+    a csv-file with the resulting scores (KGE, R2, RMSE, NSE), 
     and if specified a simple plot of the time series.
-    If specified, it also returns a geojson-file containing KGE values per station evaluated.
+    If specified, it also returns a geojson-file containing KGE and R2 values per station evaluated.
 
     NCF: Path to the netCDF-file with simulations.
 
@@ -268,7 +269,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
     
@@ -338,8 +339,9 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
             # update geojson-file with KGE info
             if geojson: 
-                if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
+                if verbose: click.echo('VERBOSE: adding station validation metrics to geo-dict')
                 geo_dict['KGE'].append(scores['KGE'][0])
+                geo_dict['R2'].append(scores['R2'][0])
 
             # make as simple plot of time series if specified and save
             if plot:
@@ -365,9 +367,9 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
         click.echo('INFO: creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
         if time_scale != None:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'KGE_per_location.geojson'), driver='GeoJSON')
+            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
 
     click.echo(click.style('INFO: done.', fg='green'))
 #------------------------------
