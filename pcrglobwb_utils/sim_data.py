@@ -18,6 +18,14 @@ class from_nc:
 
         self.ds = xr.open_dataset(fo, engine='netcdf4')
 
+    def get_copy(self):
+
+        print('returning copy of xarray dataset')
+
+        cp = self.ds.copy()
+
+        return cp
+
     def find_indices_from_coords(self, lon, lat):
 
         try:
