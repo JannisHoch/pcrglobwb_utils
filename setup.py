@@ -34,7 +34,8 @@ setup(
     description="Handy functions to work with PCR-GLOBWB input and output",
     entry_points={
         'console_scripts': [
-            'pcr_utils_evaluate = pcrglobwb_utils.scripts.evaluate:cli',
+            'pcru_eval_tims = pcrglobwb_utils.scripts.evaluate_tims:cli',
+            'pcru_eval_poly = pcrglobwb_utils.scripts.evaluate_poly:cli',
         ],
     },
     install_requires=requirements,
