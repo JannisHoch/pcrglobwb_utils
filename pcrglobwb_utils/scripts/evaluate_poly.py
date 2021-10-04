@@ -13,20 +13,7 @@ import matplotlib.pyplot as plt
 import spotpy
 import os
 
-@click.group()
-@click.option('--version/--no-version', default=False)
-@click.pass_context
-
-def cli(ctx, version):
-
-    ctx.ensure_object(dict)
-    # ctx.obj['DATA'] = data
-    # ctx.obj['NODE_NUMBER'] = node_number
-    ctx.obj['VERSION'] = version
-
-    if version: click.echo(click.style('INFO: starting evaluation with pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
-
-@cli.command()
+@click.command()
 @click.argument('ply',)
 @click.argument('sim',)
 @click.argument('obs',)
@@ -37,12 +24,12 @@ def cli(ctx, version):
 @click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
-@click.option('--sum/--no-sum', default=False, help='whether or not the simulated values or monthly totals or not.')
+@click.option('--o_sum/--no-o_sum', default=False, help='whether or not the observed values or monthly totals or not.')
+@click.option('--s_sum/--no-s_sum', default=False, help='whether or not the simulated values or monthly totals or not.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
-@click.pass_context
 
-def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, o_sum, s_sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -63,6 +50,7 @@ def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anoma
     """    
 
     click.echo(click.style('INFO: start.', fg='green'))
+    if verbose: click.echo(click.style('VERBOSE: using pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
     # print some info at the beginning
     click.echo(click.style('INFO: validating variable {} from file {}'.format(sim_var_name, sim), fg='red'))
@@ -89,9 +77,11 @@ def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anoma
     obs_idx = pd.to_datetime(pd.to_datetime(obs_ds.time.values).strftime('%Y-%m'))
     sim_idx = pd.to_datetime(pd.to_datetime(sim_ds.time.values).strftime('%Y-%m'))
 
-    if sum:
-        click.echo('INFO: converting monthly sum to monthly mean.')
+    if o_sum:
+        click.echo('INFO: converting observed monthly totals to monthly mean.')
         obs_daysinmonth = obs_idx.daysinmonth.values
+    if s_sum:
+        click.echo('INFO: converting simulated monthly totals to monthly mean.')
         sim_daysinmonth = sim_idx.daysinmonth.values
 
     # read shapefile with one or more polygons
@@ -151,15 +141,21 @@ def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anoma
             mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
             mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
 
-        if sum:
+        if o_sum:
             
-            if verbose: click.echo('VERBOSE: computing average daily values from monthly sum by dividing sum with days in month.')
-            
+            if verbose: click.echo('VERBOSE: computing average observed monthly values from monthly totals by dividing with days in month.')
             obs_tuples = list(zip(mean_val_timestep_obs, obs_daysinmonth))
             obs_df = pd.DataFrame(obs_tuples, index=obs_idx, columns=[obs_var_name, 'obs_daysinmonth'])
             obs_df[obs_var_name] = obs_df[obs_var_name].divide(obs_df['obs_daysinmonth'])
             del obs_df['obs_daysinmonth']
 
+        else:
+
+            obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
+
+        if s_sum:
+
+            if verbose: click.echo('VERBOSE: computing average simulated monthly values from monthly totals by dividing with days in month.')
             sim_tuples = list(zip(mean_val_timestep_sim, sim_daysinmonth))
             sim_df = pd.DataFrame(data=sim_tuples, index=sim_idx, columns=[sim_var_name, 'sim_daysinmonth'])
             sim_df[sim_var_name] = sim_df[sim_var_name].divide(sim_df['sim_daysinmonth'])
@@ -167,7 +163,6 @@ def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anoma
 
         else:
 
-            obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
             sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
 
         # accounting for missing values in time series (and thus missing index values!)
@@ -221,4 +216,5 @@ def POLY(ctx, ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, sum, anoma
 
     click.echo(click.style('INFO: done.', fg='green'))
 
-#------------------------------
+# if __name__ == '__main__':
+#     POLY()
