@@ -65,4 +65,15 @@ def test_daily2yearly():
 
     assert float(df_test.sum()) == float(df.sum())
 
+def test_get_grdc_station_properties():
+
+    # path is relative to main pcrglobwb_utils folder
+    fo = './examples/example_data/GRDC/files/3629000_Obidos.day'
+
+    obs = pcrglobwb_utils.obs_data.grdc_data(fo)
+
+    plot_title, properties = obs.get_grdc_station_properties()
+
+    assert properties['station'] == 'OBIDOS - PORTO'
+
 
