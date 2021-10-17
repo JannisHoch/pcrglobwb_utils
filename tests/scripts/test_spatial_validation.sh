@@ -16,3 +16,17 @@ echo
 echo VALIDATING WITH GLEAM
 
 pcru_eval_poly -o E -s total_evaporation -cf 1000 -id watprovID --s_sum --plot $shp $sim $obs $out
+
+echo
+echo VALIDATING WITH GLEAM - SHOULD CRASH
+
+pcru_eval_poly -o E -s total_evaporation -cf 1000 -id watprovID -tstep annual --s_sum --plot $shp $sim $obs $out
+
+obs='../../examples/example_data/GLEAM/GLEAM_data_2010_Tanzania_annualMean.nc'
+sim='../../examples/example_data/GLEAM/totalEvaporation_monthTot_output_2010_Tanzania_annualMean.nc'
+out='./eval_GLEAM_annualMean'
+
+echo
+echo VALIDATING WITH GLEAM - ANNUAL TIMESTEP
+
+pcru_eval_poly -o E -s total_evaporation -cf 1000 -id watprovID -tstep annual --plot $shp $sim $obs $out

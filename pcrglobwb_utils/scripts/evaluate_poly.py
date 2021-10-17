@@ -23,13 +23,14 @@ import os
 @click.option('-s', '--sim_var_name', help='variable name in simulations.', type=str)
 @click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
+@click.option('--time-step', '-tstep', help='timestep of data - either "monthly" or "annual". Note that both observed and simualted data must be annual average if the latter option is chosen.', default='monthly', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
 @click.option('--o_sum/--no-o_sum', default=False, help='whether or not the observed values or monthly totals or not.')
 @click.option('--s_sum/--no-s_sum', default=False, help='whether or not the simulated values or monthly totals or not.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, o_sum, s_sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_sum, s_sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -47,7 +48,10 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, o_sum, s_sum, a
 
     OUT: Path to output folder. Will be created if not there yet.
 
-    """    
+    """  
+
+    if (o_sum and time_step == 'annual') or (s_sum and time_step == 'annual'):
+        raise ValueError('ERROR: not possible to have o_sum or s_sum together with annual timestep. o_sum and s_sum only work with monthly timestep.')  
 
     click.echo(click.style('INFO: start.', fg='green'))
     if verbose: click.echo(click.style('VERBOSE: using pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
@@ -166,9 +170,14 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, o_sum, s_sum, a
             sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
 
         # accounting for missing values in time series (and thus missing index values!)
-        if verbose: click.echo('VERBOSE: covering missing months in observation or simulation data.')
-        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
-        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
+        if time_step == 'monthly':
+            if verbose: click.echo('VERBOSE: covering missing months in observation or simulation data.')
+            obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+            sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
+        if time_step == 'annual':
+            if verbose: click.echo('VERBOSE: covering missing years in observation or simulation data.')
+            obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
+            sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
 
         # concatenating both dataframes to drop rows with missing values in one of the columns
         # dropping rows with missing values is import because time extents of both files probably do not match
