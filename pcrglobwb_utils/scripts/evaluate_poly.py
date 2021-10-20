@@ -25,8 +25,8 @@ import os
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--time-step', '-tstep', help='timestep of data - either "monthly" or "annual". Note that both observed and simualted data must be annual average if the latter option is chosen.', default='monthly', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
-@click.option('--o_sum/--no-o_sum', default=False, help='whether or not the observed values or monthly totals or not.')
-@click.option('--s_sum/--no-s_sum', default=False, help='whether or not the simulated values or monthly totals or not.')
+@click.option('--o_sum/--no-o_sum', default=False, help='can be set to compute monthly averages from totals for observed data - does not work with annual data. WILL BE DEPRECATED SOON.')
+@click.option('--s_sum/--no-s_sum', default=False, help='can be set to compute monthly averages from totals for simulated data - does not work with annual data. WILL BE DEPRECATED SOON.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
