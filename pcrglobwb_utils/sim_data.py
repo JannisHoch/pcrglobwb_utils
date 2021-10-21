@@ -146,7 +146,7 @@ class from_nc:
 
 
     def validate_results(self, df_obs, out_dir, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
-        """Validates simulated values with observations. Computes KGE, NSE, MSE, RMSE, and R2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
+        """Validates simulated values with observations. Computes KGE, NSE, MSE, RMSE, RRMSE, and R2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
         Arguments:
             df_obs (dataframe): pandas dataframe containing observed values
@@ -209,6 +209,7 @@ class from_nc:
         nse = sp.objectivefunctions.nashsutcliffe(obs, sim)
         mse = sp.objectivefunctions.mse(obs, sim)
         rmse = sp.objectivefunctions.rmse(obs, sim)
+        rrmse = sp.objectivefunctions.rrmse(obs, sim)
         r2 = sp.objectivefunctions.rsquared(obs, sim)
         
         # fill dict
@@ -216,6 +217,7 @@ class from_nc:
                     'NSE': nse,
                     'MSE': mse,
                     'RMSE': rmse,
+                    'RRMSE': rrmse,
                     'R2': r2}
 
         # save dict to csv
