@@ -38,7 +38,7 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
     Contains multiple options to align function settings with data and evaluation properties.
 
     Returns a GeoJSON-file of r, MSE, and RMSE per polygon, and if specified as simple plot. 
-    Also returns scores of r, MSE, and RMSE per polygon as dataframe.
+    Also returns scores of r, MSE, RMSE, and RRMSE per polygon as dataframe.
     
     PLY: path to shp-file or geojson-file with one or more polygons.
 
@@ -188,14 +188,17 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
         r = spotpy.objectivefunctions.correlationcoefficient(final_df[obs_var_name].values, final_df[sim_var_name].values)
         mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
         rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-        if verbose: click.echo('INFO: correlation coefficient is {}'.format(r))
-        if verbose: click.echo('INFO: Mean Squared Error is {}'.format(mse))
-        if verbose: click.echo('INFO: Root Mean Squared Error is {}'.format(rmse))
+        rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+        if verbose: click.echo('INFO: R is {}'.format(r))
+        if verbose: click.echo('INFO: MSE is {}'.format(mse))
+        if verbose: click.echo('INFO: RMSE is {}'.format(rmse))
+        if verbose: click.echo('INFO: RRMSE is {}'.format(rrmse))
 
         # save metrics to polygon-specific dict
         poly_skill_dict = {'R': round(r, 3),
                            'MSE': round(mse, 1),
-                           'RMSE': round(rmse, 1)}
+                           'RMSE': round(rmse, 1),
+                           'RRMSE': round(rrmse, 1)}
 
         # add polygon-specific dict to 'master' dict
         out_dict[ID] = poly_skill_dict
@@ -214,7 +217,7 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
     # plot if specified
     if plot:
         click.echo('INFO: plotting evaluation metrics per polygon.')
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 10))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 7))
         gdf_out.plot(ax=ax1, column='R', legend=True)
         ax1.set_title('R')
         gdf_out.plot(ax=ax2, column='MSE', legend=True)
