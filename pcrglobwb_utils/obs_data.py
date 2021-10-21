@@ -34,12 +34,21 @@ class grdc_data:
         
         # go through lines in file
         for i, line in enumerate(f):
+
+            # GRDC-No normally in line 9 of GRDC file
+            if i == 8:
+                grdc_no = line
+                # check whether line contains station information
+                if 'GRDC-No.' not in grdc_no.split(":")[0]:
+                    os.sys.exit('GRDC-No. should be in line 9 but not found - please check if input txt-file is original GRDC format!')
+                # split and strip string
+                grdc_no = grdc_no.split(":")[-1].strip()  
             
             # station name normally in line 11 of GRDC file
             if i == 10:
                 station_grdc = line
                 # check whether line contains station information
-                if 'Station'not in station_grdc.split(":")[0]:
+                if 'Station' not in station_grdc.split(":")[0]:
                     os.sys.exit('Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
                 # split and strip string
                 station_grdc = station_grdc.split(":")[-1].strip()  
@@ -52,23 +61,42 @@ class grdc_data:
                 lat_grdc = lat_grdc.split(":")[-1].strip()
                 
             # longitude normally in line 14 of GRDC file
-            elif i == 13:
+            if i == 13:
                 lon_grdc = line
-                if 'Longitude'not in lon_grdc.split(":")[0]:
+                if 'Longitude' not in lon_grdc.split(":")[0]:
                     os.sys.exit('Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 lon_grdc = lon_grdc.split(":")[-1].strip()
+
+            # catchment area normally in line 15 of GRDC file
+            if i == 14:
+                cat_area = line
+                if 'Catchment area (km2)' not in cat_area.split(":")[0]:
+                    os.sys.exit('Catchment area should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                cat_area = cat_area.split(":")[-1].strip()
+    
+            # No. of years normally in line 26 of GRDC file
+            if i == 25:
+                no_years = line
+                if 'No. of years' not in no_years.split(":")[0]:
+                    os.sys.exit('No. of years should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                no_years = no_years.split(":")[-1].strip()
                 
             # break loop to save time    
-            elif i > 13:
+            elif i > 25:
                 break
                 
         # close file        
         f.close()
         
         # write station name, latitude, and longitude to dic
-        self.props = dict(station=str(station_grdc), 
-                     latitude=float(lat_grdc), 
-                     longitude=float(lon_grdc))
+        self.props = dict(grdc_no=int(grdc_no),
+                          station=str(station_grdc), 
+                          latitude=float(lat_grdc), 
+                          longitude=float(lon_grdc),
+                          cat_area=float(cat_area),
+                          no_years=int(no_years))
+
+        print(self.props)
         
         # create simple title for plots
         plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
