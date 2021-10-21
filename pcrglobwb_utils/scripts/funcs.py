@@ -37,7 +37,7 @@ def read_yml(yaml_file):
 
     return data, yaml_root
 
-def glob_folder(folder, grdc_column, verbose, encoding='ISO-8859-1'):
+def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
     """Collects and reads all files within a folder.
     Assumes all files are GRDC files and retrieves station properties and values from file.
     Returns all of this info as dictionary.
