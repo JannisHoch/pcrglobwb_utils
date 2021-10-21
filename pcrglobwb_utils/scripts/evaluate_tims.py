@@ -48,7 +48,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     The script faciliates resampling to other temporal resolutions.
 
     Returns a csv-file with the evaluated time series (OBS and SIM), 
-    a csv-file with the resulting scores (KGE, r, RMSE, NSE), 
+    a csv-file with the resulting scores (KGE, R2, RMSE, RRMSE, NSE), 
     and if specified a simple plot of the time series.
     If specified, it also returns a geojson-file containing KGE values per station evaluated.
 
@@ -76,7 +76,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
 
@@ -173,8 +173,10 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
             if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
             geo_dict['KGE'].append(scores['KGE'][0])
             geo_dict['R2'].append(scores['R2'][0])
+            geo_dict['NSE'].append(scores['NSE'][0])
             geo_dict['MSE'].append(scores['MSE'][0])
             geo_dict['RMSE'].append(scores['RMSE'][0])
+            geo_dict['RRMSE'].append(scores['RRMSE'][0])
 
         # make as simple plot of time series if specified and save
         if plot:
@@ -232,7 +234,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     The script faciliates resampling to other temporal resolutions.
 
     Returns a csv-file with the evaluated time series (OBS and SIM), 
-    a csv-file with the resulting scores (KGE, R2, RMSE, NSE), 
+    a csv-file with the resulting scores (KGE, R2, RMSE, RRMSE, NSE), 
     and if specified a simple plot of the time series.
     If specified, it also returns a geojson-file containing KGE and R2 values per station evaluated.
 
@@ -264,7 +266,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
     
@@ -337,6 +339,10 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
                 if verbose: click.echo('VERBOSE: adding station validation metrics to geo-dict')
                 geo_dict['KGE'].append(scores['KGE'][0])
                 geo_dict['R2'].append(scores['R2'][0])
+                geo_dict['NSE'].append(scores['NSE'][0])
+                geo_dict['MSE'].append(scores['MSE'][0])
+                geo_dict['RMSE'].append(scores['RMSE'][0])
+                geo_dict['RRMSE'].append(scores['RRMSE'][0])
 
             # make as simple plot of time series if specified and save
             if plot:
