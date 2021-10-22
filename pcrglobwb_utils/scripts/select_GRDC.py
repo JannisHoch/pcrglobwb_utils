@@ -43,22 +43,23 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_year
     # collect all GRDC-files in the input folder
     data, files = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
 
-    # from each file, collect properties
+    # from each file, collect properties and apply selection
+    click.echo('INFO: applying selection criteria')
     for f in files:
 
         grdc_obj = pcrglobwb_utils.obs_data.grdc_data(f)
         title, props = grdc_obj.get_grdc_station_properties()
-        click.echo('{} - {}'.format(props['station'], props['grdc_no']))
 
         # apply thresholds to station properties
         if (props['cat_area'] > cat_area_thld) and (props['no_years'] > no_years_thld):
-
+    
             # if both criteria are met, station is selected and appended to list
-            click.echo('... selected!')
-            out_ll.append(int(props['grdc_no']))
+            if verbose: click.echo('... selected!')
+            out_ll.append(props['station'])
     
     # write list to output file
     fo = open(out_fo,'w')
+    if verbose: click.echo('INFO: writing selected stations to {}'.format(fo))
     for item in out_ll:
         fo.write("%s\n" % item)
     fo.close()

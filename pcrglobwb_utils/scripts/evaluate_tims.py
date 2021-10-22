@@ -78,18 +78,21 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
     pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
 
-    # getting station numbers of selected stations
+    # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
         
-        click.echo('INFO: reading selected GRDC No.s from {}'.format(os.path.abspath(selection_file)))
+        click.echo('INFO: reading selected GRDC No.s from {}.'.format(os.path.abspath(selection_file)))
         selection_file = os.path.abspath(selection_file)
 
         with open(selection_file) as file:
             sel_grdc_no = file.readlines()
             sel_grdc_no = [line.rstrip() for line in sel_grdc_no]
-        
-        sel_grdc_no = [int(i) for i in sel_grdc_no]
-        print(sel_grdc_no)
+
+    # otherwise, all stations in folder or yml-file are considered
+    else:
+
+        click.echo('INFO: no selection applied, all (provided) stations considered.')
+        sel_grdc_no = data.keys()
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
@@ -98,31 +101,10 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
 
     all_scores = pd.DataFrame()
 
-    # if defined, reduce stations in folder to selection
-    if (selection_file != None) and (mode == 'fld'):
-        # initiate list with selected station names
-        station_list = list()
-        # check each station in folder
-        for station in data.keys():
-            print(station)
-            # retrieve station number
-            station_props = data[station][0]
-            station_no = station_props['grdc_no']
-            print(station_no)
-            # compare number against list with selected numbers
-            if station_no in sel_grdc_no:
-                print('yes')
-                # append to list with selected stations
-                station_list.append(station_props['station'])
-
-    # otherwise, use all stations in folder
-    else:
-        station_list = data.keys() # data.keys() is station name
-
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
     # or only for selected files in folder
-    for station in station_list:
+    for station in sel_grdc_no:
 
         # print some info
         click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
