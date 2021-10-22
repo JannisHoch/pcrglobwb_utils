@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import pcrglobwb_utils
-from . import funcs
 import click
 import xarray as xr
 import pandas as pd
@@ -60,14 +59,14 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     click.echo(click.style('INFO: start.', fg='green'))
 
     # check if data comes via yml-file or from folder
-    mode = funcs.check_mode(yaml_file, folder)
+    mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
 
     # depending on mode, data is read at different stages of this script
     if mode == 'yml':
-        data, yaml_root = funcs.read_yml(yaml_file)
+        data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data = funcs.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        data = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))

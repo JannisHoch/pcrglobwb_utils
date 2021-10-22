@@ -1,4 +1,3 @@
-from . import funcs
 import pcrglobwb_utils
 import click
 import os
@@ -41,7 +40,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_year
     out_ll = list()
 
     # collect all GRDC-files in the input folder
-    data, files = funcs.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
+    data, files = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
 
     # from each file, collect properties
     for f in files:
