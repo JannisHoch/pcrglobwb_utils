@@ -76,7 +76,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
 
