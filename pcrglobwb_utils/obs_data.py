@@ -92,8 +92,6 @@ class grdc_data:
                           longitude=float(lon_grdc),
                           cat_area=float(cat_area),
                           no_years=int(no_years))
-
-        print(self.props)
         
         # create simple title for plots
         plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
