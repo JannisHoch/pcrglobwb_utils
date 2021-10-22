@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import xarray as xr
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import rasterio as rio
-import spotpy as sp
-import os, sys
+import warnings
+import os
 
 class grdc_data:
     """Retrieve, re-work and visualize data from a GRDC-file.
@@ -40,7 +37,7 @@ class grdc_data:
                 grdc_no = line
                 # check whether line contains station information
                 if 'GRDC-No.' not in grdc_no.split(":")[0]:
-                    os.sys.exit('GRDC-No. should be in line 9 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: GRDC-No. should be in line 9 but not found - please check if input txt-file is original GRDC format!')
                 # split and strip string
                 grdc_no = grdc_no.split(":")[-1].strip()  
             
@@ -49,7 +46,7 @@ class grdc_data:
                 station_grdc = line
                 # check whether line contains station information
                 if 'Station' not in station_grdc.split(":")[0]:
-                    os.sys.exit('Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
                 # split and strip string
                 station_grdc = station_grdc.split(":")[-1].strip()  
             
@@ -57,28 +54,28 @@ class grdc_data:
             if i == 12:
                 lat_grdc = line
                 if 'Latitude'not in lat_grdc.split(":")[0]:
-                    os.sys.exit('Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 lat_grdc = lat_grdc.split(":")[-1].strip()
                 
             # longitude normally in line 14 of GRDC file
             if i == 13:
                 lon_grdc = line
                 if 'Longitude' not in lon_grdc.split(":")[0]:
-                    os.sys.exit('Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 lon_grdc = lon_grdc.split(":")[-1].strip()
 
             # catchment area normally in line 15 of GRDC file
             if i == 14:
                 cat_area = line
                 if 'Catchment area (km2)' not in cat_area.split(":")[0]:
-                    os.sys.exit('Catchment area should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Catchment area should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 cat_area = cat_area.split(":")[-1].strip()
     
             # No. of years normally in line 26 of GRDC file
             if i == 25:
                 no_years = line
                 if 'No. of years' not in no_years.split(":")[0]:
-                    os.sys.exit('No. of years should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: No. of years should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 no_years = no_years.split(":")[-1].strip()
                 
             # break loop to save time    
@@ -142,7 +139,7 @@ class grdc_data:
             if col_name == ' Value':
                 raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
             else:
-                print('WARNING: column {} not found, falling back to column Value'.format(col_name))
+                warnings.warn('WARNING: column {} not found, falling back to column Value'.format(col_name))
                 df[var_name] = df[' Value'].copy()
                 del df[' Value']
 
