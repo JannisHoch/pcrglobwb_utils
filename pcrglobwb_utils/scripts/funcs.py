@@ -62,4 +62,4 @@ def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
 
         dd[str(props['station'])] = [props, df_obs]
 
-    return dd
+    return dd, files
