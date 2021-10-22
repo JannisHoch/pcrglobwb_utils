@@ -32,6 +32,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_year
     # create output directory if not there yet
     out_dir = os.path.abspath(out_dir)
     if not os.path.isdir(out_dir):
+        if verbose: click.echo('INFO: creating output folder {}'.format(out))
         os.makedirs(out_dir)
     # define output file with selected stations
     out_fo = os.path.join(out_dir, 'selected_GRDC_stations.txt')
@@ -54,7 +55,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_year
 
             # if both criteria are met, station is selected and appended to list
             click.echo('... selected!')
-            out_ll.append(props['grdc_no'])
+            out_ll.append(int(props['grdc_no']))
     
     # write list to output file
     fo = open(out_fo,'w')

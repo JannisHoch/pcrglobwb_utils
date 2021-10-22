@@ -59,6 +59,11 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
 
     click.echo(click.style('INFO: start.', fg='green'))
 
+    out = os.path.abspath(out)
+    if not os.path.isdir(out):
+        if verbose: click.echo('INFO: creating output folder {}'.format(out))
+        os.makedirs(out)
+
     # check if data comes via yml-file or from folder
     mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
 
@@ -82,6 +87,9 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
         with open(selection_file) as file:
             sel_grdc_no = file.readlines()
             sel_grdc_no = [line.rstrip() for line in sel_grdc_no]
+        
+        sel_grdc_no = [int(i) for i in sel_grdc_no]
+        print(sel_grdc_no)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
@@ -90,27 +98,34 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
 
     all_scores = pd.DataFrame()
 
-    #TODO: station selection should happen here!
+    # if defined, reduce stations in folder to selection
+    if (selection_file != None) and (mode == 'fld'):
+        # initiate list with selected station names
+        station_list = list()
+        # check each station in folder
+        for station in data.keys():
+            print(station)
+            # retrieve station number
+            station_props = data[station][0]
+            station_no = station_props['grdc_no']
+            print(station_no)
+            # compare number against list with selected numbers
+            if station_no in sel_grdc_no:
+                print('yes')
+                # append to list with selected stations
+                station_list.append(station_props['station'])
+
+    # otherwise, use all stations in folder
+    else:
+        station_list = data.keys() # data.keys() is station name
 
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
-    for station in data.keys():
+    # or only for selected files in folder
+    for station in station_list:
 
         # print some info
         click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
-
-        # check if it is a selected station
-        if (selection_file != None) and (mode == 'fld'):
-
-            station_props = data[station][0]
-
-            click.echo('INFO: checking if station is selected')
-            station_no = station_props['grdc_no']
-
-            if not station_no in sel_grdc_no:
-
-                click.echo('... GRDC No. {} not selected, pass'.format(station_no))
-                pass
 
         # create sub-directory per station
         out_dir = os.path.abspath(out) + '/{}'.format(station)
