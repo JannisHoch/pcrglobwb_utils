@@ -33,13 +33,14 @@ def cli(ctx, version):
 @click.option('-f', '--folder', default=None, help='path to folder with GRDC-files.', type=click.Path())
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read (only used with -f option)', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
+@click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time_scale, geojson, plot, verbose):
+def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -66,11 +67,21 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
         data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
     pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+
+    # getting station numbers of selected stations
+    if (selection_file != None) and (mode == 'fld'):
+        
+        click.echo('INFO: reading selected GRDC No.s from {}'.format(os.path.abspath(selection_file)))
+        selection_file = os.path.abspath(selection_file)
+
+        with open(selection_file) as file:
+            sel_grdc_no = file.readlines()
+            sel_grdc_no = [line.rstrip() for line in sel_grdc_no]
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
@@ -79,12 +90,27 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
 
     all_scores = pd.DataFrame()
 
+    #TODO: station selection should happen here!
+
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
     for station in data.keys():
 
         # print some info
         click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
+
+        # check if it is a selected station
+        if (selection_file != None) and (mode == 'fld'):
+
+            station_props = data[station][0]
+
+            click.echo('INFO: checking if station is selected')
+            station_no = station_props['grdc_no']
+
+            if not station_no in sel_grdc_no:
+
+                click.echo('... GRDC No. {} not selected, pass'.format(station_no))
+                pass
 
         # create sub-directory per station
         out_dir = os.path.abspath(out) + '/{}'.format(station)
