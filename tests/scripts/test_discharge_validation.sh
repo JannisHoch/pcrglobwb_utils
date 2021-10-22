@@ -6,6 +6,7 @@ excel_file='../../examples/example_data/GRDC/Obidos_data.xlsx'
 loc='../../examples/example_data/GRDC/stations.geojson'
 yml_out_dir='eval_GRDC/from_yml/'
 fld_out_dir='eval_GRDC/from_folder/'
+sel_out_dir='eval_GRDC/from_folder_selectOnly/'
 xls_out_dir='eval_GRDC/from_xls/'
 
 # execute script
@@ -16,6 +17,15 @@ pcru_eval_tims --version grdc -y $yaml_file -e ascii --plot --verbose $nc_file $
 echo
 echo WITHOUT RESAMPLING FROM FOLDER
 pcru_eval_tims grdc -f $folder --plot $nc_file $fld_out_dir 
+
+echo
+echo WITHOUT RESAMPLING FROM FOLDER INCLUDING STATION SELECTION
+echo FIRST, APPLY SELECTION SCRIPT
+pcru_sel_grdc -y_thld 40 $folder $sel_out_dir
+
+echo
+echo SECOND, RUN EVALUATION ON SELECTED STATIONS ONLY
+pcru_eval_tims grdc -f $folder -sf $sel_out_dir/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
 
 echo
 echo WITHOUT RESAMPLING FROM EXCEL-FILE

@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import pcrglobwb_utils
-from . import funcs
 import click
 import xarray as xr
 import pandas as pd
@@ -34,13 +33,14 @@ def cli(ctx, version):
 @click.option('-f', '--folder', default=None, help='path to folder with GRDC-files.', type=click.Path())
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read (only used with -f option)', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
+@click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time_scale, geojson, plot, verbose):
+def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -59,30 +59,52 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, time
 
     click.echo(click.style('INFO: start.', fg='green'))
 
+    out = os.path.abspath(out)
+    if not os.path.isdir(out):
+        if verbose: click.echo('INFO: creating output folder {}'.format(out))
+        os.makedirs(out)
+
     # check if data comes via yml-file or from folder
-    mode = funcs.check_mode(yaml_file, folder)
+    mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
 
     # depending on mode, data is read at different stages of this script
     if mode == 'yml':
-        data, yaml_root = funcs.read_yml(yaml_file)
+        data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data = funcs.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
     pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
 
+    # if specified, getting station numbers of selected stations
+    if (selection_file != None) and (mode == 'fld'):
+        
+        click.echo('INFO: reading selected GRDC No.s from {}.'.format(os.path.abspath(selection_file)))
+        selection_file = os.path.abspath(selection_file)
+
+        with open(selection_file) as file:
+            sel_grdc_no = file.readlines()
+            sel_grdc_no = [line.rstrip() for line in sel_grdc_no]
+
+    # otherwise, all stations in folder or yml-file are considered
+    else:
+
+        click.echo('INFO: no selection applied, all (provided) stations considered.')
+        sel_grdc_no = data.keys()
+
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
+        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
 
     # validate data at each station specified in yml-file
     # or as returned from the all files in folder
-    for station in data.keys():
+    # or only for selected files in folder
+    for station in sel_grdc_no:
 
         # print some info
         click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
