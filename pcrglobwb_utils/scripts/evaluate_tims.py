@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import warnings
 import pcrglobwb_utils
 import click
 import xarray as xr
@@ -93,6 +94,9 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
 
         click.echo('INFO: no selection applied, all (provided) stations considered.')
         sel_grdc_no = data.keys()
+
+    if not sel_grdc_no:
+        raise Warning('WARNING: no stations selected to be evaluated!')
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
@@ -229,6 +233,7 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
+        
 
     click.echo(click.style('INFO: done.', fg='green'))
 

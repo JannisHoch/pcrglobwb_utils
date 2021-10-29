@@ -19,12 +19,19 @@ echo WITHOUT RESAMPLING FROM FOLDER
 pcru_eval_tims grdc -f $folder --plot $nc_file $fld_out_dir 
 
 echo
-echo WITHOUT RESAMPLING FROM FOLDER INCLUDING STATION SELECTION
-echo FIRST, APPLY SELECTION SCRIPT
-pcru_sel_grdc -y_thld 40 $folder $sel_out_dir
+echo WITHOUT RESAMPLING FROM FOLDER INCLUDING STATION SELECTION - END_YEAR
+echo FIRST, APPLY SELECTION SCRIPT - END_YEAR
+pcru_sel_grdc -ts_end 2018-12 $folder $sel_out_dir
+echo
+echo SECOND, RUN EVALUATION ON SELECTED STATIONS ONLY - END_YEAR
+pcru_eval_tims grdc -f $folder -sf $sel_out_dir/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
 
 echo
-echo SECOND, RUN EVALUATION ON SELECTED STATIONS ONLY
+echo WITHOUT RESAMPLING FROM FOLDER INCLUDING STATION SELECTION - NR_YEARS
+echo FIRST, APPLY SELECTION SCRIPT - NR_YEARS
+pcru_sel_grdc -y_thld 40 $folder $sel_out_dir
+echo
+echo SECOND, RUN EVALUATION ON SELECTED STATIONS ONLY - NR_YEARS
 pcru_eval_tims grdc -f $folder -sf $sel_out_dir/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
 
 echo
