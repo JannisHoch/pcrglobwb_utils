@@ -1,4 +1,5 @@
 import pcrglobwb_utils
+import pandas as pd
 import click
 import os
 
@@ -6,15 +7,16 @@ import os
 @click.argument('in_dir')
 @click.argument('out_dir')
 @click.option('-c_thld', '--cat-area-thld', default=0, help='minimum catchment area stations needs to have to be selected', type=int)
-@click.option('-y_thld', '--no-years-thld', default=1, help='minimum number of years stations needs to have to be selected', type=int)
+@click.option('-y_thld', '--nr-years-thld', default=1, help='minimum number of years stations needs to have to be selected', type=int)
+@click.option('-ts_end', '--timeseries-end', default='1900-01', help='end date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_years_thld):
+def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, nr_years_thld, timeseries_end):
     """This simple function can be run to select GRDC stations based on their properties.
     This can be handy to reduce the number of stations to evaluate in a subsequent step.
-    The properties on which selection critieria can be applied are upstream area and number of years of data record.
+    The properties on which selection critieria can be applied are upstream area, number of years of data record, and end date of data record.
     
     A txt-file is written containing the numbers of those stations selected.
     This file can later be applied when evaluating discharge with -f setting in 'pcru_eval_tims grdc'.
@@ -51,7 +53,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, no_year
         title, props = grdc_obj.get_grdc_station_properties()
 
         # apply thresholds to station properties
-        if (props['cat_area'] > cat_area_thld) and (props['no_years'] > no_years_thld):
+        if (props['cat_area'] > cat_area_thld) and (props['no_years'] > nr_years_thld) and (props['ts_end'] > pd.to_datetime(timeseries_end)):
     
             # if both criteria are met, station is selected and appended to list
             if verbose: click.echo('... selected!')

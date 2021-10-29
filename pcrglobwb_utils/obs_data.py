@@ -61,21 +61,30 @@ class grdc_data:
             if i == 13:
                 lon_grdc = line
                 if 'Longitude' not in lon_grdc.split(":")[0]:
-                    warnings.warn('WARNING: Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Longitude should be in line 14 but not found - please check if input txt-file is original GRDC format!')
                 lon_grdc = lon_grdc.split(":")[-1].strip()
 
             # catchment area normally in line 15 of GRDC file
             if i == 14:
                 cat_area = line
                 if 'Catchment area (km2)' not in cat_area.split(":")[0]:
-                    warnings.warn('WARNING: Catchment area should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Catchment area should be in line 15 but not found - please check if input txt-file is original GRDC format!')
                 cat_area = cat_area.split(":")[-1].strip()
+
+           # start and end year of observations normally in line 15 of GRDC file
+            if i == 24:
+                ts_time = line
+                if 'Time series' not in ts_time.split(":")[0]:
+                    warnings.warn('WARNING: Time series should be in line 25 but not found - please check if input txt-file is original GRDC format!')
+                ts_time = ts_time.split(":")[-1].strip()
+                ts_start = ts_time.split(" - ")[0].strip()
+                ts_end = ts_time.split(" - ")[1].strip()
     
             # No. of years normally in line 26 of GRDC file
             if i == 25:
                 no_years = line
                 if 'No. of years' not in no_years.split(":")[0]:
-                    warnings.warn('WARNING: No. of years should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: No. of years should be in line 26 but not found - please check if input txt-file is original GRDC format!')
                 no_years = no_years.split(":")[-1].strip()
                 
             # break loop to save time    
@@ -91,7 +100,9 @@ class grdc_data:
                           latitude=float(lat_grdc), 
                           longitude=float(lon_grdc),
                           cat_area=float(cat_area),
-                          no_years=int(no_years))
+                          no_years=int(no_years),
+                          ts_start=pd.to_datetime(ts_start),
+                          ts_end=pd.to_datetime(ts_end))
         
         # create simple title for plots
         plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
