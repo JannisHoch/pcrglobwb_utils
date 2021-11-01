@@ -34,18 +34,18 @@ def evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_s
 
     # get row/col combination for cell corresponding to lon/lat combination
     click.echo('INFO: getting row/column combination from longitude/latitude.')
-    row, col = pcr_data.find_indices_from_coords(props['longitude'], props['latitude'])
+    row, col = pcr_data.get_indices(props['longitude'], props['latitude'])
 
     # retrieving values at that cell
     click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
-    df_sim = pcr_data.read_values_at_indices(row, col, var_name=var_name, plot_var_name='SIM')
+    df_sim = pcr_data.get_values(row, col, var_name=var_name, plot_var_name='SIM')
     df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
     df_obs, df_sim = resample_ts(pcr_data, df_obs, df_sim, time_scale)
 
     # compute scores
     click.echo('INFO: computing scores.')
-    df_scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+    df_scores = pcr_data.validate(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
     df_scores.index = [station]
 
