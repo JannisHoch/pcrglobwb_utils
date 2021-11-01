@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import pcrglobwb_utils
+from pcrglobwb_utils import utils, __version__
 import click
 import xarray as xr
 import pandas as pd
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import os
 
 from . import funcs
-from multiprocessing import Pool, Lock
+from multiprocessing import Pool
 
 @click.group()
 def cli():
@@ -52,20 +52,25 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     """   
 
     click.echo(click.style('INFO: start.', fg='green'))
+    click.echo(click.style('INFO: pcrglobwb_utils version {}.'.format(__version__), fg='green'))
 
     # create main output dir
     out = os.path.abspath(out)
-    pcrglobwb_utils.utils.create_out_dir(out)
+    utils.create_out_dir(out)
+
+    # now get started with simulated data
+    click.echo(click.style('INFO: loading simulated data from {}.'.format(ncf), fg='red'))
+    pcr_ds = xr.open_dataset(ncf)
 
     # check if data comes via yml-file or from folder
-    mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
+    mode = utils.check_mode(yaml_file, folder)
 
     # depending on mode, data is read at different stages of this script
     if mode == 'yml':
-        data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
+        data, yaml_root = utils.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        data, files = utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
     # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
@@ -80,7 +85,6 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     # otherwise, all stations in folder or yml-file are considered
     else:
 
-        click.echo('INFO: no selection applied, all (provided) stations considered.')
         sel_grdc_no = data.keys()
 
     if not sel_grdc_no:
@@ -91,13 +95,13 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
         click.echo('INFO: using {} CPUs for pooling'.format(number_processes))
         pool = Pool(processes=number_processes)
 
-        results = [pool.apply_async(funcs.evaluate_stations,args=(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
+        results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
 
         outputList = [p.get() for p in results]
 
     else:
 
-        outputList = [funcs.evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose) for station in sel_grdc_no]
+        outputList = [funcs.evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose) for station in sel_grdc_no]
         
     print(outputList)
 

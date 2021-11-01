@@ -1,19 +1,19 @@
 
-import pcrglobwb_utils
+from pcrglobwb_utils import sim_data, obs_data, utils
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 import click
 import os
 
-def evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose):
-
+def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose):
+    
     # print some info
     click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
     
     # create sub-directory per station
     out_dir = out + '/{}'.format(station)
-    pcrglobwb_utils.utils.create_out_dir(out_dir)
+    utils.create_out_dir(out_dir)
 
     # if data is via yml-file, the data is read here as well as are station properties
     if mode == 'yml': 
@@ -23,10 +23,6 @@ def evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_s
     if mode == 'fld':
         df_obs, props = data[str(station)][1], data[str(station)][0]
 
-    # now get started with simulated data
-    click.echo('INFO: loading simulated data from {}.'.format(ncf))
-    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
-
     # prepare a geojson-file for output later (if specified)
     if geojson:
         click.echo('INFO: preparing geo-dict for GeoJSON output')
@@ -34,18 +30,18 @@ def evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_s
 
     # get row/col combination for cell corresponding to lon/lat combination
     click.echo('INFO: getting row/column combination from longitude/latitude.')
-    row, col = pcr_data.get_indices(props['longitude'], props['latitude'])
+    row, col = sim_data.find_indices_from_coords(pcr_ds, props['longitude'], props['latitude'])
 
     # retrieving values at that cell
     click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
-    df_sim = pcr_data.get_values(row, col, var_name=var_name, plot_var_name='SIM')
+    df_sim = sim_data.read_at_indices(pcr_ds, row, col, var_name=var_name, plot_var_name='SIM')
     df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
-    df_obs, df_sim = resample_ts(pcr_data, df_obs, df_sim, time_scale)
+    df_obs, df_sim = resample_ts(pcr_ds, df_obs, df_sim, time_scale)
 
     # compute scores
     click.echo('INFO: computing scores.')
-    df_scores = pcr_data.validate(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+    df_scores = sim_data.validate_timeseries(df_sim, df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
     df_scores.index = [station]
 
@@ -68,7 +64,7 @@ def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
     click.echo('INFO: reading observations from file {}.'.format(grdc_file))
 
     click.echo('INFO: loading GRDC data.')
-    grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
+    grdc_data = obs_data.grdc_data(grdc_file)
 
     if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
     plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)

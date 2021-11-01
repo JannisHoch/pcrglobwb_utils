@@ -3,7 +3,7 @@ import pandas as pd
 import spotpy as sp
 import numpy as np
 import click
-import os, sys
+import os
 
 ## OBJECT AND METHODS
 class from_nc:
@@ -19,9 +19,9 @@ class from_nc:
 
         self.ds = xr.open_dataset(fo, engine='netcdf4')
 
-    def get_copy(self):
+    def get_copy(self, verbose=False):
 
-        print('returning copy of xarray dataset')
+        if verbose: click.echo('VERBOSE: returning copy of xarray dataset')
 
         cp = self.ds.copy()
 
