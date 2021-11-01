@@ -25,12 +25,10 @@ import os
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--time-step', '-tstep', help='timestep of data - either "monthly" or "annual". Note that both observed and simualted data must be annual average if the latter option is chosen.', default='monthly', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
-@click.option('--o_sum/--no-o_sum', default=False, help='can be set to compute monthly averages from totals for observed data - does not work with annual data. WILL BE DEPRECATED SOON.')
-@click.option('--s_sum/--no-s_sum', default=False, help='can be set to compute monthly averages from totals for simulated data - does not work with annual data. WILL BE DEPRECATED SOON.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_sum, s_sum, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -50,9 +48,6 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
 
     """  
 
-    if (o_sum and time_step == 'annual') or (s_sum and time_step == 'annual'):
-        raise ValueError('ERROR: not possible to have o_sum or s_sum together with annual timestep. o_sum and s_sum only work with monthly timestep.')  
-
     click.echo(click.style('INFO: start.', fg='green'))
     if verbose: click.echo(click.style('VERBOSE: using pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
@@ -62,9 +57,7 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
 
     # get full path name of output-dir and create it if not there yet
     out = os.path.abspath(out)
-    if not os.path.isdir(out):
-        os.makedirs(out)
-    print('INFO:saving output to folder {}'.format(out))
+    pcrglobwb_utils.utils.create_out_dir(out)
 
     # read nc-files with xarray to datasets
     print('INFO: reading file {}'.format(os.path.abspath(obs)))
@@ -80,13 +73,6 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
 
     obs_idx = pd.to_datetime(pd.to_datetime(obs_ds.time.values).strftime('%Y-%m'))
     sim_idx = pd.to_datetime(pd.to_datetime(sim_ds.time.values).strftime('%Y-%m'))
-
-    if o_sum:
-        click.echo('INFO: converting observed monthly totals to monthly mean.')
-        obs_daysinmonth = obs_idx.daysinmonth.values
-    if s_sum:
-        click.echo('INFO: converting simulated monthly totals to monthly mean.')
-        sim_daysinmonth = sim_idx.daysinmonth.values
 
     # read shapefile with one or more polygons
     print('INFO: reading polygons from file {}'.format(os.path.abspath(ply)))
@@ -145,29 +131,8 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, o_su
             mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
             mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
 
-        if o_sum:
-            
-            if verbose: click.echo('VERBOSE: computing average observed monthly values from monthly totals by dividing with days in month.')
-            obs_tuples = list(zip(mean_val_timestep_obs, obs_daysinmonth))
-            obs_df = pd.DataFrame(obs_tuples, index=obs_idx, columns=[obs_var_name, 'obs_daysinmonth'])
-            obs_df[obs_var_name] = obs_df[obs_var_name].divide(obs_df['obs_daysinmonth'])
-            del obs_df['obs_daysinmonth']
-
-        else:
-
-            obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
-
-        if s_sum:
-
-            if verbose: click.echo('VERBOSE: computing average simulated monthly values from monthly totals by dividing with days in month.')
-            sim_tuples = list(zip(mean_val_timestep_sim, sim_daysinmonth))
-            sim_df = pd.DataFrame(data=sim_tuples, index=sim_idx, columns=[sim_var_name, 'sim_daysinmonth'])
-            sim_df[sim_var_name] = sim_df[sim_var_name].divide(sim_df['sim_daysinmonth'])
-            del sim_df['sim_daysinmonth']
-
-        else:
-
-            sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
+        obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
+        sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
 
         # accounting for missing values in time series (and thus missing index values!)
         if time_step == 'monthly':
