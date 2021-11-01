@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from pcrglobwb_utils import utils, __version__
+from pcrglobwb_utils import sim_data, utils, __version__
 import click
 import xarray as xr
 import pandas as pd
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import os
 
 from . import funcs
+from shapely.geometry import Point
 from multiprocessing import Pool
 
 @click.group()
@@ -200,7 +201,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
-    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+    pcr_data = sim_data.from_nc(ncf)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
