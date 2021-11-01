@@ -25,3 +25,4 @@ dependencies:
   - setuptools>=49.6
   - pyyaml
   - pcraster
+  - dask
