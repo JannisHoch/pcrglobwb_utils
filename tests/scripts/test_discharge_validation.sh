@@ -1,5 +1,5 @@
 # paths to files and dirs
-nc_file='..\../examples\example_data\GRDC\DUMMY_discharge_dailyTot_output.nc'
+nc_file='../../examples/example_data/GRDC/DUMMY_discharge_dailyTot_output.nc'
 yaml_file='../../examples/example_data/GRDC/stations.yaml'
 folder='../../examples/example_data/GRDC/files'
 excel_file='../../examples/example_data/GRDC/Obidos_data.xlsx'

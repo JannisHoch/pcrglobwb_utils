@@ -96,14 +96,14 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
         pool = Pool(processes=number_processes)
 
         results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
-        # results = [pool.map(funcs.evaluate_stations(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
-        
-        # Lock.release()
+
+        pool.close()
+        pool.join()
 
         print(results[0])
         print(results[1])
-        # results[0].get()
-        outputList = [niko.get() for niko in results]
+        outputList = [p.get() for p in results]
+        print(outputList)
 
     else:
 
