@@ -67,10 +67,6 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
         # note that 'data' is in fact a dictionary here!
         data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
-    # now get started with simulated data
-    click.echo('INFO: loading simulated data from {}.'.format(ncf))
-    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
-
     # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
         
@@ -95,21 +91,15 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
         click.echo('INFO: using {} CPUs for pooling'.format(number_processes))
         pool = Pool(processes=number_processes)
 
-        results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
+        results = [pool.apply_async(funcs.evaluate_stations,args=(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
 
-        pool.close()
-        pool.join()
-
-        print(results[0])
-        print(results[1])
         outputList = [p.get() for p in results]
-        print(outputList)
 
     else:
 
-        results = [funcs.evaluate_stations(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose) for station in sel_grdc_no]
+        outputList = [funcs.evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose) for station in sel_grdc_no]
         
-    print(results)
+    print(outputList)
 
 
 

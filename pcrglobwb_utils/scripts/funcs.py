@@ -6,8 +6,8 @@ from shapely.geometry import Point
 import click
 import os
 
-def evaluate_stations(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose):
-    
+def evaluate_stations(station, ncf, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose):
+
     # print some info
     click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
     
@@ -22,6 +22,10 @@ def evaluate_stations(station, pcr_data, out, mode, yaml_root, data, var_name, t
     # if data comes from folder, it was already read and can now be retrieved from dictionary
     if mode == 'fld':
         df_obs, props = data[str(station)][1], data[str(station)][0]
+
+    # now get started with simulated data
+    click.echo('INFO: loading simulated data from {}.'.format(ncf))
+    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
