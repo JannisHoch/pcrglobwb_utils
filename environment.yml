@@ -23,3 +23,6 @@ dependencies:
   - spotpy>=1.5.8
   - netcdf4
   - setuptools>=49.6
+  - pyyaml
+  - pcraster
+  - dask

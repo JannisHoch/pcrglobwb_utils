@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import xarray as xr
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import rasterio as rio
-import spotpy as sp
-import os, sys
+import warnings
+import os
 
 class grdc_data:
     """Retrieve, re-work and visualize data from a GRDC-file.
@@ -20,8 +17,8 @@ class grdc_data:
         """
 
         self.fo = fo
-
-    def get_grdc_station_properties(self):
+        
+    def get_grdc_station_properties(self, encoding='ISO-8859-1'):
         """Retrieves GRDC station properties from txt-file. Creates and returns header from those properties as well as a dictionary containt station name, lat, and lon info.
 
         Returns:
@@ -30,17 +27,26 @@ class grdc_data:
         """
         
         # open file
-        fp = open(self.fo)
+        f = open(self.fo, encoding=encoding)
         
         # go through lines in file
-        for i, line in enumerate(fp):
+        for i, line in enumerate(f):
+
+            # GRDC-No normally in line 9 of GRDC file
+            if i == 8:
+                grdc_no = line
+                # check whether line contains station information
+                if 'GRDC-No.' not in grdc_no.split(":")[0]:
+                    warnings.warn('WARNING: GRDC-No. should be in line 9 but not found - please check if input txt-file is original GRDC format!')
+                # split and strip string
+                grdc_no = grdc_no.split(":")[-1].strip()  
             
             # station name normally in line 11 of GRDC file
             if i == 10:
                 station_grdc = line
                 # check whether line contains station information
-                if 'Station'not in station_grdc.split(":")[0]:
-                    os.sys.exit('Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
+                if 'Station' not in station_grdc.split(":")[0]:
+                    warnings.warn('WARNING: Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
                 # split and strip string
                 station_grdc = station_grdc.split(":")[-1].strip()  
             
@@ -48,42 +54,72 @@ class grdc_data:
             if i == 12:
                 lat_grdc = line
                 if 'Latitude'not in lat_grdc.split(":")[0]:
-                    os.sys.exit('Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                    warnings.warn('WARNING: Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
                 lat_grdc = lat_grdc.split(":")[-1].strip()
                 
             # longitude normally in line 14 of GRDC file
-            elif i == 13:
+            if i == 13:
                 lon_grdc = line
-                if 'Longitude'not in lon_grdc.split(":")[0]:
-                    os.sys.exit('Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
+                if 'Longitude' not in lon_grdc.split(":")[0]:
+                    warnings.warn('WARNING: Longitude should be in line 14 but not found - please check if input txt-file is original GRDC format!')
                 lon_grdc = lon_grdc.split(":")[-1].strip()
+
+            # catchment area normally in line 15 of GRDC file
+            if i == 14:
+                cat_area = line
+                if 'Catchment area (km2)' not in cat_area.split(":")[0]:
+                    warnings.warn('WARNING: Catchment area should be in line 15 but not found - please check if input txt-file is original GRDC format!')
+                cat_area = cat_area.split(":")[-1].strip()
+
+           # start and end year of observations normally in line 15 of GRDC file
+            if i == 24:
+                ts_time = line
+                if 'Time series' not in ts_time.split(":")[0]:
+                    warnings.warn('WARNING: Time series should be in line 25 but not found - please check if input txt-file is original GRDC format!')
+                ts_time = ts_time.split(":")[-1].strip()
+                ts_start = ts_time.split(" - ")[0].strip()
+                ts_end = ts_time.split(" - ")[1].strip()
+    
+            # No. of years normally in line 26 of GRDC file
+            if i == 25:
+                no_years = line
+                if 'No. of years' not in no_years.split(":")[0]:
+                    warnings.warn('WARNING: No. of years should be in line 26 but not found - please check if input txt-file is original GRDC format!')
+                no_years = no_years.split(":")[-1].strip()
                 
             # break loop to save time    
-            elif i > 13:
+            elif i > 25:
                 break
                 
         # close file        
-        fp.close()
+        f.close()
         
         # write station name, latitude, and longitude to dic
-        self.props = dict(station=str(station_grdc), 
-                     latitude=float(lat_grdc), 
-                     longitude=float(lon_grdc))
+        self.props = dict(grdc_no=int(grdc_no),
+                          station=str(station_grdc), 
+                          latitude=float(lat_grdc), 
+                          longitude=float(lon_grdc),
+                          cat_area=float(cat_area),
+                          no_years=int(no_years),
+                          ts_start=pd.to_datetime(ts_start),
+                          ts_end=pd.to_datetime(ts_end))
         
         # create simple title for plots
         plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
 
         return plot_title, self.props
 
-    def get_grdc_station_values(self, var_name, remove_mv=True, mv_val=-999):
+    def get_grdc_station_values(self, var_name, col_name=' Value', remove_mv=True, mv_val=-999, encoding='ISO-8859-1', verbose=False):
         """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
 
         Arguments:
             var_name (str): user-specified variable name to be given to time series
 
         Keyword Arguments:
+            col_name (str): name of column in GRDC-file to be read. Defaults to ' Value'.
             remove_mv (bool): whether or not remove missing values in timeseries (default: True).
             mv_val (int): missing value in timeseries (default: -999).
+            verbose (bool): verbose mode on or off. Defaults to False.
 
         Returns:
             dataframe: dataframe containing datetime objects as index and observations as column values
@@ -92,7 +128,8 @@ class grdc_data:
         #TODO: this function should also work if get_grdc_station_properties() was not executed before;
         #TODO: because, if not executed before, self.props is no attribute yet and function exists with error
 
-        f = open(self.fo)
+        # open file
+        f = open(self.fo, encoding=encoding)
 
         for i, line in enumerate(f):
             if '#' in line:
@@ -104,13 +141,16 @@ class grdc_data:
         df = pd.read_csv(self.fo, skiprows=stopline, sep=';')
 
         try: 
-            print('... reading column Original')
-            df[var_name] = df[' Original'].copy()
-            del df[' Original']
+            if verbose: print('VERBOSE: reading column {}'.format(col_name))
+            df[var_name] = df[str(col_name)].copy()
+            del df[str(col_name)]
         except:
-            print('... reading column Calculated')
-            df[var_name] = df[' Calculated'].copy()
-            del df[' Calculated']
+            if col_name == ' Value':
+                raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
+            else:
+                warnings.warn('WARNING: column {} not found, falling back to column Value'.format(col_name))
+                df[var_name] = df[' Value'].copy()
+                del df[' Value']
 
         df['date'] = pd.to_datetime(df['YYYY-MM-DD'])
         df.set_index(df['date'], inplace=True)
@@ -122,13 +162,13 @@ class grdc_data:
             df_out.replace(mv_val, np.nan, inplace=True)
 
         if (pd.infer_freq(df_out.index) == 'M') or (pd.infer_freq(df_out.index) == 'MS'):
-            print('changing index strftime to %Y-%m')
+            # if verbose: print('changing index strftime to %Y-%m')
             df_out.index = df_out.index.strftime('%Y-%m')
 
         self.df = df_out
 
-        self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
-        self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
+        # self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
+        # self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
 
         return self.df, self.props
         

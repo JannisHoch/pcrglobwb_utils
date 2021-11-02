@@ -108,4 +108,5 @@ ENV/
 /examples/_OUT/
 /tests/scripts/eval_GRDC/
 /tests/scripts/eval_GLEAM/
+/tests/scripts/eval_GLEAM_annualMean/
 /tests/scripts/eval_GRACE/
