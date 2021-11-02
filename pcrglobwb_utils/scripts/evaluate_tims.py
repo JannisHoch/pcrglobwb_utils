@@ -9,11 +9,11 @@ import geopandas as gpd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import multiprocessing as mp
 import os
 
 from . import funcs
 from shapely.geometry import Point
-from multiprocessing import Pool
 
 @click.group()
 def cli():
@@ -93,60 +93,22 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
 
     if number_processes != None:
 
-        click.echo('INFO: using {} CPUs for pooling'.format(number_processes))
-        pool = Pool(processes=number_processes)
+        min_number_processes = min(number_processes, len(sel_grdc_no), mp.cpu_count())
+        if number_processes > min_number_processes: 
+            click.echo('INFO: number of CPUs reduced to {}'.format(min_number_processes))
+        else:
+            click.echo('INFO: using {} CPUs for pooling'.format(min_number_processes))
+        pool = mp.Pool(processes=min_number_processes)
 
-        results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)) for station in sel_grdc_no]
+        results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose)) for station in sel_grdc_no]
 
         outputList = [p.get() for p in results]
 
     else:
 
-        outputList = [funcs.evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose) for station in sel_grdc_no]
-        
-    print(outputList)
+        outputList = [funcs.evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose) for station in sel_grdc_no]
 
-
-
-    # validate data at each station specified in yml-file
-    # or as returned from the all files in folder
-    # or only for selected files in folder
-
-
-    
-    # outputList = [p.get() for p in results]
-
-    # print(outputList)
-
-    # ll_out = list()
-
-    # for station in sel_grdc_no:
-
-    #     # function return geo-dictionary with station name, coords, and scores
-    #     dd = funcs.evaluate_stations(station, pcr_data, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose)
-
-    #     print(dd)
-        
-    #     ll_out.append(dd)
-
-    # print(ll_out)
-    
-
-    #     # make as simple plot of time series if specified and save
-    #     if plot:
-    #         if verbose: click.echo('VERBOSE: plotting.')
-    #         fig, ax = plt.subplots(1, 1, figsize=(20,10))
-    #         df_sim.plot(ax=ax, c='r')
-    #         df_obs.plot(ax=ax, c='k')
-    #         ax.set_ylabel('discharge [m3/s]')
-    #         ax.set_xlabel(None)
-    #         plt.legend()
-    #         if time_scale != None:
-    #             plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
-    #         else:
-    #             plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
-
-    # funcs.write_output(all_scores, geo_dict, time_scale, geojson, out)
+    funcs.write_output(outputList, time_scale, geojson, out)
         
     click.echo(click.style('INFO: done.', fg='green'))
 

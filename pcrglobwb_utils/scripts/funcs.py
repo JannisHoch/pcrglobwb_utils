@@ -3,10 +3,11 @@ from pcrglobwb_utils import sim_data, obs_data, utils
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+import matplotlib.pyplot as plt
 import click
 import os
 
-def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, verbose):
+def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose):
     
     # print some info
     click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
@@ -54,6 +55,19 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
         gdd['MSE']   = df_scores['MSE'][0]
         gdd['RMSE']  = df_scores['RMSE'][0]
         gdd['RRMSE'] = df_scores['RRMSE'][0]
+
+    # make as simple plot of time series if specified and save
+    if plot:
+        fig, ax = plt.subplots(1, 1, figsize=(20,10))
+        df_sim.plot(ax=ax, c='r')
+        df_obs.plot(ax=ax, c='k')
+        ax.set_ylabel('discharge [m3/s]')
+        ax.set_xlabel(None)
+        plt.legend()
+        if time_scale != None:
+            plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
+        else:
+            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
     return gdd
 
@@ -108,7 +122,9 @@ def resample_ts(pcr_obj, df_obs, df_sim, time_scale):
 
     return df_obs, df_sim
 
-def write_output(all_scores, geo_dict, time_scale, geojson, out):
+def write_output(outputList, time_scale, geojson, out):
+
+    all_scores, geo_dict = create_output(outputList)
 
     if time_scale != None:
         click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores_{}.csv'.format(time_scale))))
@@ -125,3 +141,26 @@ def write_output(all_scores, geo_dict, time_scale, geojson, out):
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
+
+def create_output(outputList):
+
+    geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
+
+    all_scores = pd.DataFrame()
+
+    for dd in outputList:
+
+        geo_dict['station'].append(dd['station'])
+        geo_dict['KGE'].append(dd['KGE'])
+        geo_dict['R2'].append(dd['R2'])
+        geo_dict['NSE'].append(dd['NSE'])
+        geo_dict['MSE'].append(dd['MSE'])
+        geo_dict['RMSE'].append(dd['RMSE'])
+        geo_dict['RRMSE'].append(dd['RRMSE'])
+        geo_dict['geometry'].append(dd['geometry'])
+
+        df = pd.DataFrame.from_dict(dd, orient='index', columns=[dd['station']]).drop(['station', 'geometry'])
+
+        all_scores = pd.concat([all_scores, df], axis=1)
+
+    return all_scores, geo_dict
