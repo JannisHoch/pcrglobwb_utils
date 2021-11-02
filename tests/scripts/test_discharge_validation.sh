@@ -1,5 +1,5 @@
 # paths to files and dirs
-nc_file='..\../examples\example_data\GRDC\DUMMY_discharge_dailyTot_output.nc'
+nc_file='../../examples/example_data/GRDC/DUMMY_discharge_dailyTot_output.nc'
 yaml_file='../../examples/example_data/GRDC/stations.yaml'
 folder='../../examples/example_data/GRDC/files'
 excel_file='../../examples/example_data/GRDC/Obidos_data.xlsx'
@@ -11,8 +11,14 @@ xls_out_dir='eval_GRDC/from_xls/'
 
 # execute script
 echo
-echo WITHOUT RESAMPLING FROM YAML-FILE
-pcru_eval_tims --version grdc -y $yaml_file -e ascii --plot --verbose $nc_file $yml_out_dir 
+echo WITHOUT RESAMPLING FROM YAML-FILE - WITH POOLING
+pcru_eval_tims grdc -y $yaml_file -e ascii -N 4 --plot $nc_file $yml_out_dir 
+
+echo
+echo WITHOUT RESAMPLING FROM YAML-FILE - WITHOUT POOLING
+pcru_eval_tims grdc -y $yaml_file -e ascii --plot --verbose $nc_file $yml_out_dir/pooling 
+
+exit 0
 
 echo
 echo WITHOUT RESAMPLING FROM FOLDER

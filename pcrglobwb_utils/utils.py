@@ -84,3 +84,11 @@ def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
         dd[str(props['station'])] = [props, df_obs]
 
     return dd, files
+
+def create_out_dir(out_dir):
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+        click.echo('INFO: saving output to folder {}'.format(out_dir))
+
+    return

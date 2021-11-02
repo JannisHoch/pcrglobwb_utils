@@ -1,30 +1,24 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import warnings
-import pcrglobwb_utils
+from pcrglobwb_utils import sim_data, utils, __version__
 import click
 import xarray as xr
 import pandas as pd
-from shapely.geometry import Point
 import geopandas as gpd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import multiprocessing as mp
 import os
 
+from . import funcs
+from shapely.geometry import Point
+
 @click.group()
-@click.option('--version/--no-version', default=False)
-@click.pass_context
+def cli():
 
-def cli(ctx, version):
-
-    ctx.ensure_object(dict)
-    # ctx.obj['DATA'] = data
-    # ctx.obj['NODE_NUMBER'] = node_number
-    ctx.obj['VERSION'] = version
-
-    if version: click.echo(click.style('INFO: starting evaluation with pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
+    return
 
 @cli.command()
 @click.argument('ncf',)
@@ -36,12 +30,12 @@ def cli(ctx, version):
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
+@click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
-@click.pass_context
 
-def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, verbose):
+def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, number_processes, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -59,25 +53,25 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
     """   
 
     click.echo(click.style('INFO: start.', fg='green'))
+    click.echo(click.style('INFO: pcrglobwb_utils version {}.'.format(__version__), fg='green'))
 
+    # create main output dir
     out = os.path.abspath(out)
-    if not os.path.isdir(out):
-        if verbose: click.echo('INFO: creating output folder {}'.format(out))
-        os.makedirs(out)
+    utils.create_out_dir(out)
+
+    # now get started with simulated data
+    click.echo(click.style('INFO: loading simulated data from {}.'.format(ncf), fg='red'))
+    pcr_ds = xr.open_dataset(ncf)
 
     # check if data comes via yml-file or from folder
-    mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
+    mode = utils.check_mode(yaml_file, folder)
 
     # depending on mode, data is read at different stages of this script
     if mode == 'yml':
-        data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
+        data, yaml_root = utils.read_yml(yaml_file)
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
-        data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
-
-    # now get started with simulated data
-    click.echo('INFO: loading simulated data from {}.'.format(ncf))
-    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+        data, files = utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
 
     # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
@@ -92,149 +86,30 @@ def GRDC(ctx, ncf, out, var_name, yaml_file, folder, grdc_column, encoding, sele
     # otherwise, all stations in folder or yml-file are considered
     else:
 
-        click.echo('INFO: no selection applied, all (provided) stations considered.')
         sel_grdc_no = data.keys()
 
     if not sel_grdc_no:
         raise Warning('WARNING: no stations selected to be evaluated!')
 
-    # prepare a geojson-file for output later (if specified)
-    if geojson:
-        click.echo('INFO: preparing geo-dict for GeoJSON output')
-        geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
+    if number_processes != None:
 
-    all_scores = pd.DataFrame()
-
-    # validate data at each station specified in yml-file
-    # or as returned from the all files in folder
-    # or only for selected files in folder
-    for station in sel_grdc_no:
-
-        # print some info
-        click.echo(click.style('INFO: validating station {}.'.format(station), fg='cyan'))
-
-        # create sub-directory per station
-        out_dir = os.path.abspath(out) + '/{}'.format(station)
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
-        click.echo('INFO: saving output to folder {}'.format(out_dir))
-
-        # update geojson-file with station info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station name to geo-dict')
-            geo_dict['station'].append(station)
-
-        # if data is via yml-file, the data is read here as well as are station properties
-        if mode == 'yml': 
-
-            # construct path to GRDC-file
-            grdc_file = os.path.join(yaml_root, data[str(station)]['file'])           
-            click.echo('INFO: validating variable {} from file {}'.format(var_name, ncf))
-            click.echo('INFO: with observations from file {}.'.format(grdc_file))
-        
-            click.echo('INFO: loading GRDC data.')
-            grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
-
-            if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
-            plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)
-
-            # retrieving values from GRDC file
-            if 'column' in data[str(station)].keys():
-                df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name='OBS', encoding=encoding, verbose=verbose)
-            else:
-                df_obs, props = grdc_data.get_grdc_station_values(var_name='OBS', verbose=verbose, encoding=encoding)
-            df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
-
-            # if 'lat' or 'lon' are specified for a station in yml-file,
-            # use this instead of GRDC coordinates
-            if 'lat' in data[str(station)].keys():
-                click.echo('INFO: overwriting GRDC latitude information {} with user input {}.'.format(props['latitude'], data[str(station)]['lat']))
-                props['latitude'] = data[str(station)]['lat']
-            if 'lon' in data[str(station)].keys():
-                click.echo('INFO: overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
-                props['longitude'] = data[str(station)]['lon']
-
-        # if data comes from folder, it was already read and can now be retrieved from dictionary
-        if mode == 'fld':
-            df_obs, props = data[str(station)][1], data[str(station)][0]
-
-        # update geojson-file with geometry info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
-            geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
-
-        # get row/col combination for cell corresponding to lon/lat combination
-        click.echo('INFO: getting row/column combination from longitude/latitude.')
-        row, col = pcr_data.find_indices_from_coords(props['longitude'], props['latitude'])
-
-        # retrieving values at that cell
-        click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
-        df_sim = pcr_data.read_values_at_indices(row, col, var_name=var_name, plot_var_name='SIM')
-        df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
-
-        # resample if specified to other time scales
-        if time_scale == 'month':
-            click.echo('INFO: resampling observed data to monthly time scale.')
-            df_obs = df_obs.resample('M', convention='start').mean()
-            df_sim = pcr_data.resample2monthly()
-        elif time_scale == 'year':
-            click.echo('INFO: resampling observed data to yearly time scale.')
-            df_obs = df_obs.resample('Y', convention='start').mean()
-            df_sim = pcr_data.resample2yearly()
-        elif time_scale == 'quarter':
-            click.echo('INFO: resampling observed data to quarterly time scale.')
-            df_obs = df_obs.resample('Q', convention='start').agg('mean')
-            df_sim = pcr_data.resample2quarterly()
-
-        # compute scores
-        click.echo('INFO: computing scores.')
-        scores = pcr_data.validate_results(df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
-
-        # create one dataframe with scores from all stations
-        scores.index = [station]
-        all_scores = pd.concat([all_scores, scores], axis=0)
-        
-        # update geojson-file with KGE info
-        if geojson: 
-            if verbose: click.echo('VERBOSE: adding station KGE to geo-dict')
-            geo_dict['KGE'].append(scores['KGE'][0])
-            geo_dict['R2'].append(scores['R2'][0])
-            geo_dict['NSE'].append(scores['NSE'][0])
-            geo_dict['MSE'].append(scores['MSE'][0])
-            geo_dict['RMSE'].append(scores['RMSE'][0])
-            geo_dict['RRMSE'].append(scores['RRMSE'][0])
-
-        # make as simple plot of time series if specified and save
-        if plot:
-            if verbose: click.echo('VERBOSE: plotting.')
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            df_sim.plot(ax=ax, c='r')
-            df_obs.plot(ax=ax, c='k')
-            ax.set_ylabel('discharge [m3/s]')
-            ax.set_xlabel(None)
-            plt.legend()
-            if time_scale != None:
-                plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
-            else:
-                plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
-
-    if time_scale != None:
-        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores_{}.csv'.format(time_scale))))
-        all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
-    else:
-        click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
-        all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
-
-    # write geojson-file to disc
-    if geojson:
-        click.echo('INFO: creating geo-dataframe')
-        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
-        if time_scale != None:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+        min_number_processes = min(number_processes, len(sel_grdc_no), mp.cpu_count())
+        if number_processes > min_number_processes: 
+            click.echo('INFO: number of CPUs reduced to {}'.format(min_number_processes))
         else:
-            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
-        
+            click.echo('INFO: using {} CPUs for pooling'.format(min_number_processes))
+        pool = mp.Pool(processes=min_number_processes)
 
+        results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose)) for station in sel_grdc_no]
+
+        outputList = [p.get() for p in results]
+
+    else:
+
+        outputList = [funcs.evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose) for station in sel_grdc_no]
+
+    funcs.write_output(outputList, time_scale, geojson, out)
+        
     click.echo(click.style('INFO: done.', fg='green'))
 
 #------------------------------
@@ -288,7 +163,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
     # now get started with simulated data
     click.echo('INFO: loading simulated data from {}.'.format(ncf))
-    pcr_data = pcrglobwb_utils.sim_data.from_nc(ncf)
+    pcr_data = sim_data.from_nc(ncf)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
