@@ -2,10 +2,80 @@
 from pcrglobwb_utils import sim_data, obs_data, utils
 import pandas as pd
 import geopandas as gpd
+import numpy as np
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import click
+import spotpy
 import os
+
+def evaluate_polygons(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+
+    if verbose: click.echo('VERBOSE: evaluating polygon with {} {}'.format(ply_id, ID))
+
+    poly = extent_gdf.loc[extent_gdf[ply_id] == ID]
+
+    # clipping obs data-array to shape extent
+    obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+    # clipping sim data-array to shape extent
+    sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+
+    mean_val_timestep_obs = list()
+    mean_val_timestep_sim = list()
+
+    # compute mean per time step in clipped data-array and append to array
+    for i in range(len(obs_data_c.time.values)):
+        time = obs_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(obs_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_obs.append(mean)
+    for i in range(len(sim_data_c.time.values)):
+        time = sim_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(sim_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_sim.append(mean)
+
+    # determine anomalies is specified
+    if anomaly:
+        if verbose: click.echo('VERBOSE: determine anomalies.')
+        mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
+        mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
+
+    obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
+    sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
+
+    # accounting for missing values in time series (and thus missing index values!)
+    if time_step == 'monthly':
+        if verbose: click.echo('VERBOSE: covering missing months in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
+    if time_step == 'annual':
+        if verbose: click.echo('VERBOSE: covering missing years in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
+
+    # concatenating both dataframes to drop rows with missing values in one of the columns
+    # dropping rows with missing values is import because time extents of both files probably do not match
+    if verbose: click.echo('VEROBSE: concatenating observed and simulated data.')
+    final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
+
+    # computing evaluation metrics
+    r = spotpy.objectivefunctions.correlationcoefficient(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    if verbose: click.echo('INFO: R is {}'.format(r))
+    if verbose: click.echo('INFO: MSE is {}'.format(mse))
+    if verbose: click.echo('INFO: RMSE is {}'.format(rmse))
+    if verbose: click.echo('INFO: RRMSE is {}'.format(rrmse))
+
+    # save metrics to polygon-specific dict
+    poly_skill_dict = {'R': round(r, 3),
+                        'MSE': round(mse, 1),
+                        'RMSE': round(rmse, 1),
+                        'RRMSE': round(rrmse, 1)}
+
+    return poly_skill_dict
 
 def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose):
     
@@ -141,6 +211,39 @@ def write_output(outputList, time_scale, geojson, out):
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
+
+def write_output_poly(outputList, sim_var_name, obs_var_name, out, plot):
+
+    # initializing 'master' dictionary to store metrics per polygon
+    out_dict = {}
+    
+    # add polygon-specific dict to 'master' dict    
+    out_dict[ID] = poly_skill_dict
+
+    # convert 'master' dict to dataframe and store to file
+    out_df = pd.DataFrame().from_dict(out_dict).T
+    out_df.index.name = ply_id
+    click.echo('INFO: storing dictionary to {}.'.format(os.path.join(out, 'output_dict.csv')))
+    out_df.to_csv(os.path.join(out, '{}_vs_{}.csv'.format(sim_var_name, obs_var_name)))
+
+    # assign evaluation metrics per polygon to geometry and store to file
+    gdf_out = extent_gdf.merge(out_df, on=ply_id)
+    click.echo('INFO: storing polygons to {}.'.format(os.path.join(out, 'output_polygons.geojson')))
+    gdf_out.to_file(os.path.join(out, '{}_vs_{}.geojson'.format(sim_var_name, obs_var_name)), driver='GeoJSON')
+
+    # plot if specified
+    if plot:
+        click.echo('INFO: plotting evaluation metrics per polygon.')
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 7))
+        gdf_out.plot(ax=ax1, column='R', legend=True)
+        ax1.set_title('R')
+        gdf_out.plot(ax=ax2, column='MSE', legend=True)
+        ax2.set_title('MSE')
+        gdf_out.plot(ax=ax3, column='RMSE', legend=True)
+        ax3.set_title('RMSE')
+        plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
+
+    return
 
 def create_output(outputList):
 
