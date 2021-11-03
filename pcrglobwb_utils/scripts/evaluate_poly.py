@@ -104,7 +104,7 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
         pool = mp.Pool(processes=min_number_processes)
 
         #TODO: change function such that returned dictionaries in list contain all information needed to later produce csv and geojson output
-        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
+        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
 
         outputList = [p.get() for p in results]
 
@@ -112,7 +112,6 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
 
         outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
 
-    #TODO: adapt this function such that it works with tims and poly
-    funcs.write_output_poly(outputList, time_scale, geojson, out)
+    funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
     
     click.echo(click.style('INFO: done.', fg='green'))
