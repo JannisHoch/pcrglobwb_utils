@@ -72,6 +72,7 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here!
         data, files = utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        yaml_root = None
 
     # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
@@ -121,7 +122,7 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
 @click.argument('out',)
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-id', '--location-id', help='unique identifier in locations file.', default='name', type=str)
-@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
+@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year', type=str)
 @click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
@@ -153,8 +154,6 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     click.echo(click.style('INFO: validating variable {} from file {}'.format(var_name, ncf), fg='red'))
     click.echo(click.style('INFO: with data from file {}'.format(xls), fg='red'))
     click.echo(click.style('INFO: using locations from file {}'.format(loc), fg='red'))
-
-    sim = xr.open_dataset(ncf)
 
     df_obs = pd.read_excel(xls, index_col=0)
     df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
@@ -207,11 +206,11 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
             # get row/col combination for cell corresponding to lon/lat combination
             click.echo('INFO: getting row/column combination from longitude/latitude.')
-            row, col = pcr_data.find_indices_from_coords(lon, lat)
+            row, col = pcr_data.get_indices(lon, lat)
 
             # retrieving values at that cell
             click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
-            df_sim = pcr_data.read_values_at_indices(row, col, var_name=var_name, plot_var_name='SIM')
+            df_sim = pcr_data.get_values(row, col, var_name=var_name, plot_var_name='SIM')
             df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
             # resample if specified to other time scales
@@ -230,7 +229,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
             # compute scores
             click.echo('INFO: computing scores.')
-            scores = pcr_data.validate_results(station_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
+            scores = pcr_data.validate(station_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
             # create one dataframe with scores from all stations
             scores.index = [name]

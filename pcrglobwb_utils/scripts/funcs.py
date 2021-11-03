@@ -1,5 +1,5 @@
 
-from pcrglobwb_utils import sim_data, obs_data, utils
+from pcrglobwb_utils import sim_data, obs_data, time_funcs, utils
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -9,16 +9,21 @@ import click
 import spotpy
 import os
 
-def evaluate_polygons(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
 
     if verbose: click.echo('VERBOSE: evaluating polygon with {} {}'.format(ply_id, ID))
 
     poly = extent_gdf.loc[extent_gdf[ply_id] == ID]
 
+    poly_geom = poly['geometry']
+
+    click.echo('INFO: preparing geo-dict for GeoJSON output')
+    gdd = {'ID': ID, 'geometry': poly_geom}
+
     # clipping obs data-array to shape extent
-    obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+    obs_data_c = obs_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
     # clipping sim data-array to shape extent
-    sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+    sim_data_c = sim_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
 
     mean_val_timestep_obs = list()
     mean_val_timestep_sim = list()
@@ -60,22 +65,21 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_id
     final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
 
     # computing evaluation metrics
-    r = spotpy.objectivefunctions.correlationcoefficient(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
     mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
     rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
     rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    if verbose: click.echo('INFO: R is {}'.format(r))
+    if verbose: click.echo('INFO: R2 is {}'.format(r2))
     if verbose: click.echo('INFO: MSE is {}'.format(mse))
     if verbose: click.echo('INFO: RMSE is {}'.format(rmse))
     if verbose: click.echo('INFO: RRMSE is {}'.format(rrmse))
 
-    # save metrics to polygon-specific dict
-    poly_skill_dict = {'R': round(r, 3),
-                        'MSE': round(mse, 1),
-                        'RMSE': round(rmse, 1),
-                        'RRMSE': round(rrmse, 1)}
+    gdd['R2'] = round(r2, 3)
+    gdd['MSE'] = round(mse, 3)
+    gdd['RMSE'] = round(rmse, 3)
+    gdd['RRMSE'] = round(rrmse, 3)
 
-    return poly_skill_dict
+    return gdd
 
 def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose):
     
@@ -108,7 +112,7 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
     df_sim = sim_data.read_at_indices(pcr_ds, row, col, var_name=var_name, plot_var_name='SIM')
     df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
-    df_obs, df_sim = resample_ts(pcr_ds, df_obs, df_sim, time_scale)
+    df_obs, df_sim = resample_ts(df_obs, df_sim, time_scale)
 
     # compute scores
     click.echo('INFO: computing scores.')
@@ -171,21 +175,15 @@ def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
 
     return df_obs, props
 
-def resample_ts(pcr_obj, df_obs, df_sim, time_scale):
+def resample_ts(df_obs, df_sim, time_scale):
 
     # resample if specified to other time scales
     if time_scale == 'month':
-        click.echo('INFO: resampling observed data to monthly time scale.')
-        df_obs = df_obs.resample('M', convention='start').mean()
-        df_sim = pcr_obj.resample2monthly()
+        df_obs = time_funcs.resample_to_month(df_obs, stat_func='mean')
+        df_sim = time_funcs.resample_to_month(df_sim, stat_func='mean')
     elif time_scale == 'year':
-        click.echo('INFO: resampling observed data to yearly time scale.')
-        df_obs = df_obs.resample('Y', convention='start').mean()
-        df_sim = pcr_obj.resample2yearly()
-    elif time_scale == 'quarter':
-        click.echo('INFO: resampling observed data to quarterly time scale.')
-        df_obs = df_obs.resample('Q', convention='start').agg('mean')
-        df_sim = pcr_obj.resample2quarterly()
+        df_obs = time_funcs.resample_to_annual(df_obs, stat_func='mean')
+        df_sim = time_funcs.resample_to_annual(df_sim, stat_func='mean')
     else:
         df_obs = df_obs
         df_sim = df_sim    
@@ -214,36 +212,26 @@ def write_output(outputList, time_scale, geojson, out):
 
 def write_output_poly(outputList, sim_var_name, obs_var_name, out, plot):
 
-    # initializing 'master' dictionary to store metrics per polygon
-    out_dict = {}
-    
-    # add polygon-specific dict to 'master' dict    
-    out_dict[ID] = poly_skill_dict
+    all_scores, geo_dict = create_output_poly(outputList)
 
-    # convert 'master' dict to dataframe and store to file
-    out_df = pd.DataFrame().from_dict(out_dict).T
-    out_df.index.name = ply_id
     click.echo('INFO: storing dictionary to {}.'.format(os.path.join(out, 'output_dict.csv')))
-    out_df.to_csv(os.path.join(out, '{}_vs_{}.csv'.format(sim_var_name, obs_var_name)))
+    all_scores.to_csv(os.path.join(out, '{}_vs_{}.csv'.format(sim_var_name, obs_var_name)))
 
     # assign evaluation metrics per polygon to geometry and store to file
-    gdf_out = extent_gdf.merge(out_df, on=ply_id)
+    gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
     click.echo('INFO: storing polygons to {}.'.format(os.path.join(out, 'output_polygons.geojson')))
-    gdf_out.to_file(os.path.join(out, '{}_vs_{}.geojson'.format(sim_var_name, obs_var_name)), driver='GeoJSON')
+    gdf.to_file(os.path.join(out, '{}_vs_{}.geojson'.format(sim_var_name, obs_var_name)), driver='GeoJSON')
 
     # plot if specified
     if plot:
-        click.echo('INFO: plotting evaluation metrics per polygon.')
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 7))
-        gdf_out.plot(ax=ax1, column='R', legend=True)
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 5))
+        gdf.plot(ax=ax1, column='R', legend=True)
         ax1.set_title('R')
-        gdf_out.plot(ax=ax2, column='MSE', legend=True)
+        gdf.plot(ax=ax2, column='MSE', legend=True)
         ax2.set_title('MSE')
-        gdf_out.plot(ax=ax3, column='RMSE', legend=True)
+        gdf.plot(ax=ax3, column='RMSE', legend=True)
         ax3.set_title('RMSE')
         plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
-
-    return
 
 def create_output(outputList):
 
@@ -263,6 +251,27 @@ def create_output(outputList):
         geo_dict['geometry'].append(dd['geometry'])
 
         df = pd.DataFrame.from_dict(dd, orient='index', columns=[dd['station']]).drop(['station', 'geometry'])
+
+        all_scores = pd.concat([all_scores, df], axis=1)
+
+    return all_scores, geo_dict
+
+def create_output_poly(outputList):
+
+    geo_dict = {'ID': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
+
+    all_scores = pd.DataFrame()
+
+    for dd in outputList:
+
+        geo_dict['ID'].append(dd['ID'])
+        geo_dict['R2'].append(dd['R2'])
+        geo_dict['MSE'].append(dd['MSE'])
+        geo_dict['RMSE'].append(dd['RMSE'])
+        geo_dict['RRMSE'].append(dd['RRMSE'])
+        geo_dict['geometry'].append(dd['geometry'])
+
+        df = pd.DataFrame.from_dict(dd, orient='index', columns=[dd['ID']]).drop(['ID', 'geometry'])
 
         all_scores = pd.concat([all_scores, df], axis=1)
 
