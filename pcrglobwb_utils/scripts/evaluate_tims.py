@@ -2,6 +2,7 @@
 # coding: utf-8
 
 from pcrglobwb_utils import sim_data, utils, __version__
+from . import funcs
 import click
 import xarray as xr
 import pandas as pd
@@ -10,10 +11,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import multiprocessing as mp
-import os
-
-from . import funcs
+from datetime import datetime
 from shapely.geometry import Point
+import os
 
 @click.group()
 def cli():
@@ -52,15 +52,17 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     OUT: Main output directory. Per station, a sub-directory will be created.
     """   
 
-    click.echo(click.style('INFO: start.', fg='green'))
-    click.echo(click.style('INFO: pcrglobwb_utils version {}.'.format(__version__), fg='green'))
+    t_start = datetime.now()
+
+    click.echo(click.style('INFO -- start.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(__version__), fg='green'))
 
     # create main output dir
     out = os.path.abspath(out)
     utils.create_out_dir(out)
 
     # now get started with simulated data
-    click.echo(click.style('INFO: loading simulated data from {}.'.format(ncf), fg='red'))
+    click.echo(click.style('INFO -- loading simulated data from {}.'.format(ncf), fg='red'))
     pcr_ds = xr.open_dataset(ncf)
 
     # check if data comes via yml-file or from folder
@@ -77,7 +79,7 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     # if specified, getting station numbers of selected stations
     if (selection_file != None) and (mode == 'fld'):
         
-        click.echo('INFO: reading selected GRDC No.s from {}.'.format(os.path.abspath(selection_file)))
+        click.echo('INFO -- reading selected GRDC No.s from {}.'.format(os.path.abspath(selection_file)))
         selection_file = os.path.abspath(selection_file)
 
         with open(selection_file) as file:
@@ -96,9 +98,9 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
 
         min_number_processes = min(number_processes, len(sel_grdc_no), mp.cpu_count())
         if number_processes > min_number_processes: 
-            click.echo('INFO: number of CPUs reduced to {}'.format(min_number_processes))
+            click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
         else:
-            click.echo('INFO: using {} CPUs for pooling'.format(min_number_processes))
+            click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
         pool = mp.Pool(processes=min_number_processes)
 
         results = [pool.apply_async(funcs.evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose)) for station in sel_grdc_no]
@@ -110,8 +112,12 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
         outputList = [funcs.evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose) for station in sel_grdc_no]
 
     funcs.write_output(outputList, time_scale, geojson, out)
+
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
         
-    click.echo(click.style('INFO: done.', fg='green'))
+    click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
 #------------------------------
 
@@ -150,10 +156,12 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     OUT: Main output directory. Per station, a sub-directory will be created.
     """    
 
-    click.echo(click.style('INFO: start.', fg='green'))
-    click.echo(click.style('INFO: validating variable {} from file {}'.format(var_name, ncf), fg='red'))
-    click.echo(click.style('INFO: with data from file {}'.format(xls), fg='red'))
-    click.echo(click.style('INFO: using locations from file {}'.format(loc), fg='red'))
+    t_start = datetime.now()
+
+    click.echo(click.style('INFO -- start.', fg='green'))
+    click.echo(click.style('INFO -- validating variable {} from file {}'.format(var_name, ncf), fg='red'))
+    click.echo(click.style('INFO -- with data from file {}'.format(xls), fg='red'))
+    click.echo(click.style('INFO -- using locations from file {}'.format(loc), fg='red'))
 
     df_obs = pd.read_excel(xls, index_col=0)
     df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
@@ -161,12 +169,12 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
     locs = gpd.read_file(loc, driver='GeoJSON')
 
     # now get started with simulated data
-    click.echo('INFO: loading simulated data from {}.'.format(ncf))
+    click.echo('INFO -- loading simulated data from {}.'.format(ncf))
     pcr_data = sim_data.from_nc(ncf)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
-        click.echo('INFO: preparing geo-dict for GeoJSON output')
+        click.echo('INFO -- preparing geo-dict for GeoJSON output')
         geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
     all_scores = pd.DataFrame()
@@ -179,56 +187,56 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
         else:
         
-            if verbose: click.echo('VERBOSE: evaluating station with name {}'.format(name))
+            if verbose: click.echo('VERBOSE -- evaluating station with name {}'.format(name))
 
             # update geojson-file with station info
             if geojson: 
-                if verbose: click.echo('VERBOSE: adding station name to geo-dict')
+                if verbose: click.echo('VERBOSE -- adding station name to geo-dict')
                 geo_dict['station'].append(name)
 
             # create sub-directory per station
             out_dir = os.path.abspath(out) + '/{}'.format(name)
             if not os.path.isdir(out_dir):
                 os.makedirs(out_dir)
-            click.echo('INFO: saving output to folder {}'.format(out_dir))
+            click.echo('INFO -- saving output to folder {}'.format(out_dir))
 
-            click.echo('INFO: retrieving data from Excel-file for column with name of station')
+            click.echo('INFO -- retrieving data from Excel-file for column with name of station')
             station_obs = df_obs[str(name)]
 
             lon = locs[locs[location_id] == name].geometry.x[i]
             lat = locs[locs[location_id] == name].geometry.y[i]
-            click.echo('INFO: from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
+            click.echo('INFO -- from geojson-file, retrieved lon/lat combination {}/{}'.format(lon, lat))
 
             # update geojson-file with geometry info
             if geojson: 
-                if verbose: click.echo('VERBOSE: adding station coordinates to geo-dict')
+                if verbose: click.echo('VERBOSE -- adding station coordinates to geo-dict')
                 geo_dict['geometry'].append(Point(lon, lat))
 
             # get row/col combination for cell corresponding to lon/lat combination
-            click.echo('INFO: getting row/column combination from longitude/latitude.')
+            click.echo('INFO -- getting row/column combination from longitude/latitude.')
             row, col = pcr_data.get_indices(lon, lat)
 
             # retrieving values at that cell
-            click.echo('INFO: reading variable {} at row {} and column {}.'.format(var_name, row, col))
+            click.echo('INFO -- reading variable {} at row {} and column {}.'.format(var_name, row, col))
             df_sim = pcr_data.get_values(row, col, var_name=var_name, plot_var_name='SIM')
             df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
             # resample if specified to other time scales
             if time_scale == 'month':
-                click.echo('INFO: resampling observed data to monthly time scale.')
+                click.echo('INFO -- resampling observed data to monthly time scale.')
                 station_obs = station_obs.resample('M', convention='start').mean()
                 df_sim = pcr_data.resample2monthly()
             elif time_scale == 'year':
-                click.echo('INFO: resampling observed data to yearly time scale.')
+                click.echo('INFO -- resampling observed data to yearly time scale.')
                 station_obs = station_obs.resample('Y', convention='start').mean()
                 df_sim = pcr_data.resample2yearly()
             elif time_scale == 'quarter':
-                click.echo('INFO: resampling observed data to quarterly time scale.')
+                click.echo('INFO -- resampling observed data to quarterly time scale.')
                 station_obs = station_obs.resample('Q', convention='start').agg('mean')
                 df_sim = pcr_data.resample2quarterly()
 
             # compute scores
-            click.echo('INFO: computing scores.')
+            click.echo('INFO -- computing scores.')
             scores = pcr_data.validate(station_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
 
             # create one dataframe with scores from all stations
@@ -237,7 +245,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
             # update geojson-file with KGE info
             if geojson: 
-                if verbose: click.echo('VERBOSE: adding station validation metrics to geo-dict')
+                if verbose: click.echo('VERBOSE -- adding station validation metrics to geo-dict')
                 geo_dict['KGE'].append(scores['KGE'][0])
                 geo_dict['R2'].append(scores['R2'][0])
                 geo_dict['NSE'].append(scores['NSE'][0])
@@ -247,7 +255,7 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
 
             # make as simple plot of time series if specified and save
             if plot:
-                if verbose: click.echo('VERBOSE: plotting.')
+                if verbose: click.echo('VERBOSE -- plotting.')
                 fig, ax = plt.subplots(1, 1, figsize=(20,10))
                 df_sim.plot(ax=ax, c='r')
                 station_obs.plot(ax=ax, c='k')
@@ -259,19 +267,23 @@ def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geoj
                 else:
                     plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
 
-    click.echo('INFO: saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
+    click.echo('INFO -- saving all scores to {}.'.format(os.path.join(out, 'all_scores.csv')))
     if time_scale != None:
         all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
     else:
         all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
 
     if geojson:
-        click.echo('INFO: creating geo-dataframe')
+        click.echo('INFO -- creating geo-dataframe')
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
         if time_scale != None:
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
         else:
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
 
-    click.echo(click.style('INFO: done.', fg='green'))
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+
+    click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 #------------------------------

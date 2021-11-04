@@ -30,7 +30,7 @@ def calc_montly_avg(df_in, var_name=None):
 
 def resample_to_month(df, stat_func):
 
-    click.echo('INFO: resampling data to monthly time scale.')
+    click.echo('INFO -- resampling data to monthly time scale.')
     if stat_func == 'mean':
         df = df.resample('M', convention='start').mean()
     elif stat_func == 'max':
@@ -44,7 +44,7 @@ def resample_to_month(df, stat_func):
 
 def resample_to_annual(df, stat_func):
 
-    click.echo('INFO: resampling data to yearly time scale.')
+    click.echo('INFO -- resampling data to yearly time scale.')
     if stat_func == 'mean':
         df = df.resample('Y', convention='start').mean()
     elif stat_func == 'max':

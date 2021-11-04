@@ -2,19 +2,16 @@
 # coding: utf-8
 
 import pcrglobwb_utils
+from . import funcs
 import click
 import xarray as xr
 import pandas as pd
-import numpy as np
 import geopandas as gpd
 import multiprocessing as mp
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import spotpy
+from datetime import datetime
 import os
-
-from . import funcs
 
 @click.command()
 @click.argument('ply',)
@@ -52,23 +49,25 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
 
     """  
 
-    click.echo(click.style('INFO: start.', fg='green'))
-    click.echo(click.style('INFO: pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
+    t_start = datetime.now()
+
+    click.echo(click.style('INFO -- start.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
     # get full path name of output-dir and create it if not there yet
     out = os.path.abspath(out)
     pcrglobwb_utils.utils.create_out_dir(out)
 
     # read nc-files with xarray to datasets
-    click.echo(click.style('INFO: reading observed variable {} from {}'.format(obs_var_name, obs), fg='red'))
+    click.echo(click.style('INFO -- reading observed variable {} from {}'.format(obs_var_name, obs), fg='red'))
     obs_ds = xr.open_dataset(obs)
-    click.echo(click.style('INFO: reading simulated variable {} from {}'.format(sim_var_name, sim), fg='red'))
+    click.echo(click.style('INFO -- reading simulated variable {} from {}'.format(sim_var_name, sim), fg='red'))
     sim_ds = xr.open_dataset(sim)
 
     # extract variable data from datasets
-    if verbose: click.echo('VERBOSE: extract data from files')
+    if verbose: click.echo('VERBOSE -- extract data from files')
     obs_data = obs_ds[obs_var_name]
-    if verbose: click.echo('VERBOSE: applying conversion factor {} to simulated data'.format(conversion_factor))
+    if verbose: click.echo('VERBOSE -- applying conversion factor {} to simulated data'.format(conversion_factor))
     sim_data = sim_ds[sim_var_name] * conversion_factor
 
     # retrieve time indices
@@ -76,11 +75,11 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
     sim_idx = pd.to_datetime(pd.to_datetime(sim_ds.time.values).strftime('%Y-%m'))
 
     # read shapefile with one or more polygons
-    click.echo(click.style('INFO: reading polygons from {}'.format(os.path.abspath(ply)), fg='red'))
+    click.echo(click.style('INFO -- reading polygons from {}'.format(os.path.abspath(ply)), fg='red'))
     extent_gdf = gpd.read_file(ply, crs=coordinate_system, driver='GeoJSON')
 
     # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
-    if verbose: click.echo('VERBOSE: setting spatial dimensions and crs of nc-files')
+    if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
     try:
         obs_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
     except:
@@ -93,25 +92,28 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
         sim_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     sim_data.rio.write_crs(coordinate_system, inplace=True)
 
-    click.echo('INFO: evaluating each polygon')
+    click.echo('INFO -- evaluating each polygon')
     if number_processes != None:
 
         min_number_processes = min(number_processes, len(extent_gdf), mp.cpu_count())
         if number_processes > min_number_processes: 
-            click.echo('INFO: number of CPUs reduced to {}'.format(min_number_processes))
+            click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
         else:
-            click.echo('INFO: using {} CPUs for pooling'.format(min_number_processes))
+            click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
         pool = mp.Pool(processes=min_number_processes)
 
-        #TODO: change function such that returned dictionaries in list contain all information needed to later produce csv and geojson output
         results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
 
         outputList = [p.get() for p in results]
 
     else:
 
-        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
-
-    funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
+        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
     
-    click.echo(click.style('INFO: done.', fg='green'))
+    funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
+
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+    
+    click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))

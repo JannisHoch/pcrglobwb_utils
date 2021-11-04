@@ -23,7 +23,7 @@ class from_nc:
 
     def get_copy(self, verbose=False):
 
-        if verbose: click.echo('VERBOSE: returning copy of xarray dataset')
+        if verbose: click.echo('VERBOSE -- returning copy of xarray dataset')
 
         cp = self.ds.copy()
 

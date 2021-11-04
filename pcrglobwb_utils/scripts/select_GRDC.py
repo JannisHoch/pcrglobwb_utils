@@ -34,7 +34,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, nr_year
     # create output directory if not there yet
     out_dir = os.path.abspath(out_dir)
     if not os.path.isdir(out_dir):
-        if verbose: click.echo('INFO: creating output folder {}'.format(out_dir))
+        if verbose: click.echo('INFO -- creating output folder {}'.format(out_dir))
         os.makedirs(out_dir)
     # define output file with selected stations
     out_fo = os.path.join(out_dir, 'selected_GRDC_stations.txt')
@@ -46,7 +46,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, nr_year
     data, files = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
 
     # from each file, collect properties and apply selection
-    click.echo('INFO: applying selection criteria')
+    click.echo('INFO -- applying selection criteria')
     for f in files:
 
         grdc_obj = pcrglobwb_utils.obs_data.grdc_data(f)
@@ -61,7 +61,7 @@ def main(in_dir, out_dir, grdc_column, verbose, encoding, cat_area_thld, nr_year
     
     # write list to output file
     fo = open(out_fo,'w')
-    if verbose: click.echo('INFO: writing selected stations to {}'.format(fo))
+    if verbose: click.echo('INFO -- writing selected stations to {}'.format(fo))
     for item in out_ll:
         fo.write("%s\n" % item)
     fo.close()
