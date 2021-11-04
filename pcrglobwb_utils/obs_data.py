@@ -141,7 +141,7 @@ class grdc_data:
         df = pd.read_csv(self.fo, skiprows=stopline, sep=';')
 
         try: 
-            if verbose: print('VERBOSE: reading column {}'.format(col_name))
+            if verbose: print('VERBOSE -- reading column {}'.format(col_name))
             df[var_name] = df[str(col_name)].copy()
             del df[str(col_name)]
         except:

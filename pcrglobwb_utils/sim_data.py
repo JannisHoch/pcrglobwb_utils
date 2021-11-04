@@ -5,6 +5,8 @@ import numpy as np
 import click
 import os
 
+from . import time_funcs
+
 ## OBJECT AND METHODS
 class from_nc:
     """Retrieving and working with timeseries data from a nc-file.
@@ -21,7 +23,7 @@ class from_nc:
 
     def get_copy(self, verbose=False):
 
-        if verbose: click.echo('VERBOSE: returning copy of xarray dataset')
+        if verbose: click.echo('VERBOSE -- returning copy of xarray dataset')
 
         cp = self.ds.copy()
 
@@ -46,7 +48,7 @@ class from_nc:
 
         return self.df
 
-    def resample2monthly(self, stat_func='mean'):
+    def to_monthly(self, stat_func='mean'):
         """Resampling values to monthly time scale.
 
         Keyword Arguments:
@@ -56,19 +58,13 @@ class from_nc:
             dataframe: dataframe containing monthly values
         """        
 
-        click.echo('INFO: resampling simulated data to monthly time scale.')
-        if stat_func == 'mean':
-            self.df = self.df.resample('M', convention='start').mean()
-        elif stat_func == 'max':
-            self.df = self.df.resample('M', convention='start').max()
-        elif stat_func == 'min':
-            self.df = self.df.resample('M', convention='start').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = self.df
+
+        df = time_funcs.resample_to_month(df, stat_func=stat_func)
 
         return self.df
 
-    def resample2yearly(self, stat_func='mean'):
+    def to_annual(self, stat_func='mean'):
         """Resampling values to annual time scale.
 
         Keyword Arguments:
@@ -76,31 +72,13 @@ class from_nc:
 
         Returns:
             dataframe: dataframe containing monthly annual values
-        """        
+        """       
 
-        click.echo('INFO: resampling simulated data to yearly time scale.')
-        if stat_func == 'mean':
-            self.df = self.df.resample('Y', convention='start').mean()
-        elif stat_func == 'max':
-            self.df = self.df.resample('Y', convention='start').max()
-        elif stat_func == 'min':
-            self.df = self.df.resample('Y', convention='start').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = self.df 
 
-        return self.df
-
-    def resample2quarterly(self):
-        """Resampling values to quarterly time scale.
-
-        Returns:
-            dataframe: dataframe containing quarterly average values
-        """        
-
-        click.echo('INFO: resampling simulated data to quarterly time scale.')
-        self.df = self.df.resample('Q', convention='start').agg('mean')
-
-        return self.df
+        df = time_funcs.resample_to_annual(df, stat_func=stat_func)
+        
+        return df
 
     def validate(self, df_obs, out_dir, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
 
@@ -110,23 +88,6 @@ class from_nc:
                                      suffix=suffix, var_name_obs=var_name_obs, var_name_sim=var_name_sim, return_all_KGE=return_all_KGE)
         
         return df_out
-
-    def calc_stats(self, out_dir, add_obs=False):
-        """Calculates statistics for both observed and simulated timeseries using the pandas describe function.
-
-        Keyword Arguments:
-            plot (bool): whether or not to plot the histogram (default: False)
-
-        Returns:
-            dataframe: dataframe containing statistical values
-        """        
-
-        stats = self.df.describe()
-
-        # save dict to csv
-        stats.to_csv(os.path.join(out_dir, 'stats.csv'))
-
-        return stats
 
 ## FUNCTIONS ##
 

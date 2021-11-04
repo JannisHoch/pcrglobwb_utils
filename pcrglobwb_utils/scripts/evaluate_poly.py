@@ -2,15 +2,15 @@
 # coding: utf-8
 
 import pcrglobwb_utils
+from . import funcs
 import click
 import xarray as xr
 import pandas as pd
-import numpy as np
 import geopandas as gpd
+import multiprocessing as mp
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import spotpy
+from datetime import datetime
 import os
 
 @click.command()
@@ -24,11 +24,12 @@ import os
 @click.option('-cf', '--conversion-factor', default=1, help='conversion factor applied to simulated values to align variable units.', type=int)
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--time-step', '-tstep', help='timestep of data - either "monthly" or "annual". Note that both observed and simualted data must be annual average if the latter option is chosen.', default='monthly', type=str)
+@click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, number_processes, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -48,41 +49,37 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, anom
 
     """  
 
-    click.echo(click.style('INFO: start.', fg='green'))
-    if verbose: click.echo(click.style('VERBOSE: using pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
+    t_start = datetime.now()
 
-    # print some info at the beginning
-    click.echo(click.style('INFO: validating variable {} from file {}'.format(sim_var_name, sim), fg='red'))
-    click.echo(click.style('INFO: with variable {} from file {}'.format(obs_var_name, obs), fg='red'))
+    click.echo(click.style('INFO -- start.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
     # get full path name of output-dir and create it if not there yet
     out = os.path.abspath(out)
     pcrglobwb_utils.utils.create_out_dir(out)
 
     # read nc-files with xarray to datasets
-    print('INFO: reading file {}'.format(os.path.abspath(obs)))
+    click.echo(click.style('INFO -- reading observed variable {} from {}'.format(obs_var_name, obs), fg='red'))
     obs_ds = xr.open_dataset(obs)
-    print('INFO: reading file {}'.format(os.path.abspath(sim)))
+    click.echo(click.style('INFO -- reading simulated variable {} from {}'.format(sim_var_name, sim), fg='red'))
     sim_ds = xr.open_dataset(sim)
 
     # extract variable data from datasets
-    print('INFO: extract data from files')
+    if verbose: click.echo('VERBOSE -- extract data from files')
     obs_data = obs_ds[obs_var_name]
-    click.echo('INFO: applying conversion factor of {} to simulated data'.format(conversion_factor))
+    if verbose: click.echo('VERBOSE -- applying conversion factor {} to simulated data'.format(conversion_factor))
     sim_data = sim_ds[sim_var_name] * conversion_factor
 
+    # retrieve time indices
     obs_idx = pd.to_datetime(pd.to_datetime(obs_ds.time.values).strftime('%Y-%m'))
     sim_idx = pd.to_datetime(pd.to_datetime(sim_ds.time.values).strftime('%Y-%m'))
 
     # read shapefile with one or more polygons
-    print('INFO: reading polygons from file {}'.format(os.path.abspath(ply)))
-    try:
-        extent_gdf = gpd.read_file(ply, crs=coordinate_system)
-    except:
-        extent_gdf = gpd.read_file(ply, crs=coordinate_system, driver='GeoJSON')
+    click.echo(click.style('INFO -- reading polygons from {}'.format(os.path.abspath(ply)), fg='red'))
+    extent_gdf = gpd.read_file(ply, crs=coordinate_system, driver='GeoJSON')
 
     # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
-    click.echo('INFO: setting spatial dimensions and crs of nc-files')
+    if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
     try:
         obs_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
     except:
@@ -95,103 +92,28 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, anom
         sim_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     sim_data.rio.write_crs(coordinate_system, inplace=True)
 
-    # initializing 'master' dictionary to store metrics per polygon
-    out_dict = {}
+    click.echo('INFO -- evaluating each polygon')
+    if number_processes != None:
 
-    click.echo('INFO: evaluating each polygon')
-    # go through all polygons in the ply-file as identfied by a unique ID
-    for ID in extent_gdf[ply_id].unique():
+        min_number_processes = min(number_processes, len(extent_gdf), mp.cpu_count())
+        if number_processes > min_number_processes: 
+            click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
+        else:
+            click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
+        pool = mp.Pool(processes=min_number_processes)
 
-        if verbose: click.echo('VERBOSE: computing R and RMSE for polygon with key identifier {}'.format(ID))
-        poly = extent_gdf.loc[extent_gdf[ply_id] == ID]
+        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
 
-        # clipping obs data-array to shape extent
-        obs_data_c = obs_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
-        # clipping sim data-array to shape extent
-        sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+        outputList = [p.get() for p in results]
 
-        mean_val_timestep_obs = list()
-        mean_val_timestep_sim = list()
+    else:
 
-        # compute mean per time step in clipped data-array and append to array
-        for i in range(len(obs_data_c.time.values)):
-            time = obs_data_c.time[i]
-            t = pd.to_datetime(time.values)
-            mean = float(obs_data_c.sel(time=t).mean(skipna=True))
-            mean_val_timestep_obs.append(mean)
-        for i in range(len(sim_data_c.time.values)):
-            time = sim_data_c.time[i]
-            t = pd.to_datetime(time.values)
-            mean = float(sim_data_c.sel(time=t).mean(skipna=True))
-            mean_val_timestep_sim.append(mean)
+        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
+    
+    funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
 
-        # determine anomalies is specified
-        if anomaly:
-            if verbose: click.echo('VERBOSE: determine anomalies.')
-            mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
-            mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
-
-        obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
-        sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
-
-        # accounting for missing values in time series (and thus missing index values!)
-        if time_step == 'monthly':
-            if verbose: click.echo('VERBOSE: covering missing months in observation or simulation data.')
-            obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
-            sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
-        if time_step == 'annual':
-            if verbose: click.echo('VERBOSE: covering missing years in observation or simulation data.')
-            obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
-            sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
-
-        # concatenating both dataframes to drop rows with missing values in one of the columns
-        # dropping rows with missing values is import because time extents of both files probably do not match
-        if verbose: click.echo('VEROBSE: concatenating observed and simulated data.')
-        final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
-
-        # computing evaluation metrics
-        r = spotpy.objectivefunctions.correlationcoefficient(final_df[obs_var_name].values, final_df[sim_var_name].values)
-        mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-        rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-        rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-        if verbose: click.echo('INFO: R is {}'.format(r))
-        if verbose: click.echo('INFO: MSE is {}'.format(mse))
-        if verbose: click.echo('INFO: RMSE is {}'.format(rmse))
-        if verbose: click.echo('INFO: RRMSE is {}'.format(rrmse))
-
-        # save metrics to polygon-specific dict
-        poly_skill_dict = {'R': round(r, 3),
-                           'MSE': round(mse, 1),
-                           'RMSE': round(rmse, 1),
-                           'RRMSE': round(rrmse, 1)}
-
-        # add polygon-specific dict to 'master' dict
-        out_dict[ID] = poly_skill_dict
-
-    # convert 'master' dict to dataframe and store to file
-    out_df = pd.DataFrame().from_dict(out_dict).T
-    out_df.index.name = ply_id
-    click.echo('INFO: storing dictionary to {}.'.format(os.path.join(out, 'output_dict.csv')))
-    out_df.to_csv(os.path.join(out, '{}_vs_{}.csv'.format(sim_var_name, obs_var_name)))
-
-    # assign evaluation metrics per polygon to geometry and store to file
-    gdf_out = extent_gdf.merge(out_df, on=ply_id)
-    click.echo('INFO: storing polygons to {}.'.format(os.path.join(out, 'output_polygons.geojson')))
-    gdf_out.to_file(os.path.join(out, '{}_vs_{}.geojson'.format(sim_var_name, obs_var_name)), driver='GeoJSON')
-
-    # plot if specified
-    if plot:
-        click.echo('INFO: plotting evaluation metrics per polygon.')
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 7))
-        gdf_out.plot(ax=ax1, column='R', legend=True)
-        ax1.set_title('R')
-        gdf_out.plot(ax=ax2, column='MSE', legend=True)
-        ax2.set_title('MSE')
-        gdf_out.plot(ax=ax3, column='RMSE', legend=True)
-        ax3.set_title('RMSE')
-        plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
-
-    click.echo(click.style('INFO: done.', fg='green'))
-
-# if __name__ == '__main__':
-#     POLY()
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+    
+    click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))

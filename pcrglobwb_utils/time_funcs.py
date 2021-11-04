@@ -1,4 +1,5 @@
 import pandas as pd
+import click
 
 
 def calc_montly_avg(df_in, var_name=None):
@@ -27,53 +28,58 @@ def calc_montly_avg(df_in, var_name=None):
     return df_out
 
 
-def daily2monthly(df_in, averaging=True, volumetric=False, volumetric_factor=86400, plot=False):
-    """Aggregates daily values to monthly values. Note that the unit is not changed (m3/s) unless volumetric is True.
+def resample_to_month(df, stat_func='mean'):
+    """[summary]
 
-    Arguments:
-        df_in (dataframe): dataframe containing daily values
+    Args:
+        df ([type]): [description]
+        stat_func (str, optional): [description]. Defaults to 'mean'.
 
-    Keyword Arguments:
-        averaging (bool) : whether or not to compute monthly average or not; if False, the monthly aggregate is computed (default: True)
-        volumetric (bool): whether flux is converted to volume (e.g. m3/s to m3) (default: False)
-        volumetric_factor (int): factor to convert flux to volume if specified (default: 86400)
-        plot (bool): whether or not to plot the monthly timeseries (default: False)
+    Raises:
+        ValueError: [description]
 
     Returns:
-        dataframe: dataframe containing monthly values
-    """
+        [type]: [description]
+    """    
 
-    if averaging:
-        df_out = df_in.resample('M').mean()
+    click.echo('INFO -- resampling data to monthly time scale.')
+    if stat_func == 'mean':
+        df = df.resample('M', convention='start').mean()
+    elif stat_func == 'max':
+        df = df.resample('M', convention='start').max()
+    elif stat_func == 'min':
+        df = df.resample('M', convention='start').min()
+    elif stat_func == 'sum':
+        df = df.resample('M', convention='start').sum()
     else:
-        df_out = df_in.resample('M').sum()
+        raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-    if volumetric: df_out = df_out*volumetric_factor
+    return df
 
-    if plot: df_out.plot()
+def resample_to_annual(df, stat_func='mean'):
+    """[summary]
 
-    return df_out
+    Args:
+        df ([type]): [description]
+        stat_func (str, optional): [description]. Defaults to 'mean'.
 
-def daily2yearly(df_in, averaging=True, volumetric=False, volumetric_factor=86400, plot=False):
-    """Aggregates daily values to yearly values. Note that the unit is not changed (m3/s) unless volumetric is True.
-
-    Arguments:
-        df_in (dataframe): dataframe containing daily values
-
-    Keyword Arguments:
-        averaging (bool) : whether or not to compute monthly average or not; if False, the monthly aggregate is computed (default: True)
-        volumetric (bool): whether flux is converted to volume (e.g. m3/s to m3) (default: False)
-        volumetric_factor (int): factor to convert flux to volume if specified (default: 86400)
-        plot (bool): whether or not to plot the monthly timeseries (default: False)
+    Raises:
+        ValueError: [description]
 
     Returns:
-        dataframe: dataframe containing yearly values
-    """
+        [type]: [description]
+    """    
 
-    df_out = df_in.resample('Y').sum()
+    click.echo('INFO -- resampling data to yearly time scale.')
+    if stat_func == 'mean':
+        df = df.resample('Y', convention='start').mean()
+    elif stat_func == 'max':
+        df = df.resample('Y', convention='start').max()
+    elif stat_func == 'min':
+        df = df.resample('Y', convention='start').min()
+    elif stat_func == 'sum':
+        df = df.resample('Y', convention='start').sum()
+    else:
+        raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
-    if volumetric: df_out = df_out*86400
-
-    if plot: df_out.plot()
-
-    return df_out
+    return df

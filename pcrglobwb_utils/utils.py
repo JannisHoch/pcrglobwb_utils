@@ -35,10 +35,10 @@ def check_mode(yaml_file, folder):
         raise ValueError('ERROR: not possible to specify both yaml-file and folder - only one option posssible!')
 
     if yaml_file != None:
-        click.echo(click.style('INFO: reading GRDC data via yml-file.', fg='red'))
+        click.echo(click.style('INFO -- reading GRDC data via yml-file.', fg='red'))
         mode = 'yml'
     if folder != None:
-        click.echo(click.style('INFO: reading GRDC data from folder.', fg='red'))
+        click.echo(click.style('INFO -- reading GRDC data from folder.', fg='red'))
         mode = 'fld'
 
     return mode
@@ -49,7 +49,7 @@ def read_yml(yaml_file):
 
     # get path to yml-file containing GRDC station info
     yaml_file = os.path.abspath(yaml_file)
-    click.echo(click.style('INFO: parsing GRDC station information from file {}'.format(yaml_file), fg='red'))
+    click.echo(click.style('INFO -- parsing GRDC station information from file {}'.format(yaml_file), fg='red'))
     # get content of yml-file
     with open(yaml_file, 'r') as file:
         data = yaml.safe_load(file)
@@ -65,15 +65,15 @@ def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
     """
 
     folder = os.path.abspath(folder)
-    click.echo('INFO: folder with GRDC data is {}'.format(folder))
+    click.echo('INFO -- folder with GRDC data is {}'.format(folder))
     files = sorted(glob.glob(os.path.join(folder,'*')))
 
     dd = dict()
 
     for f in files:
-        click.echo('INFO: loading GRDC file {} with encoding {}.'.format(f, encoding))
+        click.echo('INFO -- loading GRDC file {} with encoding {}.'.format(f, encoding))
         grdc_data = pcrglobwb_utils.obs_data.grdc_data(f)
-        # if verbose: click.echo('VERBOSE: retrieving GRDC station properties.')
+        # if verbose: click.echo('VERBOSE -- retrieving GRDC station properties.')
         plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)
 
         # retrieving values from GRDC file
@@ -89,6 +89,6 @@ def create_out_dir(out_dir):
 
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-        click.echo('INFO: saving output to folder {}'.format(out_dir))
+        click.echo('INFO -- saving output to folder {}'.format(out_dir))
 
     return
