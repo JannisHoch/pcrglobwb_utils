@@ -28,7 +28,19 @@ def calc_montly_avg(df_in, var_name=None):
     return df_out
 
 
-def resample_to_month(df, stat_func):
+def resample_to_month(df, stat_func='mean'):
+    """[summary]
+
+    Args:
+        df ([type]): [description]
+        stat_func (str, optional): [description]. Defaults to 'mean'.
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     click.echo('INFO -- resampling data to monthly time scale.')
     if stat_func == 'mean':
@@ -37,12 +49,26 @@ def resample_to_month(df, stat_func):
         df = df.resample('M', convention='start').max()
     elif stat_func == 'min':
         df = df.resample('M', convention='start').min()
+    elif stat_func == 'sum':
+        df = df.resample('M', convention='start').sum()
     else:
         raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
     return df
 
-def resample_to_annual(df, stat_func):
+def resample_to_annual(df, stat_func='mean'):
+    """[summary]
+
+    Args:
+        df ([type]): [description]
+        stat_func (str, optional): [description]. Defaults to 'mean'.
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     click.echo('INFO -- resampling data to yearly time scale.')
     if stat_func == 'mean':
@@ -51,6 +77,8 @@ def resample_to_annual(df, stat_func):
         df = df.resample('Y', convention='start').max()
     elif stat_func == 'min':
         df = df.resample('Y', convention='start').min()
+    elif stat_func == 'sum':
+        df = df.resample('Y', convention='start').sum()
     else:
         raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
