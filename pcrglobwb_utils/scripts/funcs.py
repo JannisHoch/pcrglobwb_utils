@@ -10,6 +10,25 @@ import spotpy
 import os
 
 def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+    """[summary]
+
+    Args:
+        ID ([type]): [description]
+        ply_id ([type]): [description]
+        extent_gdf ([type]): [description]
+        obs_d ([type]): [description]
+        sim_d ([type]): [description]
+        obs_var_name ([type]): [description]
+        sim_var_name ([type]): [description]
+        obs_idx ([type]): [description]
+        sim_idx ([type]): [description]
+        time_step ([type]): [description]
+        anomaly ([type]): [description]
+        verbose ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     if verbose: click.echo('VERBOSE -- evaluating polygon with {} {}'.format(ply_id, ID))
 
@@ -82,6 +101,25 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
     return gdd
 
 def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose):
+    """[summary]
+
+    Args:
+        station ([type]): [description]
+        pcr_ds ([type]): [description]
+        out ([type]): [description]
+        mode ([type]): [description]
+        yaml_root ([type]): [description]
+        data ([type]): [description]
+        var_name ([type]): [description]
+        time_scale ([type]): [description]
+        encoding ([type]): [description]
+        geojson ([type]): [description]
+        plot ([type]): [description]
+        verbose ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     
     # print some info
     click.echo(click.style('INFO -- validating station {}.'.format(station), fg='cyan'))
@@ -146,6 +184,19 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
     return gdd
 
 def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
+    """[summary]
+
+    Args:
+        yaml_root ([type]): [description]
+        data ([type]): [description]
+        station ([type]): [description]
+        var_name ([type]): [description]
+        encoding ([type]): [description]
+        verbose ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # construct path to GRDC-file
     grdc_file = os.path.join(yaml_root, data[str(station)]['file'])           
@@ -175,6 +226,16 @@ def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
     return df_obs, props
 
 def resample_ts(df_obs, df_sim, time_scale):
+    """[summary]
+
+    Args:
+        df_obs ([type]): [description]
+        df_sim ([type]): [description]
+        time_scale ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # resample if specified to other time scales
     if time_scale == 'month':
@@ -190,6 +251,14 @@ def resample_ts(df_obs, df_sim, time_scale):
     return df_obs, df_sim
 
 def write_output(outputList, time_scale, geojson, out):
+    """[summary]
+
+    Args:
+        outputList ([type]): [description]
+        time_scale ([type]): [description]
+        geojson ([type]): [description]
+        out ([type]): [description]
+    """    
 
     all_scores, geo_dict = create_output(outputList)
 
@@ -211,6 +280,15 @@ def write_output(outputList, time_scale, geojson, out):
             gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
 
 def write_output_poly(outputList, sim_var_name, obs_var_name, out, plot):
+    """[summary]
+
+    Args:
+        outputList ([type]): [description]
+        sim_var_name ([type]): [description]
+        obs_var_name ([type]): [description]
+        out ([type]): [description]
+        plot ([type]): [description]
+    """    
 
     all_scores, geo_dict = create_output_poly(outputList)
 
@@ -236,6 +314,14 @@ def write_output_poly(outputList, sim_var_name, obs_var_name, out, plot):
         plt.savefig(os.path.join(out, '{}_vs_{}.png'.format(sim_var_name, obs_var_name)), dpi=300, bbox_inches='tight')
 
 def create_output(outputList):
+    """[summary]
+
+    Args:
+        outputList ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     geo_dict = {'station': list(), 'KGE': list(), 'R2': list(), 'NSE': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
@@ -259,6 +345,14 @@ def create_output(outputList):
     return all_scores, geo_dict
 
 def create_output_poly(outputList):
+    """[summary]
+
+    Args:
+        outputList ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     geo_dict = {'ID': list(), 'R2': list(), 'MSE': list(), 'RMSE': list(), 'RRMSE': list(), 'geometry': list()}
 
