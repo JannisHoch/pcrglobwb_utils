@@ -13,7 +13,7 @@ def cli():
     return
 
 @cli.command()
-@click.argument('raster')
+@click.argument('ncf')
 @click.argument('poly')
 @click.argument('out')
 @click.option('-v', '--var-name', help='variable name in netCDF-file.', type=str)
@@ -21,19 +21,33 @@ def cli():
 @click.option('-crs', '--crs-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def create_POLY_mask(raster, poly, out, var_name, poly_id, crs_system, verbose):
+def create_POLY_mask(ncf, poly, out, var_name, poly_id, crs_system, verbose):
+    """Creates a mask per polygon for a given netCDF file.
+    The resulting combination of polygon and mask is saved to a dictionary, wihch in turn is pickled.
+    All dictionaries are saved in a list which is pickled too.
+    That way, it is possible to perform the time-consuming rioxarray.clip() function only once and save time during evaluation.
+
+    NCF: path to netCDF-file.
+
+    POLY: path to geojson-file with one or more polygons.
+
+    OUT: path where list and dictionaries are pickled.
+
+    """    
+
+    click.echo(click.style('INFO -- start preprocesing: create-poly-mask.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
     # create main output dir
     out = os.path.abspath(out)
     pcrglobwb_utils.utils.create_out_dir(out)
-
+    # create dir for pickling masks
     pickle_out = os.path.join(out, 'masks')
     pcrglobwb_utils.utils.create_out_dir(pickle_out)
 
-    raster = os.path.abspath(raster)
-
-    click.echo(click.style('INFO -- reading raster data from {}'.format(raster), fg='red'))
-    ds = xr.open_dataset(raster)
+    # open netCDF-file and reduce to first time step
+    click.echo(click.style('INFO -- reading raster data from {}'.format(os.path.abspath(ncf)), fg='red'))
+    ds = xr.open_dataset(os.path.abspath(ncf))
     ds = ds[var_name].sel(time=ds.time.values[0])
 
     # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
@@ -42,35 +56,46 @@ def create_POLY_mask(raster, poly, out, var_name, poly_id, crs_system, verbose):
         ds.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
     except:
         ds.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
-    
     ds.rio.write_crs(crs_system, inplace=True)
 
     # read shapefile with one or more polygons
     click.echo(click.style('INFO -- reading polygons from {}'.format(os.path.abspath(poly)), fg='red'))
     poly_gdf = gpd.read_file(poly, crs=crs_system, driver='GeoJSON')
 
+    # initiate list
     ll = list()
 
+    # go through all polygons
     click.echo('INFO -- looping through polygons')
     for ID in poly_gdf[poly_id].unique():
 
+        # select polygon associated to unique identifier
         poly_gdf_id = poly_gdf.loc[poly_gdf[poly_id] == ID]
 
+        # create mask by clipping DataArray to polygon geometry
+        # note that this will contain actual values, not boolean ones
         poly_mask = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
+        # make sure the original 2D-shape is maintained
         assert poly_mask.shape == (len(ds.latitude), len(ds.longitude))
 
-        with open(os.path.join(pickle_out, 'mask_{}.pkl'.format(ID)), 'wb') as f:
+        # pickle each mask
+        with open(os.path.join(pickle_out, 'mask_{}.mask'.format(ID)), 'wb') as f:
             pickle.dump(poly_mask, f)
 
+        # set content of dictionary linking unique identifier with mask location
         dd = {'ID': ID,
-              'pkl': os.path.join(pickle_out, 'mask_{}.pkl'.format(ID))}   
+              'pkl': os.path.join(pickle_out, 'mask_{}.mask'.format(ID))}   
 
+        # append to list
         ll.append(dd)
 
-    
-    with open(os.path.join(out, 'mask_list.txt'), 'wb') as f:
+    # pickle list with dictionaries linking unique polygon identifiers with their masks 
+    click.echo('INFO -- pickling list with dictionaries to {}'.format(os.path.join(out, 'mask_list.list')))
+    with open(os.path.join(out, 'mask_list.list'), 'wb') as f:
             pickle.dump(ll, f)
+
+    click.echo(click.style('INFO -- done.', fg='green'))
 
 
 @cli.command()
