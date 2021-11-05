@@ -4,8 +4,11 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point
+from osgeo import gdal
 import matplotlib.pyplot as plt
 import click
+import rioxarray
+import pickle
 import spotpy
 import os
 
@@ -374,3 +377,45 @@ def create_output_poly(outputList):
     all_scores = all_scores.T
 
     return all_scores, geo_dict
+
+def nc_to_tiff(nc):
+    """
+    Converts the first band of a netCDF file to GeoTiff format.
+    Output file is located at same location as input file.
+
+    Arguments:
+        nc (str): path to netCDF file.
+
+    Returns:
+        str: path to GeoTiff file.
+    """    
+
+    # absolute path to nc-file
+    nc = os.path.abspath(nc)
+
+    # construct path to tiff-file
+    tif = str(os.path.dirname(nc)) + '/' + str(os.path.basename(nc).split('.')[0]) + '.tiff'
+
+    click.echo('INFO -- translating {} to {}'.format(nc, tif))
+    # define tranlsate options
+    translate_options = gdal.TranslateOptions(format='GTiff', bandList=[1])
+    # translate
+    gdal.Translate(tif, nc, options=translate_options)
+
+    return tif
+
+def unpickle_object(loc):
+    """
+    Unpickles a previously pickled object.
+
+    Arguments:
+        loc (str): path to pickled object.
+
+    Returns:
+        mixed pickles.
+    """    
+
+    with open(loc, "rb") as f:
+        out = pickle.load(f)
+
+    return out

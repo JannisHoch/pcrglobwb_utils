@@ -58,6 +58,8 @@ def create_POLY_mask(raster, poly, out, var_name, poly_id, crs_system, verbose):
 
         poly_mask = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
+        assert poly_mask.shape == (len(ds.latitude), len(ds.longitude))
+
         with open(os.path.join(pickle_out, 'mask_{}.pkl'.format(ID)), 'wb') as f:
             pickle.dump(poly_mask, f)
 
