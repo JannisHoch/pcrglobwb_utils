@@ -70,6 +70,8 @@ class grdc_data:
                 if 'Catchment area (km2)' not in cat_area.split(":")[0]:
                     warnings.warn('WARNING: Catchment area should be in line 15 but not found - please check if input txt-file is original GRDC format!')
                 cat_area = cat_area.split(":")[-1].strip()
+                if cat_area == '':
+                    cat_area = 0.0
 
            # start and end year of observations normally in line 15 of GRDC file
             if i == 24:
@@ -131,6 +133,7 @@ class grdc_data:
         # open file
         f = open(self.fo, encoding=encoding)
 
+        # find line in file in which meta-data starts and observational record starts
         for i, line in enumerate(f):
             if '#' in line:
                 pass
@@ -138,7 +141,7 @@ class grdc_data:
                 stopline = i
                 break
 
-        df = pd.read_csv(self.fo, skiprows=stopline, sep=';')
+        df = pd.read_csv(self.fo, skiprows=stopline, sep=';', encoding=encoding)
 
         try: 
             if verbose: print('VERBOSE -- reading column {}'.format(col_name))

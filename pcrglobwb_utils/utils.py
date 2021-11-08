@@ -71,7 +71,7 @@ def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
     dd = dict()
 
     for f in files:
-        click.echo('INFO -- loading GRDC file {} with encoding {}.'.format(f, encoding))
+        if verbose: click.echo('VERBOSE -- loading GRDC file {} with encoding {}.'.format(f, encoding))
         grdc_data = pcrglobwb_utils.obs_data.grdc_data(f)
         # if verbose: click.echo('VERBOSE -- retrieving GRDC station properties.')
         plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)

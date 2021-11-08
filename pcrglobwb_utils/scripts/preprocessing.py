@@ -118,12 +118,13 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 @click.argument('out')
 @click.option('-c_thld', '--cat-area-thld', default=0, help='minimum catchment area stations needs to have to be selected', type=int)
 @click.option('-y_thld', '--nr-years-thld', default=1, help='minimum number of years stations needs to have to be selected', type=int)
-@click.option('-ts_end', '--timeseries-end', default='1900-01', help='end date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
+@click.option('-ts_start', '--timeseries-start', default='1900-01', help='start date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
+@click.option('-ts_end', '--timeseries-end', default='2100-01', help='end date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_thld, nr_years_thld, timeseries_end):
+def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_thld, nr_years_thld, timeseries_end, timeseries_start):
     """This simple function can be run to select GRDC stations based on their properties.
     This can be handy to reduce the number of stations to evaluate in a subsequent step.
     The properties on which selection critieria can be applied are upstream area, number of years of data record, and end date of data record.
@@ -159,13 +160,13 @@ def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
 
     # from each file, collect properties and apply selection
     click.echo('INFO -- applying selection criteria')
-    for f in files:
+    for key in data.keys():
 
-        grdc_obj = pcrglobwb_utils.obs_data.grdc_data(f)
-        title, props = grdc_obj.get_grdc_station_properties()
+        loc_data = data[str(key)]
+        props = loc_data[0]
 
         # apply thresholds to station properties
-        if (props['cat_area'] > cat_area_thld) and (props['no_years'] > nr_years_thld) and (props['ts_end'] > pd.to_datetime(timeseries_end)):
+        if (props['cat_area'] >= cat_area_thld) and (props['no_years'] >= nr_years_thld) and (props['ts_end'] <= pd.to_datetime(timeseries_end)) and (props['ts_start'] >= pd.to_datetime(timeseries_start)):
     
             # if both criteria are met, station is selected and appended to list
             if verbose: click.echo('... selected!')
