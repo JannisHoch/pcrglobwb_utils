@@ -23,14 +23,6 @@ echo WITHOUT RESAMPLING FROM FOLDER
 pcru_eval_tims grdc -f $folder --plot $nc_file $fld_out_dir 
 
 echo
-echo WITHOUT RESAMPLING FROM FOLDER INCLUDING STATION SELECTION - NR_YEARS
-echo FIRST, APPLY SELECTION SCRIPT - NR_YEARS
-pcru_sel_grdc -y_thld 40 $folder $sel_out_dir
-echo
-echo SECOND, RUN EVALUATION ON SELECTED STATIONS ONLY - NR_YEARS
-pcru_eval_tims grdc -f $folder -sf $sel_out_dir/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
-
-echo
 echo WITHOUT RESAMPLING FROM EXCEL-FILE
 pcru_eval_tims excel -v discharge -id station --plot --verbose $nc_file $excel_file $loc $xls_out_dir 
 

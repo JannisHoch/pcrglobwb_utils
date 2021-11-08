@@ -12,4 +12,4 @@ from . import ensembles
 __author__ = """Jannis M. Hoch, Niko Wanders"""
 __institute__= """Utrecht University"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.3.0'
+__version__ = '0.3.1'

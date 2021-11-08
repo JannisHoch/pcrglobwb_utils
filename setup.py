@@ -36,7 +36,7 @@ setup(
         'console_scripts': [
             'pcru_eval_tims = pcrglobwb_utils.scripts.evaluate_tims:cli',
             'pcru_eval_poly = pcrglobwb_utils.scripts.evaluate_poly:main',
-            'pcru_sel_grdc = pcrglobwb_utils.scripts.select_GRDC:main',
+            'pcru_preprocess = pcrglobwb_utils.scripts.preprocessing:cli',
         ],
     },
     install_requires=requirements,
@@ -50,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://pcrglobwb-utils.readthedocs.io/',
-    version='0.3.0',
+    version='0.3.1',
     zip_safe=False,
 )

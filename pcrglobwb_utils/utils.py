@@ -8,7 +8,7 @@ import rasterio
 import yaml
 import click
 import glob
-import os, sys
+import os
 
 def print_versions():
 

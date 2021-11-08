@@ -1,15 +1,18 @@
 
 from pcrglobwb_utils import sim_data, obs_data, time_funcs, utils
 import pandas as pd
+import xarray as xr
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import click
+import rioxarray
+import pickle
 import spotpy
 import os
 
-def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose):
     """[summary]
 
     Args:
@@ -23,6 +26,7 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
         obs_idx ([type]): [description]
         sim_idx ([type]): [description]
         time_step ([type]): [description]
+        ll_pickled_masks
         anomaly ([type]): [description]
         verbose ([type]): [description]
 
@@ -38,12 +42,33 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
 
     if verbose: click.echo('VERBOSE -- preparing geo-dict for GeoJSON output')
     gdd = {'ID': ID, 'geometry': poly_geom}
+    
+    # if clip was done in preprocessing, just use these pickled masks
+    if isinstance(obs_masks, pd.DataFrame) and isinstance(sim_masks, pd.DataFrame):
+        # if isinstance(ll_pickled_masks, pd.DataFrame):
+        if verbose: click.echo('VERBOSE -- using preprocessed mask.')
+        obs_masks_ID = obs_masks.loc[obs_masks.index == ID]
+        sim_masks_ID = sim_masks.loc[sim_masks.index == ID]
+        
+        obs_mask_ID = unpickle_object(obs_masks_ID.path.values[0])
+        sim_mask_ID = unpickle_object(sim_masks_ID.path.values[0])
+        # print(obs_mask_ID)
+        # print(sim_mask_ID)
 
-    # clipping obs data-array to shape extent
-    obs_data_c = obs_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
-    # clipping sim data-array to shape extent
-    sim_data_c = sim_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+        obs_data_c = xr.where(obs_mask_ID == True, obs_d, np.nan)
+        sim_data_c = xr.where(sim_mask_ID == True, sim_d, np.nan)
 
+        # print(obs_data_c.sel(time=obs_data_c.time.values[0]))
+        # print(sim_data_c.sel(time=sim_data_c.time.values[0]))
+
+    # if no file with pickled list of pickled masks is provided, clip here on-the-fly
+    else:
+        if verbose: click.echo('VERBOSE -- clip data to polygon.')
+        # clipping obs data-array to shape extent
+        obs_data_c = obs_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+        # clipping sim data-array to shape extent
+        sim_data_c = sim_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+    
     mean_val_timestep_obs = list()
     mean_val_timestep_sim = list()
 
@@ -374,3 +399,19 @@ def create_output_poly(outputList):
     all_scores = all_scores.T
 
     return all_scores, geo_dict
+
+def unpickle_object(loc):
+    """
+    Unpickles a previously pickled object.
+
+    Arguments:
+        loc (str): path to pickled object.
+
+    Returns:
+        mixed pickles.
+    """    
+
+    with open(loc, "rb") as f:
+        out = pickle.load(f)
+
+    return out

@@ -25,15 +25,17 @@ import os
 @click.option('-crs', '--coordinate-system', default='epsg:4326', help='coordinate system.', type=str)
 @click.option('--time-step', '-tstep', help='timestep of data - either "monthly" or "annual". Note that both observed and simualted data must be annual average if the latter option is chosen.', default='monthly', type=str)
 @click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
+@click.option('-om', '--obs-masks', default=None, help='path to file with pickled paths to preprocessed masks per polygon for observations.', type=str)
+@click.option('-sm', '--sim-masks', default=None, help='path to file with pickled paths to preprocessed masks per polygon for simulations.', type=str)
 @click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, number_processes, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_masks, time_step, number_processes, anomaly, conversion_factor, coordinate_system, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
-    Each polygon needs to have a unique ID.
+    Each polygon needs to have a unique ID.pickled_masks
     Contains multiple options to align function settings with data and evaluation properties.
 
     Returns a GeoJSON-file of r, MSE, and RMSE per polygon, and if specified as simple plot. 
@@ -92,6 +94,20 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
         sim_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     sim_data.rio.write_crs(coordinate_system, inplace=True)
 
+    if obs_masks != None:
+        if sim_masks != None:
+            obs_masks = os.path.abspath(obs_masks)
+            click.echo(click.style('INFO -- reading paths to preprocessed masks from {}'.format(obs_masks), fg='red'))
+            obs_masks = funcs.unpickle_object(obs_masks)
+            sim_masks = os.path.abspath(sim_masks)
+            click.echo(click.style('INFO -- reading paths to preprocessed masks from {}'.format(sim_masks), fg='red'))
+            sim_masks = funcs.unpickle_object(sim_masks)
+        else:
+            raise ValueError('ERROR -- if providing -om/--obs-masks, also provide -sm/--sim-masks!')
+    else:
+        obs_masks = None
+        sim_masks = None
+
     click.echo('INFO -- evaluating each polygon')
     if number_processes != None:
 
@@ -102,13 +118,13 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, time_step, numb
             click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
         pool = mp.Pool(processes=min_number_processes)
 
-        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
+        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
 
         outputList = [p.get() for p in results]
 
     else:
 
-        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
+        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
     
     funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
 

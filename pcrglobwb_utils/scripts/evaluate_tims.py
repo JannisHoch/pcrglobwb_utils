@@ -134,7 +134,7 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 @click.pass_context
 
-def EXCEL(ctx, ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, verbose):
+def EXCEL(ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, verbose):
     """Uses pcrglobwb_utils to validate simulated time series
     with observations for one or more stations. The station names and their locations need to be provided via geojson-file.
     Observations are read from Excel-file and analysis will be performed for all stations with matching names in Excel-file columns and geojson-file.
