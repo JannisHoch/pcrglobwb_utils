@@ -1,5 +1,7 @@
+from numpy import little_endian
 import pcrglobwb_utils
 import pandas as pd
+import numpy as np
 import xarray as xr
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -19,9 +21,10 @@ def cli():
 @click.option('-v', '--var-name', help='variable name in netCDF-file.', type=str)
 @click.option('-id', '--poly-id', help='unique identifier in file containing polygons.', type=str)
 @click.option('-crs', '--crs-system', default='epsg:4326', help='coordinate system.', type=str)
+@click.option('-of', '--out-file-name', default='mask.list', help='name of file to which polygon and mask data is pickled.', type=str)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def create_POLY_mask(ncf, poly, out, var_name, poly_id, crs_system, verbose):
+def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_system, verbose):
     """Creates a mask per polygon for a given netCDF file.
     The resulting combination of polygon and mask is saved to a dictionary, wihch in turn is pickled.
     All dictionaries are saved in a list which is pickled too.
@@ -31,19 +34,15 @@ def create_POLY_mask(ncf, poly, out, var_name, poly_id, crs_system, verbose):
 
     POLY: path to geojson-file with one or more polygons.
 
-    OUT: path where list and dictionaries are pickled.
-
+    OUT: path where dataframe and masks are pickled to file with -of/--out-file-name.
     """    
 
-    click.echo(click.style('INFO -- start preprocesing: create-poly-mask.', fg='green'))
+    click.echo(click.style('INFO -- start preprocsesing: create-poly-mask.', fg='green'))
     click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
 
-    # create main output dir
+    # create output dir
     out = os.path.abspath(out)
     pcrglobwb_utils.utils.create_out_dir(out)
-    # create dir for pickling masks
-    pickle_out = os.path.join(out, 'masks')
-    pcrglobwb_utils.utils.create_out_dir(pickle_out)
 
     # open netCDF-file and reduce to first time step
     click.echo(click.style('INFO -- reading raster data from {}'.format(os.path.abspath(ncf)), fg='red'))
@@ -62,8 +61,9 @@ def create_POLY_mask(ncf, poly, out, var_name, poly_id, crs_system, verbose):
     click.echo(click.style('INFO -- reading polygons from {}'.format(os.path.abspath(poly)), fg='red'))
     poly_gdf = gpd.read_file(poly, crs=crs_system, driver='GeoJSON')
 
-    # initiate list
-    ll = list()
+    # initiate lists for polygon ID and path to pickled mask
+    ll_ID = list()
+    ll_path = list()
 
     # go through all polygons
     click.echo('INFO -- looping through polygons')
@@ -74,26 +74,34 @@ def create_POLY_mask(ncf, poly, out, var_name, poly_id, crs_system, verbose):
 
         # create mask by clipping DataArray to polygon geometry
         # note that this will contain actual values, not boolean ones
-        poly_mask = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
+        mask_data = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
+
+        poly_mask = ~xr.ufuncs.isnan(mask_data)
 
         # make sure the original 2D-shape is maintained
-        assert poly_mask.shape == (len(ds.latitude), len(ds.longitude))
+        assert poly_mask.shape == ds.values.shape
+
+        # define path to pickled mask
+        path = os.path.join(out, 'mask_{}.mask'.format(ID))
 
         # pickle each mask
-        with open(os.path.join(pickle_out, 'mask_{}.mask'.format(ID)), 'wb') as f:
+        with open(path, 'wb') as f:
             pickle.dump(poly_mask, f)
+   
+        # append ID and path to mask to list
+        ll_ID.append(int(ID))
+        ll_path.append(path)  
 
-        # set content of dictionary linking unique identifier with mask location
-        dd = {'ID': ID,
-              'pkl': os.path.join(pickle_out, 'mask_{}.mask'.format(ID))}   
-
-        # append to list
-        ll.append(dd)
-
+    # create output dataframe
+    dd = {'ID': ll_ID, 'path': ll_path}
+    df_out = pd.DataFrame(data=dd)
+    df_out.set_index('ID', inplace=True)
+    
     # pickle list with dictionaries linking unique polygon identifiers with their masks 
-    click.echo('INFO -- pickling list with dictionaries to {}'.format(os.path.join(out, 'mask_list.list')))
-    with open(os.path.join(out, 'mask_list.list'), 'wb') as f:
-            pickle.dump(ll, f)
+    fname = os.path.join(out, out_file_name)
+    click.echo('INFO -- pickling list with dictionaries to {}'.format(fname))
+    with open(fname, 'wb') as f:
+            pickle.dump(df_out, f)
 
     click.echo(click.style('INFO -- done.', fg='green'))
 
@@ -116,12 +124,13 @@ def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
     A txt-file is written containing the numbers of those stations selected.
     This file can later be applied when evaluating discharge with -f setting in 'pcru_eval_tims grdc'.
 
-    Args:
+    IN_DIR: path to folder where GRDC-stations are located.
 
-        IN_DIR: path to folder where GRDC-stations are located.
-
-        OUT_DIR: path to folder where txt-file is written.
+    OUT_DIR: path to folder where txt-file is written.
     """    
+
+    click.echo(click.style('INFO -- start preprocessing: select-grdc-stations.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
     
     # input directory
     in_dir = os.path.abspath(in_dir)
@@ -155,7 +164,9 @@ def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
     
     # write list to output file
     fo = open(out_fo,'w')
-    if verbose: click.echo('INFO -- writing selected stations to {}'.format(fo))
+    click.echo('INFO -- writing selected stations to {}'.format(fo))
     for item in out_ll:
         fo.write("%s\n" % item)
     fo.close()
+
+    click.echo(click.style('INFO -- done.', fg='green'))
