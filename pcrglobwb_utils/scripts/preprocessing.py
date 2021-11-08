@@ -7,6 +7,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import pickle
 import click
+from datetime import datetime
 import os
 
 @click.group()
@@ -36,6 +37,8 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 
     OUT: path where dataframe and masks are pickled to file with -of/--out-file-name.
     """    
+
+    t_start = datetime.now()
 
     click.echo(click.style('INFO -- start preprocsesing: create-poly-mask.', fg='green'))
     click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
@@ -103,7 +106,11 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
     with open(fname, 'wb') as f:
             pickle.dump(df_out, f)
 
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+
     click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
 
 @cli.command()
@@ -129,6 +136,8 @@ def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
     OUT_DIR: path to folder where txt-file is written.
     """    
 
+    t_start = datetime.now()
+    
     click.echo(click.style('INFO -- start preprocessing: select-grdc-stations.', fg='green'))
     click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
     
@@ -161,12 +170,18 @@ def select_GRDC_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
             # if both criteria are met, station is selected and appended to list
             if verbose: click.echo('... selected!')
             out_ll.append(props['station'])
+
+    click.echo('INFO -- {}/{} stations selected'.format(len(out_ll), len(files)))
     
     # write list to output file
     fo = open(out_fo,'w')
-    click.echo('INFO -- writing selected stations to {}'.format(fo))
+    click.echo('INFO -- writing selected stations to {}'.format(out_fo))
     for item in out_ll:
         fo.write("%s\n" % item)
     fo.close()
 
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+
     click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
