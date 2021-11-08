@@ -16,3 +16,4 @@
   jinja2==2.11.3
   pyyaml
   dask==2021.10.0
+  osgeo==3.0.4
