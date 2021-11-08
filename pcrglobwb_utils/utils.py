@@ -4,11 +4,12 @@ import pandas as pd
 import numpy as np
 import geopandas as gpd
 import rioxarray as rio
+from osgeo import gdal
 import rasterio
 import yaml
 import click
 import glob
-import os, sys
+import os
 
 def print_versions():
 
@@ -92,3 +93,29 @@ def create_out_dir(out_dir):
         click.echo('INFO -- saving output to folder {}'.format(out_dir))
 
     return
+
+def nc_to_tiff(nc):
+    """
+    Converts the first band of a netCDF file to GeoTiff format.
+    Output file is located at same location as input file.
+
+    Arguments:
+        nc (str): path to netCDF file.
+
+    Returns:
+        str: path to GeoTiff file.
+    """    
+
+    # absolute path to nc-file
+    nc = os.path.abspath(nc)
+
+    # construct path to tiff-file
+    tif = str(os.path.dirname(nc)) + '/' + str(os.path.basename(nc).split('.')[0]) + '.tiff'
+
+    click.echo('INFO -- translating {} to {}'.format(nc, tif))
+    # define tranlsate options
+    translate_options = gdal.TranslateOptions(format='GTiff', bandList=[1])
+    # translate
+    gdal.Translate(tif, nc, options=translate_options)
+
+    return tif
