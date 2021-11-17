@@ -287,6 +287,8 @@ def write_output(outputList, time_scale, geojson, out):
 
     all_scores, geo_dict = create_output(outputList)
 
+    all_scores = all_scores.T
+
     if time_scale != None:
         click.echo('INFO -- saving all scores to {}.'.format(os.path.join(out, 'all_scores_{}.csv'.format(time_scale))))
         all_scores.to_csv(os.path.join(out, 'all_scores_{}.csv'.format(time_scale)))
