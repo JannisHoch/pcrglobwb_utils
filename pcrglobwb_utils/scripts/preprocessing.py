@@ -50,7 +50,8 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
     # open netCDF-file and reduce to first time step
     click.echo(click.style('INFO -- reading raster data from {}'.format(os.path.abspath(ncf)), fg='red'))
     ds = xr.open_dataset(os.path.abspath(ncf))
-    ds = ds[var_name].sel(time=ds.time.values[0])
+    # aggregate over time to pick also sparse data points in time
+    ds = ds[var_name].sum('time')
 
     # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
     if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
@@ -72,6 +73,8 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
     click.echo('INFO -- looping through polygons')
     for ID in poly_gdf[poly_id].unique():
 
+        if verbose: click.echo('VERBOSE -- polygon identifier {}.'.format(ID))
+
         # select polygon associated to unique identifier
         poly_gdf_id = poly_gdf.loc[poly_gdf[poly_id] == ID]
 
@@ -79,21 +82,31 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         # note that this will contain actual values, not boolean ones
         mask_data = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
-        poly_mask = ~xr.ufuncs.isnan(mask_data)
+        # if non-nan values are picked up in the aggregation over time, create mask
+        if np.sum(mask_data.values) != np.nan:
 
-        # make sure the original 2D-shape is maintained
-        assert poly_mask.shape == ds.values.shape
+            # get boolean mask with True for all cells that do not contain missing values
+            poly_mask = ~xr.ufuncs.isnan(mask_data)
 
-        # define path to pickled mask
-        path = os.path.join(out, 'mask_{}.mask'.format(ID))
+            # make sure the original 2D-shape is maintained
+            assert poly_mask.shape == ds.values.shape
 
-        # pickle each mask
-        with open(path, 'wb') as f:
-            pickle.dump(poly_mask, f)
-   
-        # append ID and path to mask to list
-        ll_ID.append(int(ID))
-        ll_path.append(path)  
+            # define path to pickled mask
+            path = os.path.join(out, 'mask_{}.mask'.format(ID))
+
+            # pickle each mask
+            with open(path, 'wb') as f:
+                pickle.dump(poly_mask, f)
+    
+            # append ID and path to mask to list
+            ll_ID.append(int(ID))
+            ll_path.append(path)  
+
+        # otherwise, skip this polygon
+        else:
+            
+            if verbose: click.echo('VERBOSE -- no values found in polygon, skipped.')
+            pass
 
     # create output dataframe
     dd = {'ID': ll_ID, 'path': ll_path}
