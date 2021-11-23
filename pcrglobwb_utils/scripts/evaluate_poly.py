@@ -106,13 +106,17 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_
             sim_masks = os.path.abspath(sim_masks)
             click.echo(click.style('INFO -- reading paths to preprocessed masks from {}'.format(sim_masks), fg='red'))
             sim_masks = funcs.unpickle_object(sim_masks)
+            # reduce polgyons to be evaluated to those for which a mask is provided
+            poly_list = obs_masks.index.values
+
         # if not, raise error
         else:
             raise ValueError('ERROR -- if providing -om/--obs-masks, also provide -sm/--sim-masks!')
-    # otherwise, set masks to None
+    # otherwise, set masks to None and use all polygon IDs in geojson-file
     else:
         obs_masks = None
         sim_masks = None
+        poly_list = extent_gdf[ply_id].unique()
 
     click.echo('INFO -- evaluating each polygon')
     # if a number of processes for parallelization are provided, set up multiprocessing and evalute polygons
@@ -129,14 +133,14 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_
         pool = mp.Pool(processes=min_number_processes)
 
         # apply function and convert returned data to list
-        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
+        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose)) for ID in poly_list]
         outputList = [p.get() for p in results]
 
     # otherwise, evaluate polygons without multiprocessing
     else:
 
         # apply function and retrieve list
-        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
+        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose) for ID in poly_list]
     
     # write output from list
     funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
