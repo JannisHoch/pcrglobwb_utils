@@ -94,38 +94,55 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_
         sim_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     sim_data.rio.write_crs(coordinate_system, inplace=True)
 
+    # if masks for observations is provided...
     if obs_masks != None:
+        # ... check first if there is also one provided for simulations
         if sim_masks != None:
+            # unpickle dataframe with polygons IDs and corresponding masks for observations
             obs_masks = os.path.abspath(obs_masks)
             click.echo(click.style('INFO -- reading paths to preprocessed masks from {}'.format(obs_masks), fg='red'))
             obs_masks = funcs.unpickle_object(obs_masks)
+            # unpickle dataframe with polygons IDs and corresponding masks for simulations
             sim_masks = os.path.abspath(sim_masks)
             click.echo(click.style('INFO -- reading paths to preprocessed masks from {}'.format(sim_masks), fg='red'))
             sim_masks = funcs.unpickle_object(sim_masks)
+            # reduce polgyons to be evaluated to those for which a mask is provided
+            poly_list = obs_masks.index.values
+
+        # if not, raise error
         else:
             raise ValueError('ERROR -- if providing -om/--obs-masks, also provide -sm/--sim-masks!')
+    # otherwise, set masks to None and use all polygon IDs in geojson-file
     else:
         obs_masks = None
         sim_masks = None
+        poly_list = extent_gdf[ply_id].unique()
 
     click.echo('INFO -- evaluating each polygon')
+    # if a number of processes for parallelization are provided, set up multiprocessing and evalute polygons
     if number_processes != None:
 
+        # derive actually available and sensible number of cores to use for application
         min_number_processes = min(number_processes, len(extent_gdf), mp.cpu_count())
+        # if required, reduce provided number of processes
         if number_processes > min_number_processes: 
             click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
         else:
             click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
+        # set up multiprocessing
         pool = mp.Pool(processes=min_number_processes)
 
-        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose)) for ID in extent_gdf[ply_id].unique()]
-
+        # apply function and convert returned data to list
+        results = [pool.apply_async(funcs.evaluate_polygons,args=(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose)) for ID in poly_list]
         outputList = [p.get() for p in results]
 
+    # otherwise, evaluate polygons without multiprocessing
     else:
 
-        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose) for ID in extent_gdf[ply_id].unique()]
+        # apply function and retrieve list
+        outputList = [funcs.evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, sim_var_name, obs_idx, sim_idx, obs_masks, sim_masks, time_step, anomaly, verbose) for ID in poly_list]
     
+    # write output from list
     funcs.write_output_poly(outputList, sim_var_name, obs_var_name, out, plot)
 
     t_end = datetime.now()
