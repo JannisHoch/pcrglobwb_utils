@@ -9,6 +9,7 @@ import yaml
 import click
 import glob
 import os
+import shutil
 
 def print_versions():
 
@@ -87,8 +88,9 @@ def glob_folder(folder, grdc_column, verbose=False, encoding='ISO-8859-1'):
 
 def create_out_dir(out_dir):
 
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-        click.echo('INFO -- saving output to folder {}'.format(out_dir))
+    shutil.rmtree(out_dir)
+    
+    os.makedirs(out_dir)
+    click.echo('INFO -- saving output to folder {}'.format(out_dir))
 
     return

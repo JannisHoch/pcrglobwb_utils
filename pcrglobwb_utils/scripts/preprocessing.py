@@ -1,4 +1,3 @@
-from numpy import little_endian
 import pcrglobwb_utils
 import pandas as pd
 import numpy as np
