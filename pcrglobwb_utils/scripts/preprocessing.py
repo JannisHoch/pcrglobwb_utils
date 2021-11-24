@@ -82,28 +82,21 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         mask_data_min = ds_min.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
         mask_data_max = ds_max.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
-        print(np.sum(mask_data).item(), np.sum(mask_data_min).item(), np.sum(mask_data_max).item())
-
         if np.sum(mask_data).item() != np.nan:
             nan_flag = True
-            # click.echo('VERBOSE -- not only nans found!')
         else:
             nan_flag = False
-            # click.echo('VERBOSE -- only nans found!')
 
         if (np.sum(mask_data_min).item() != 0.0) and (np.sum(mask_data_max).item() != 0.0):
             min_max_flag = True
-            # click.echo('VERBOSE -- min/max values not only 0!')
         else:
             min_max_flag = False
-            # click.echo('VERBOSE -- min/max values only 0!')
 
-        print(nan_flag, min_max_flag)
 
         # if not only nan values are picked up in the aggregation over time, create mask
         # or if the sum of maximum and minimum values per cell do not equal 0, indicating all values are 0, create mask 
         # otherwise, skip this polygon
-        if nan_flag or min_max_flag:
+        if nan_flag and min_max_flag:
 
             click.echo('VERBOSE -- creating mask.')
             # get boolean mask with True for all cells that do not contain missing values
@@ -122,6 +115,14 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
             # append ID and path to mask to list
             ll_ID.append(int(ID))
             ll_path.append(path)  
+
+        if not nan_flag:
+
+            click.echo('VERBOSE -- only nan values found in polygon.')
+
+        if not min_max_flag:
+
+            click.echo('VERBOSE -- min/max values only 0 in polygon.')
 
     # create output dataframe
     dd = {'ID': ll_ID, 'path': ll_path}
