@@ -103,6 +103,7 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         # otherwise, skip this polygon
         if nan_flag or min_max_flag:
 
+            click.echo('VERBOSE -- creating mask.')
             # get boolean mask with True for all cells that do not contain missing values
             poly_mask = ~xr.ufuncs.isnan(mask_data)
 
