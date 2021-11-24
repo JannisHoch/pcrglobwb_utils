@@ -92,7 +92,6 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         else:
             min_max_flag = False
 
-
         # if not only nan values are picked up in the aggregation over time, create mask
         # or if the sum of maximum and minimum values per cell do not equal 0, indicating all values are 0, create mask 
         # otherwise, skip this polygon
@@ -118,11 +117,11 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 
         if not nan_flag:
 
-            click.echo('VERBOSE -- only nan values found in polygon.')
+            click.echo('VERBOSE -- not creating mask. Only nan values found in polygon.')
 
         if not min_max_flag:
 
-            click.echo('VERBOSE -- min/max values only 0 in polygon.')
+            click.echo('VERBOSE -- not creating mask. Min/max values only 0 in polygon.')
 
     # create output dataframe
     dd = {'ID': ll_ID, 'path': ll_path}
