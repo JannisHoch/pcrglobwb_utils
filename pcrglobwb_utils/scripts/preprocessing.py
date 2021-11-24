@@ -82,9 +82,11 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         mask_data_min = ds_min.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
         mask_data_max = ds_max.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
+        print(np.sum(mask_data).item())
+
         # if not only nan values are picked up in the aggregation over time, create mask
         # or if the sum of maximum and minimum values per cell do not equal 0, indicating all values are 0, create mask 
-        if (np.sum(mask_data.values) != np.nan) or ((np.sum(mask_data_min.values) != 0.0) and (np.sum(mask_data_max.values) != 0.0)):
+        if (np.sum(mask_data).item() != np.nan) or ((np.sum(mask_data_min).item() != 0.0) and (np.sum(mask_data_max).item() != 0.0)):
 
             # get boolean mask with True for all cells that do not contain missing values
             poly_mask = ~xr.ufuncs.isnan(mask_data)
