@@ -9,10 +9,10 @@ fname_GLEAM='waterProvince_masks_GLEAM.list'
 
 echo
 echo CREATING POLYGON MASK
-pcru_preprocess create-poly-mask -of $fname_PCR -v total_evaporation -id watprovID --verbose $nc_file $poly $out_dir/masks_PCR
-pcru_preprocess create-poly-mask -of $fname_GLEAM -v E -id watprovID --verbose $obs $poly $out_dir/masks_GLEAM
+pcru_preprocess create-poly-mask -of $fname_PCR -v total_evaporation -id watprovID --verbose $nc_file $poly ./masks_PCR
+pcru_preprocess create-poly-mask -of $fname_GLEAM -v E -id watprovID --verbose $obs $poly ./masks_GLEAM
 echo
-pcru_eval_poly -o E -s total_evaporation -sm $out_dir/masks_PCR/$fname_PCR -om $out_dir/masks_GLEAM/$fname_GLEAM -cf 1000 -id watprovID --plot --verbose $poly $nc_file $obs $out_dir
+pcru_eval_poly -o E -s total_evaporation -sm ./masks_PCR/$fname_PCR -om ./masks_GLEAM/$fname_GLEAM -cf 1000 -id watprovID --plot --verbose $poly $nc_file $obs $out_dir
 
 #####
 
@@ -22,6 +22,6 @@ sel_out_dir='eval_GRDC/from_folder_selectOnly/'
 
 echo
 echo SELECTING GRDC STATIONS
-pcru_preprocess select-grdc-stations -y_thld 40 $folder $sel_out_dir
+pcru_preprocess select-grdc-stations -y_thld 40 $folder ./masks_GRDC
 echo
-pcru_eval_tims grdc -f $folder -sf $sel_out_dir/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
+pcru_eval_tims grdc -f $folder -sf ./masks_GRDC/selected_GRDC_stations.txt --plot $nc_file $sel_out_dir 
