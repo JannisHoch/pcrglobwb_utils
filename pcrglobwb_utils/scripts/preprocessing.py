@@ -1,4 +1,5 @@
 import pcrglobwb_utils
+from . import funcs
 import pandas as pd
 import numpy as np
 import xarray as xr
@@ -50,15 +51,13 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
     click.echo(click.style('INFO -- reading raster data from {}'.format(os.path.abspath(ncf)), fg='red'))
     ds = xr.open_dataset(os.path.abspath(ncf))
     # aggregate over time to pick also sparse data points in time
-    ds = ds[var_name].sum('time')
+    ds_sum = ds[var_name].sum('time')
+    ds_min = ds[var_name].min('time') 
+    ds_max = ds[var_name].max('time') 
 
-    # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
-    if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
-    try:
-        ds.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
-    except:
-        ds.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
-    ds.rio.write_crs(crs_system, inplace=True)
+    ds_sum = funcs.align_geo(ds_sum, crs_system=crs_system, verbose=verbose)
+    ds_min = funcs.align_geo(ds_min, crs_system=crs_system, verbose=verbose)
+    ds_max = funcs.align_geo(ds_max, crs_system=crs_system, verbose=verbose)
 
     # read shapefile with one or more polygons
     click.echo(click.style('INFO -- reading polygons from {}'.format(os.path.abspath(poly)), fg='red'))
@@ -79,16 +78,19 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 
         # create mask by clipping DataArray to polygon geometry
         # note that this will contain actual values, not boolean ones
-        mask_data = ds.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
+        mask_data = ds_sum.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
+        mask_data_min = ds_min.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
+        mask_data_max = ds_max.rio.clip(poly_gdf_id.geometry, drop=False, all_touched=True)
 
-        # if non-nan values are picked up in the aggregation over time, create mask
-        if np.sum(mask_data.values) != np.nan:
+        # if not only nan values are picked up in the aggregation over time, create mask
+        # or if the sum of maximum and minimum values per cell do not equal 0, indicating all values are 0, create mask 
+        if (np.sum(mask_data.values) != np.nan) or ((np.sum(mask_data_min.values) != 0.0) and (np.sum(mask_data_max.values) != 0.0)):
 
             # get boolean mask with True for all cells that do not contain missing values
             poly_mask = ~xr.ufuncs.isnan(mask_data)
 
             # make sure the original 2D-shape is maintained
-            assert poly_mask.shape == ds.values.shape
+            assert poly_mask.shape == ds_sum.values.shape
 
             # define path to pickled mask
             path = os.path.join(out, 'mask_{}.mask'.format(ID))

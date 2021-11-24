@@ -418,3 +418,17 @@ def unpickle_object(loc):
         out = pickle.load(f)
 
     return out
+
+def align_geo(ds, crs_system='epgs:4326', verbose=False):
+
+    # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
+    if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
+    
+    try:
+        ds.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        ds.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
+
+    ds.rio.write_crs(crs_system, inplace=True)
+
+    return ds
