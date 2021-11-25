@@ -14,8 +14,6 @@ pcru_preprocess create-poly-mask -of $fname_GLEAM -v E -id watprovID --verbose $
 echo
 pcru_eval_poly -o E -s total_evaporation -sm ./masks_PCR/$fname_PCR -om ./masks_GLEAM/$fname_GLEAM -cf 1000 -id watprovID --plot --verbose $poly $nc_file $obs $out_dir
 
-exit 0
-
 #####
 
 nc_file='../../examples/example_data/GRDC/DUMMY_discharge_dailyTot_output.nc'

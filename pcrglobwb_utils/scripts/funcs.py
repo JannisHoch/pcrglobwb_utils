@@ -40,7 +40,6 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
 
     poly_geom = poly['geometry'].values
 
-    if verbose: click.echo('VERBOSE -- preparing geo-dict for GeoJSON output')
     gdd = {'ID': ID, 'geometry': poly_geom}
     
     # if clip was done in preprocessing, just use these pickled masks
@@ -52,13 +51,25 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
         obs_masks_ID = obs_masks.loc[obs_masks.index == ID]
         sim_masks_ID = sim_masks.loc[sim_masks.index == ID]
 
-        # unpickle these masks
-        obs_mask_ID = unpickle_object(obs_masks_ID.path.values[0])
-        sim_mask_ID = unpickle_object(sim_masks_ID.path.values[0])
+        if not obs_masks_ID.empty and not sim_masks_ID.empty: 
 
-        # apply masks
-        obs_data_c = xr.where(obs_mask_ID == True, obs_d, np.nan)
-        sim_data_c = xr.where(sim_mask_ID == True, sim_d, np.nan)
+            # unpickle these masks
+            obs_mask_ID = unpickle_object(obs_masks_ID.path.values[0])
+            sim_mask_ID = unpickle_object(sim_masks_ID.path.values[0])
+
+            # apply masks
+            obs_data_c = xr.where(obs_mask_ID == True, obs_d, np.nan)
+            sim_data_c = xr.where(sim_mask_ID == True, sim_d, np.nan)
+
+            final_df = concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)
+
+        elif obs_masks_ID.empty:
+
+            click.echo('INFO -- no mask for observed data found for ID {}, pass.'.format(ID))
+
+        else:
+
+            click.echo('INFO -- no mask for simulated data found for ID {}, pass.'.format(ID))
 
     # if no file with pickled list of pickled masks is provided, clip here on-the-fly
     else:
@@ -68,47 +79,9 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
         # clipping data-arrays to shape extent
         obs_data_c = obs_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
         sim_data_c = sim_d.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
+
+        final_df = concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)
     
-    # initiate output lists
-    mean_val_timestep_obs = list()
-    mean_val_timestep_sim = list()
-
-    # compute mean per time step in clipped data-array and append to array
-    for i in range(len(obs_data_c.time.values)):
-        time = obs_data_c.time[i]
-        t = pd.to_datetime(time.values)
-        mean = float(obs_data_c.sel(time=t).mean(skipna=True))
-        mean_val_timestep_obs.append(mean)
-    for i in range(len(sim_data_c.time.values)):
-        time = sim_data_c.time[i]
-        t = pd.to_datetime(time.values)
-        mean = float(sim_data_c.sel(time=t).mean(skipna=True))
-        mean_val_timestep_sim.append(mean)
-
-    # determine anomalies is specified
-    if anomaly:
-        if verbose: click.echo('VERBOSE -- determine anomalies.')
-        mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
-        mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
-
-    obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
-    sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
-
-    # accounting for missing values in time series (and thus missing index values!)
-    if time_step == 'monthly':
-        if verbose: click.echo('VERBOSE -- covering missing months in observation or simulation data.')
-        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
-        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
-    if time_step == 'annual':
-        if verbose: click.echo('VERBOSE -- covering missing years in observation or simulation data.')
-        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
-        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
-
-    # concatenating both dataframes to drop rows with missing values in one of the columns
-    # dropping rows with missing values is import because time extents of both files probably do not match
-    if verbose: click.echo('VERBOSE -- concatenating observed and simulated data.')
-    final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
-
     # computing evaluation metrics
     r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
     mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
@@ -432,3 +405,47 @@ def align_geo(ds, crs_system='epgs:4326', verbose=False):
     ds.rio.write_crs(crs_system, inplace=True)
 
     return ds
+
+def concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+
+    # initiate output lists
+    mean_val_timestep_obs = list()
+    mean_val_timestep_sim = list()
+
+    # compute mean per time step in clipped data-array and append to array
+    for i in range(len(obs_data_c.time.values)):
+        time = obs_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(obs_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_obs.append(mean)
+    for i in range(len(sim_data_c.time.values)):
+        time = sim_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(sim_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_sim.append(mean)
+
+    # determine anomalies is specified
+    if anomaly:
+        if verbose: click.echo('VERBOSE -- determine anomalies.')
+        mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
+        mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
+
+    obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
+    sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
+
+    # accounting for missing values in time series (and thus missing index values!)
+    if time_step == 'monthly':
+        if verbose: click.echo('VERBOSE -- covering missing months in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
+    if time_step == 'annual':
+        if verbose: click.echo('VERBOSE -- covering missing years in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
+
+    # concatenating both dataframes to drop rows with missing values in one of the columns
+    # dropping rows with missing values is import because time extents of both files probably do not match
+    if verbose: click.echo('VERBOSE -- concatenating observed and simulated data.')
+    final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
+
+    return final_df

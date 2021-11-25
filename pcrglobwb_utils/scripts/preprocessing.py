@@ -97,7 +97,6 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
         # otherwise, skip this polygon
         if nan_flag and min_max_flag:
 
-            click.echo('VERBOSE -- creating mask.')
             # get boolean mask with True for all cells that do not contain missing values
             poly_mask = ~xr.ufuncs.isnan(mask_data)
 
@@ -117,11 +116,11 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 
         if not nan_flag:
 
-            click.echo('VERBOSE -- not creating mask. Only nan values found in polygon.')
+            if verbose: click.echo('VERBOSE -- not creating mask. Only nan values found in polygon.')
 
         if not min_max_flag:
 
-            click.echo('VERBOSE -- not creating mask. Min/max values only 0 in polygon.')
+            if verbose: click.echo('VERBOSE -- not creating mask. Min/max values only 0 in polygon.')
 
     # create output dataframe
     dd = {'ID': ll_ID, 'path': ll_path}
