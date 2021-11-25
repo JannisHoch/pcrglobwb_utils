@@ -51,6 +51,7 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
         obs_masks_ID = obs_masks.loc[obs_masks.index == ID]
         sim_masks_ID = sim_masks.loc[sim_masks.index == ID]
 
+        # if data is found for poly ID (i.e. a non-empty df is returned) for observation and simulation data, unpickle data
         if not obs_masks_ID.empty and not sim_masks_ID.empty: 
 
             # unpickle these masks
@@ -63,13 +64,21 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_d, sim_d, obs_var_name, sim_va
 
             final_df = concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)
 
+        # if no data is found for poly ID (i.e. an empty df is returned) for observation data, then create empty dummy df for evaluation later
         elif obs_masks_ID.empty:
 
             click.echo('INFO -- no mask for observed data found for ID {}, pass.'.format(ID))
+            obs_df = pd.DataFrame(data=[], index=obs_idx, columns=[obs_var_name])
+            sim_df = pd.DataFrame(data=[], index=obs_idx, columns=[obs_var_name])
+            final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
 
+        # if no data is found for poly ID (i.e. an empty df is returned) for simulation data, then create empty dummy df for evaluation later
         else:
 
             click.echo('INFO -- no mask for simulated data found for ID {}, pass.'.format(ID))
+            obs_df = pd.DataFrame(data=[], index=obs_idx, columns=[obs_var_name])
+            sim_df = pd.DataFrame(data=[], index=obs_idx, columns=[obs_var_name])
+            final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
 
     # if no file with pickled list of pickled masks is provided, clip here on-the-fly
     else:
