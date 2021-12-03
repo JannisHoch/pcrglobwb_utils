@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 import pandas as pd
 import click
 
@@ -83,3 +86,28 @@ def resample_to_annual(df, stat_func='mean'):
         raise ValueError('no supported statistical function provided - choose between mean, max, and min')
 
     return df
+
+def resample_ts(df_obs, df_sim, time_scale):
+    """[summary]
+
+    Args:
+        df_obs ([type]): [description]
+        df_sim ([type]): [description]
+        time_scale ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
+    # resample if specified to other time scales
+    if time_scale == 'month':
+        df_obs = resample_to_month(df_obs, stat_func='mean')
+        df_sim = resample_to_month(df_sim, stat_func='mean')
+    elif time_scale == 'year':
+        df_obs = resample_to_annual(df_obs, stat_func='mean')
+        df_sim = resample_to_annual(df_sim, stat_func='mean')
+    else:
+        df_obs = df_obs
+        df_sim = df_sim    
+
+    return df_obs, df_sim

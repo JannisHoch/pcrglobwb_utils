@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 import pcrglobwb_utils
 import xarray as xr
 import pandas as pd
@@ -95,3 +98,103 @@ def create_out_dir(out_dir):
     click.echo('INFO -- saving output to folder {}'.format(out_dir))
 
     return
+
+def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
+    """[summary]
+
+    Args:
+        yaml_root ([type]): [description]
+        data ([type]): [description]
+        station ([type]): [description]
+        var_name ([type]): [description]
+        encoding ([type]): [description]
+        verbose ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
+    # construct path to GRDC-file
+    grdc_file = os.path.join(yaml_root, data[str(station)]['file'])           
+    click.echo('INFO -- reading observations from file {}.'.format(grdc_file))
+
+    grdc_data = pcrglobwb_utils.obs_data.grdc_data(grdc_file)
+
+    if verbose: click.echo('VERBOSE -- retrieving GRDC station properties.')
+    plot_title, props = grdc_data.get_grdc_station_properties(encoding=encoding)
+
+    # retrieving values from GRDC file
+    if 'column' in data[str(station)].keys():
+        df_obs, props = grdc_data.get_grdc_station_values(col_name=data[str(station)]['column'], var_name=var_name, encoding=encoding, verbose=verbose)
+    else:
+        df_obs, props = grdc_data.get_grdc_station_values(var_name=var_name, verbose=verbose, encoding=encoding)
+    df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
+
+    # if 'lat' or 'lon' are specified for a station in yml-file,
+    # use this instead of GRDC coordinates
+    if 'lat' in data[str(station)].keys():
+        if verbose: click.echo('VERBOSE -- overwriting GRDC latitude information {} with user input {}.'.format(props['latitude'], data[str(station)]['lat']))
+        props['latitude'] = data[str(station)]['lat']
+    if 'lon' in data[str(station)].keys():
+        if verbose: click.echo('VERBOSE -- overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
+        props['longitude'] = data[str(station)]['lon']
+
+    return df_obs, props
+
+def align_geo(ds, crs_system='epgs:4326', verbose=False):
+
+    # align spatial settings of nc-files to be compatible with geosjon-file or ply-file
+    if verbose: click.echo('VERBOSE -- setting spatial dimensions and crs of nc-files')
+    
+    try:
+        ds.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    except:
+        ds.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
+
+    ds.rio.write_crs(crs_system, inplace=True)
+
+    return ds
+
+def concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose):
+
+    # initiate output lists
+    mean_val_timestep_obs = list()
+    mean_val_timestep_sim = list()
+
+    # compute mean per time step in clipped data-array and append to array
+    for i in range(len(obs_data_c.time.values)):
+        time = obs_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(obs_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_obs.append(mean)
+    for i in range(len(sim_data_c.time.values)):
+        time = sim_data_c.time[i]
+        t = pd.to_datetime(time.values)
+        mean = float(sim_data_c.sel(time=t).mean(skipna=True))
+        mean_val_timestep_sim.append(mean)
+
+    # determine anomalies is specified
+    if anomaly:
+        if verbose: click.echo('VERBOSE -- determine anomalies.')
+        mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
+        mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
+
+    obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
+    sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
+
+    # accounting for missing values in time series (and thus missing index values!)
+    if time_step == 'monthly':
+        if verbose: click.echo('VERBOSE -- covering missing months in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('M').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('M').mean()  
+    if time_step == 'annual':
+        if verbose: click.echo('VERBOSE -- covering missing years in observation or simulation data.')
+        obs_df = obs_df.resample('D').mean().fillna(np.nan).resample('Y').mean()
+        sim_df = sim_df.resample('D').mean().fillna(np.nan).resample('Y').mean()  
+
+    # concatenating both dataframes to drop rows with missing values in one of the columns
+    # dropping rows with missing values is import because time extents of both files probably do not match
+    if verbose: click.echo('VERBOSE -- concatenating observed and simulated data.')
+    final_df = pd.concat([obs_df, sim_df], axis=1).dropna()
+
+    return final_df

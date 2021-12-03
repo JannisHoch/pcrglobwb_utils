@@ -8,6 +8,9 @@ from . import plotting
 from . import water_balance
 from . import spatial_validation
 from . import ensembles
+from . import pre
+from . import io
+from . import eval
 
 __author__ = """Jannis M. Hoch, Niko Wanders"""
 __institute__= """Utrecht University"""
