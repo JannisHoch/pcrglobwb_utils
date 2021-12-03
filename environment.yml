@@ -26,3 +26,4 @@ dependencies:
   - pyyaml
   - pcraster
   - dask
+  - dask-jobqueue
