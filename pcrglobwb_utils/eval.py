@@ -244,11 +244,15 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
 
     # if data is via yml-file, the data is read here as well as are station properties
     if mode == 'yml': 
-        df_obs, props = pcrglobwb_utils.utils.get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose)
+        df_obs, props, lat_lon_flag = pcrglobwb_utils.utils.get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose)
 
     # if data comes from folder, it was already read and can now be retrieved from dictionary
     if mode == 'fld':
         df_obs, props = data[str(station)][1], data[str(station)][0]
+        lat_lon_flag = False
+
+    # compute mean value of observations
+    df_obs_mean = np.mean(df_obs.dropna().values)
 
     # prepare a geojson-file for output later (if specified)
     if geojson:
@@ -257,7 +261,7 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
 
     # get row/col combination for cell corresponding to lon/lat combination
     if verbose: click.echo('VERBOSE -- getting row/column combination from longitude/latitude.')
-    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, props['longitude'], props['latitude'])
+    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, df_obs_mean, props['longitude'], props['latitude'], lat_lon_flag, var_name=var_name)
 
     # retrieving values at that cell
     if verbose: click.echo('VERBOSE -- reading variable {} at row {} and column {}.'.format(var_name, row, col))

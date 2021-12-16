@@ -139,7 +139,12 @@ def get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose):
         if verbose: click.echo('VERBOSE -- overwriting GRDC longitude information {} with user input {}.'.format(props['longitude'], data[str(station)]['lon']))
         props['longitude'] = data[str(station)]['lon']
 
-    return df_obs, props
+    if ('lon' in data[str(station)].keys()) or ('lat' in data[str(station)].keys()):
+        lat_lon_flag = True
+    else:
+        lat_lon_flag = False
+
+    return df_obs, props, lat_lon_flag
 
 def align_geo(ds, crs_system='epgs:4326', verbose=False):
 

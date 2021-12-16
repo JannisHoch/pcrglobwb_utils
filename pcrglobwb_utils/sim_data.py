@@ -91,7 +91,7 @@ class from_nc:
 
 ## FUNCTIONS ##
 
-def find_indices_from_coords(ds, lon, lat):
+def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='discharge'):
     """[summary]
 
     Args:
@@ -103,12 +103,60 @@ def find_indices_from_coords(ds, lon, lat):
         [type]: [description]
     """    
 
+    if not lat_lon_flag:
+
+        click.echo('INFO -- lat/lon not set manually, applied window search.')
+    
+        # find lat/lon coords for cell in window which matches observation mean best
+        # define search window
+        min_lon = lon - 3
+        max_lon = lon + 3
+        min_lat = lat - 3
+        max_lat = lat + 3
+
+        # create mask for search window
+        try:
+            mask_lon = (ds.lon >= min_lon) & (ds.lon <= max_lon)
+            mask_lat = (ds.lat >= min_lat) & (ds.lat <= max_lat)
+        except:
+            mask_lon = (ds.longitude >= min_lon) & (ds.longitude <= max_lon)
+            mask_lat = (ds.latitude >= min_lat) & (ds.latitude <= max_lat)
+
+        # mask initial array and determine mean over time
+        cropped_ds = ds.where(mask_lon & mask_lat, drop=True)
+        cropped_ds = cropped_ds.mean('time')
+
+        # determine match between simulation and observation
+        dev_ds = cropped_ds.assign(deviation = cropped_ds[var_name] / obs_mean)
+        # where deviation is the smallest, assign True
+        dev_mask_ds = xr.where(dev_ds == np.max(dev_ds.deviation.values), True, False)
+        # mask out all other cells
+        out = dev_ds.where(dev_mask_ds.deviation, drop=True)
+
+        # retrieve new lat/lon coords
+        try:
+            new_lon = out.lon.values[0]
+            new_lat = out.lat.values[0]
+        except:
+            new_lon = out.longitude.values[0]
+            new_lat = out.latitude.values[0]
+
+        if (lat, lon) != (new_lat, new_lon):
+            click.echo('VERBOSE -- original lat/lon coords {}/{} were replaced by {}/{}.'.format(lat, lon, new_lat, new_lon))
+
+    else:
+
+        new_lat = lat
+        new_lon = lon
+
+    # return index belonging to the chosen lat/lon coords
+
     try:
-        abslat = np.abs(ds.lat-lat)
-        abslon = np.abs(ds.lon-lon)
+        abslat = np.abs(ds.lat-new_lat)
+        abslon = np.abs(ds.lon-new_lon)
     except:
-        abslat = np.abs(ds.latitude-lat)
-        abslon = np.abs(ds.longitude-lon)
+        abslat = np.abs(ds.latitude-new_lat)
+        abslon = np.abs(ds.longitude-new_lon)
 
     c = np.maximum(abslon, abslat)
 
@@ -120,10 +168,12 @@ def find_indices_from_coords(ds, lon, lat):
 
     return idx_row, idx_col
 
-def read_at_indices(ds, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
+def read_at_indices(ds_obs, idx_row, idx_col, var_name='discharge', plot=False, plot_var_name=None, plot_title=None):
     """Reading a nc-file and retrieving variable values at given column and row indices. Default setting is that discharge is extracted at this point. Resulting timeseries is stored as pandas timeframe and can be plotted with user-specified variable name and title.
 
     Arguments:
+        ds_obs (dataframe): dataframe containing timeseries of observations
+        obs_mean (float): mean value of observations
         idx_row (float): row index from which to read the data
         idx_col (float): column index from which to read the data
 
@@ -139,9 +189,9 @@ def read_at_indices(ds, idx_row, idx_col, var_name='discharge', plot=False, plot
 
     # read variable values at indices as xarray DataArray
     try:
-        dsq = ds[var_name].isel(lat=idx_row, lon=idx_col)
+        dsq = ds_obs[var_name].isel(lat=idx_row, lon=idx_col)
     except:
-        dsq = ds[var_name].isel(latitude=idx_row, longitude=idx_col)
+        dsq = ds_obs[var_name].isel(latitude=idx_row, longitude=idx_col)
     
     # change variable names if specified
     if plot_var_name != None:
