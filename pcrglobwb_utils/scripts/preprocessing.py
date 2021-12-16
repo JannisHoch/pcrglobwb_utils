@@ -37,7 +37,7 @@ def create_POLY_mask(ncf, poly, out, var_name, out_file_name, poly_id, crs_syste
 @click.option('-c_thld', '--cat-area-thld', default=0, help='minimum catchment area stations needs to have to be selected', type=int)
 @click.option('-y_thld', '--nr-years-thld', default=1, help='minimum number of years stations needs to have to be selected', type=int)
 @click.option('-ts_start', '--timeseries-start', default='1900-01', help='start date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
-@click.option('-ts_end', '--timeseries-end', default='2100-01', help='end date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
+@click.option('-ts_end', '--timeseries-end', default='1900-01', help='end date of observed timeseries to be considered in selection (format="YYYY-MM")', type=str)
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
