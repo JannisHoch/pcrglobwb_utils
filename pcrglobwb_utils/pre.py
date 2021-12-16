@@ -88,7 +88,8 @@ def mask_polygons(ncf, poly, out, var_name, out_file_name, poly_id, crs_system='
         if nan_flag and min_max_flag:
 
             # get boolean mask with True for all cells that do not contain missing values
-            poly_mask = ~xr.ufuncs.isnan(mask_data)
+            # poly_mask = ~xr.ufuncs.isnan(mask_data) # deprecated
+            poly_mask = ~np.isnan(mask_data)
 
             # make sure the original 2D-shape is maintained
             assert poly_mask.shape == ds_sum.values.shape
