@@ -160,7 +160,7 @@ def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
         props = loc_data[0]
 
         # apply thresholds to station properties
-        if (props['cat_area'] >= cat_area_thld) and (props['no_years'] >= nr_years_thld) and (props['ts_end'] <= pd.to_datetime(timeseries_end)) and (props['ts_start'] >= pd.to_datetime(timeseries_start)):
+        if (props['cat_area'] >= cat_area_thld) and (props['no_years'] >= nr_years_thld) and (props['ts_end'] >= pd.to_datetime(timeseries_end)) and (props['ts_start'] >= pd.to_datetime(timeseries_start)):
     
             # if both criteria are met, station is selected and appended to list
             if verbose: click.echo('... selected!')
