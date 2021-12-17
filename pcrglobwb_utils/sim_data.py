@@ -91,7 +91,7 @@ class from_nc:
 
 ## FUNCTIONS ##
 
-def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='discharge'):
+def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='discharge', window=5):
     """[summary]
 
     Args:
@@ -106,13 +106,16 @@ def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='dis
     if not lat_lon_flag:
 
         click.echo('INFO -- lat/lon not set manually, applied window search.')
+
+        # res = (ds.lat.max() - ds.lat.min()) / len(ds.lat)
+        # res = res.values.item()
     
         # find lat/lon coords for cell in window which matches observation mean best
-        # define search window
-        min_lon = lon - 3
-        max_lon = lon + 3
-        min_lat = lat - 3
-        max_lat = lat + 3
+        # define search window of 5 km in all direction
+        min_lon = lon - window * 0.008333333
+        max_lon = lon + window * 0.008333333
+        min_lat = lat - window * 0.008333333
+        max_lat = lat + window * 0.008333333
 
         # create mask for search window
         try:
@@ -123,7 +126,10 @@ def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='dis
             mask_lat = (ds.latitude >= min_lat) & (ds.latitude <= max_lat)
 
         # mask initial array and determine mean over time
-        cropped_ds = ds.where(mask_lon & mask_lat, drop=True)
+        try:
+            cropped_ds = ds.where(mask_lon & mask_lat, drop=True)
+        except:
+            cropped_ds = ds.copy()
         cropped_ds = cropped_ds.mean('time')
 
         # determine match between simulation and observation
