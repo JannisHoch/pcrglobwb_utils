@@ -103,6 +103,7 @@ def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='dis
         [type]: [description]
     """    
 
+    # if lat/lon are not set manually (basically only possible with yml-file)
     if not lat_lon_flag:
 
         click.echo('INFO -- lat/lon not set manually, applied window search.')
@@ -151,7 +152,8 @@ def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='dis
 
         # if not possible, do not apply masks and continue
         except:
-            pass
+            new_lat = lat
+            new_lon = lon
 
     else:
 
