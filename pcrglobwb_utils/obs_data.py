@@ -28,83 +28,62 @@ class grdc_data:
         
         # open file
         f = open(self.fo, encoding=encoding)
+
+        self.props = dict()
         
         # go through lines in file
         for i, line in enumerate(f):
 
-            # GRDC-No normally in line 9 of GRDC file
-            if i == 8:
-                grdc_no = line
-                # check whether line contains station information
-                if 'GRDC-No.' not in grdc_no.split(":")[0]:
-                    warnings.warn('WARNING: GRDC-No. should be in line 9 but not found - please check if input txt-file is original GRDC format!')
-                # split and strip string
-                grdc_no = grdc_no.split(":")[-1].strip()  
-            
-            # station name normally in line 11 of GRDC file
-            if i == 10:
-                station_grdc = line
-                # check whether line contains station information
-                if 'Station' not in station_grdc.split(":")[0]:
-                    warnings.warn('WARNING: Station name should be in line 11 but not found - please check if input txt-file is original GRDC format!')
-                # split and strip string
-                station_grdc = station_grdc.split(":")[-1].strip()  
-            
-            # latitude normally in line 13 of GRDC file
-            if i == 12:
-                lat_grdc = line
-                if 'Latitude'not in lat_grdc.split(":")[0]:
-                    warnings.warn('WARNING: Latitude should be in line 13 but not found - please check if input txt-file is original GRDC format!')
-                lat_grdc = lat_grdc.split(":")[-1].strip()
-                
-            # longitude normally in line 14 of GRDC file
-            if i == 13:
-                lon_grdc = line
-                if 'Longitude' not in lon_grdc.split(":")[0]:
-                    warnings.warn('WARNING: Longitude should be in line 14 but not found - please check if input txt-file is original GRDC format!')
-                lon_grdc = lon_grdc.split(":")[-1].strip()
+            split_line = line.split(":")[0]
 
-            # catchment area normally in line 15 of GRDC file
-            if i == 14:
-                cat_area = line
-                if 'Catchment area (km2)' not in cat_area.split(":")[0]:
-                    warnings.warn('WARNING: Catchment area should be in line 15 but not found - please check if input txt-file is original GRDC format!')
-                cat_area = cat_area.split(":")[-1].strip()
+            if 'GRDC-No.' in split_line:
+                grdc_no = line.split(":")[-1].strip()
+                self.props['grdc_no'] = int(grdc_no)
+
+            if 'Station' in split_line:
+                station_grdc = line.split(":")[-1].strip()
+                self.props['station'] = str(station_grdc)
+
+            if 'Latitude' in split_line:
+                lat_grdc = line.split(":")[-1].strip()
+                self.props['latitude'] = float(lat_grdc)
+
+            if 'Longitude' in split_line:
+                lon_grdc = line.split(":")[-1].strip()
+                self.props['longitude'] = float(lon_grdc)
+
+            if 'Catchment area' in split_line:
+                cat_area = line.split(":")[-1].strip()
                 if cat_area == '':
                     cat_area = 0.0
+                self.props['cat_area'] = float(cat_area)
 
-           # start and end year of observations normally in line 15 of GRDC file
-            if i == 24:
-                ts_time = line
-                if 'Time series' not in ts_time.split(":")[0]:
-                    warnings.warn('WARNING: Time series should be in line 25 but not found - please check if input txt-file is original GRDC format!')
-                ts_time = ts_time.split(":")[-1].strip()
+            if 'Time series' in split_line:
+                ts_time = line.split(":")[-1].strip()
                 ts_start = ts_time.split(" - ")[0].strip()
                 ts_end = ts_time.split(" - ")[1].strip()
-    
-            # No. of years normally in line 26 of GRDC file
-            if i == 25:
-                no_years = line
-                if 'No. of years' not in no_years.split(":")[0]:
-                    warnings.warn('WARNING: No. of years should be in line 26 but not found - please check if input txt-file is original GRDC format!')
-                no_years = no_years.split(":")[-1].strip()
-                
-            # break loop to save time    
-            elif i > 25:
+                self.props['ts_start'] = pd.to_datetime(ts_start)
+                self.props['ts_end'] = pd.to_datetime(ts_end)
+
+            if 'No. of years' in split_line:
+                no_years = line.split(":")[-1].strip()
+                self.props['no_years'] = int(no_years)
+
+            # break loop to save time and not read all observed values   
+            if i > 25:
                 break
                 
         # close file        
         f.close()
-        
-        # write station name, latitude, and longitude to dic
-        self.props = dict(grdc_no=int(grdc_no),
-                          station=str(station_grdc), 
-                          latitude=float(lat_grdc), 
-                          longitude=float(lon_grdc),
-                          cat_area=float(cat_area),
-                          no_years=int(no_years),
-                          ts_start=pd.to_datetime(ts_start),
-                          ts_end=pd.to_datetime(ts_end))
+
+        if 'grdc_no' not in self.props.keys(): warnings.warn('WARNING -- no "GRDC-No." information found in file.')
+        if 'station' not in self.props.keys(): warnings.warn('WARNING -- no "Station" information found in file.')
+        if 'latitude' not in self.props.keys(): warnings.warn('WARNING -- no "Latitude" information found in file.')
+        if 'longitude' not in self.props.keys(): warnings.warn('WARNING -- no "Longitude" information found in file.')
+        if 'cat_area' not in self.props.keys(): warnings.warn('WARNING -- no "Catchment area" information found in file.')
+        if 'ts_start' not in self.props.keys(): warnings.warn('WARNING -- no start date of timeseries found in file.')
+        if 'ts_end' not in self.props.keys(): warnings.warn('WARNING -- no end date of timeseries found in file.')
+        if 'no_years' not in self.props.keys(): warnings.warn('WARNING -- no "No. of years" information found in file.')
         
         # create simple title for plots
         plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
