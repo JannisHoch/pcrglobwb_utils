@@ -125,30 +125,33 @@ def find_indices_from_coords(ds, obs_mean, lon, lat, lat_lon_flag, var_name='dis
             mask_lon = (ds.longitude >= min_lon) & (ds.longitude <= max_lon)
             mask_lat = (ds.latitude >= min_lat) & (ds.latitude <= max_lat)
 
-        # mask initial array and determine mean over time
+        # mask initial array and determine mean over time, if possible
+        # reasons why not possible: GRDC station coords not found in nc-file
         try:
             cropped_ds = ds.where(mask_lon & mask_lat, drop=True)
+            cropped_ds = cropped_ds.mean('time')
+
+            # determine match between simulation and observation
+            dev_ds = cropped_ds.assign(deviation = cropped_ds[var_name] / obs_mean)
+            # where deviation is the smallest, assign True
+            dev_mask_ds = xr.where(dev_ds == np.max(dev_ds.deviation.values), True, False)
+            # mask out all other cells
+            out = dev_ds.where(dev_mask_ds.deviation, drop=True)
+
+            # retrieve new lat/lon coords
+            try:
+                new_lon = out.lon.values[0]
+                new_lat = out.lat.values[0]
+            except:
+                new_lon = out.longitude.values[0]
+                new_lat = out.latitude.values[0]
+
+            if (lat, lon) != (new_lat, new_lon):
+                click.echo('VERBOSE -- original lat/lon coords {}/{} were replaced by {}/{}.'.format(lat, lon, new_lat, new_lon))
+
+        # if not possible, do not apply masks and continue
         except:
-            cropped_ds = ds.copy()
-        cropped_ds = cropped_ds.mean('time')
-
-        # determine match between simulation and observation
-        dev_ds = cropped_ds.assign(deviation = cropped_ds[var_name] / obs_mean)
-        # where deviation is the smallest, assign True
-        dev_mask_ds = xr.where(dev_ds == np.max(dev_ds.deviation.values), True, False)
-        # mask out all other cells
-        out = dev_ds.where(dev_mask_ds.deviation, drop=True)
-
-        # retrieve new lat/lon coords
-        try:
-            new_lon = out.lon.values[0]
-            new_lat = out.lat.values[0]
-        except:
-            new_lon = out.longitude.values[0]
-            new_lat = out.latitude.values[0]
-
-        if (lat, lon) != (new_lat, new_lon):
-            click.echo('VERBOSE -- original lat/lon coords {}/{} were replaced by {}/{}.'.format(lat, lon, new_lat, new_lon))
+            pass
 
     else:
 
