@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from shapely.geometry import Point
 import pickle
 import click
 from datetime import datetime
@@ -130,7 +131,7 @@ def mask_polygons(ncf, poly, out, var_name, out_file_name, poly_id, crs_system='
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_thld, nr_years_thld, timeseries_end, timeseries_start):
+def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_thld, nr_years_thld, timeseries_end, timeseries_start, geojson=True):
 
     t_start = datetime.now()
     
@@ -150,6 +151,11 @@ def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
     # initiate list with GRDC No.s which are selected
     out_ll = list()
 
+    # prepare a geojson-file for output later (if specified)
+    if geojson:
+        click.echo('INFO -- preparing geo-dict for GeoJSON output')
+        geo_dict = {'station': list(), 'geometry': list()}
+
     # collect all GRDC-files in the input folder
     data, files = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
 
@@ -166,9 +172,16 @@ def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
             # if both criteria are met, station is selected and appended to list
             if verbose: click.echo('... selected!')
             out_ll.append(props['station'])
+            if geojson: 
+                geo_dict['station'].append(props['station'])
+                geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
 
     click.echo('INFO -- {}/{} stations selected'.format(len(out_ll), len(files)))
     
+    if geojson: 
+        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+        gdf.to_file(os.path.join(out, 'selected_GRDC_stations.geojson'), driver='GeoJSON')
+
     # write list to output file
     fo = open(out_fo,'w')
     click.echo('INFO -- writing selected stations to {}'.format(out_fo))
