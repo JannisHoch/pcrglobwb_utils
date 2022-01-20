@@ -6,6 +6,7 @@ import click
 import os
 
 from . import time_funcs
+from . import eval
 
 ## OBJECT AND METHODS
 class from_nc:
@@ -222,7 +223,7 @@ def read_at_indices(ds_obs, idx_row, idx_col, var_name='discharge', plot=False, 
     
     return df
 
-def validate_timeseries(df_sim, df_obs, out_dir, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
+def validate_timeseries(df_sim, df_obs, out_dir, station, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False):
     """Validates simulated values with observations. Computes KGE, NSE, MSE, RMSE, RRMSE, and R2. Concatenates the two dataframes and drops all NaNs to achieve dataframe with common time period.
 
     Arguments:
@@ -277,31 +278,22 @@ def validate_timeseries(df_sim, df_obs, out_dir, suffix=None, var_name_obs=None,
     if both.empty:
         click.echo('WARNING: no common time period of observed and simulated values found in dataframes!')
     
-    # convert to np-arrays
-    obs = both_noMV[both_noMV.columns[0]].to_numpy()
-    sim = both_noMV[both_noMV.columns[1]].to_numpy()
-    
-    # apply objective functions
-    kge = sp.objectivefunctions.kge(obs, sim, return_all=return_all_KGE)
-    nse = sp.objectivefunctions.nashsutcliffe(obs, sim)
-    mse = sp.objectivefunctions.mse(obs, sim)
-    rmse = sp.objectivefunctions.rmse(obs, sim)
-    rrmse = sp.objectivefunctions.rrmse(obs, sim)
-    r2 = sp.objectivefunctions.rsquared(obs, sim)
+    # # apply objective functions
+    metrics_dict = eval.calc_metrics(both_noMV, both_noMV.columns[0], both_noMV.columns[1], return_all=return_all_KGE)
     
     # fill dict
-    evaluation = {'KGE': [kge],
-                'NSE': nse,
-                'MSE': mse,
-                'RMSE': rmse,
-                'RRMSE': rrmse,
-                'R2': r2}
+    evaluation = {'KGE': round(metrics_dict['KGE'], 3),
+                  'NSE': round(metrics_dict['NSE'], 3),
+                  'MSE': round(metrics_dict['MSE'], 3),
+                  'RMSE': round(metrics_dict['RMSE'], 3),
+                  'RRMSE': round(metrics_dict['RRMSE'], 3),
+                  'R2': round(metrics_dict['R2'], 3)}
 
     # save dict to csv
     try:
-        df_out = pd.DataFrame().from_dict(evaluation, orient='index')
+        df_out = pd.DataFrame().from_dict(evaluation, columns=[station], orient='index')
     except:
-        df_out = pd.DataFrame().from_dict(evaluation)
+        df_out = pd.DataFrame().from_dict(evaluation, columns=[station])
 
     if suffix != None:
         df_out.to_csv(os.path.join(out_dir, 'evaluation_{}.csv'.format(suffix)))

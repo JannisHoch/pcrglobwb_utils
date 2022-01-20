@@ -94,22 +94,13 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, 
         sim_data_c = sim_data.rio.clip(poly.geometry, poly.crs, drop=True, all_touched=True)
 
         final_df = pcrglobwb_utils.utils.concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_idx, sim_idx, time_step, anomaly, verbose)
-    
-    # computing evaluation metrics
-    r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values) # this RRMSE divides RMSE with mean(eval)
-    rrmse = rmse / final_df[obs_var_name].std()                                                             # but we rather want to have RMSE divided by std(eval)
-    if verbose: click.echo('VERBOSE -- R2 is {}'.format(r2))
-    if verbose: click.echo('VERBOSE -- MSE is {}'.format(mse))
-    if verbose: click.echo('VERBOSE -- RMSE is {}'.format(rmse))
-    if verbose: click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
 
-    gdd['R2'] = round(r2, 3)
-    gdd['MSE'] = round(mse, 3)
-    gdd['RMSE'] = round(rmse, 3)
-    gdd['RRMSE'] = round(rrmse, 3)
+    metrics_dict = calc_metrics(final_df, obs_var_name, sim_var_name, verbose=verbose)
+
+    gdd['R2'] = round(metrics_dict['R2'], 3)
+    gdd['MSE'] = round(metrics_dict['MSE'], 3)
+    gdd['RMSE'] = round(metrics_dict['RMSE'], 3)
+    gdd['RRMSE'] = round(metrics_dict['RRMSE'], 3)
 
     return gdd
 
@@ -273,9 +264,8 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
 
     # compute scores
     click.echo('INFO -- computing scores.')
-    df_scores = pcrglobwb_utils.sim_data.validate_timeseries(df_sim, df_obs, out_dir=out_dir, suffix=time_scale, return_all_KGE=False)
-
-    df_scores.index = [station]
+    df_scores = pcrglobwb_utils.sim_data.validate_timeseries(df_sim, df_obs, out_dir, station, suffix=time_scale, return_all_KGE=False)
+    df_scores = df_scores.T
 
     # update geojson-file with KGE info
     if geojson: 
@@ -506,3 +496,24 @@ def EXCEL(ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, 
 
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
+
+def calc_metrics(final_df, obs_var_name, sim_var_name, verbose=False, return_all=False):
+
+    # computing evaluation metrics
+    kge = spotpy.objectivefunctions.kge(final_df[obs_var_name].values, final_df[sim_var_name].values, return_all=return_all)
+    nse = spotpy.objectivefunctions.nashsutcliffe(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values) # this RRMSE divides RMSE with mean(eval)
+    rrmse = rmse / final_df[obs_var_name].std()
+    if verbose: click.echo('VERBOSE -- KGE is {}'.format(kge))
+    if verbose: click.echo('VERBOSE -- NSE is {}'.format(nse))                                                             # but we rather want to have RMSE divided by std(eval)
+    if verbose: click.echo('VERBOSE -- R2 is {}'.format(r2))
+    if verbose: click.echo('VERBOSE -- MSE is {}'.format(mse))
+    if verbose: click.echo('VERBOSE -- RMSE is {}'.format(rmse))
+    if verbose: click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
+
+    dd = {'KGE': kge, 'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
+
+    return dd
