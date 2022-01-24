@@ -180,9 +180,9 @@ def concat_dataframes(obs_data_c, sim_data_c, obs_var_name, sim_var_name, obs_id
 
     # determine anomalies is specified
     if anomaly:
-        if verbose: click.echo('VERBOSE -- determine anomalies.')
+        if verbose: click.echo('VERBOSE -- determine anomalies of OBS data.')
         mean_val_timestep_obs = mean_val_timestep_obs - np.mean(mean_val_timestep_obs)
-        mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
+        # mean_val_timestep_sim = mean_val_timestep_sim - np.mean(mean_val_timestep_sim)
 
     obs_df = pd.DataFrame(data=mean_val_timestep_obs, index=obs_idx, columns=[obs_var_name])
     sim_df = pd.DataFrame(data=mean_val_timestep_sim, index=sim_idx, columns=[sim_var_name])
