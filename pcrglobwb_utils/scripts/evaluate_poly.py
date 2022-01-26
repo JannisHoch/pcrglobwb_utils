@@ -18,11 +18,13 @@ import click
 @click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
 @click.option('-om', '--obs-masks', default=None, help='path to file with pickled paths to preprocessed masks per polygon for observations.', type=str)
 @click.option('-sm', '--sim-masks', default=None, help='path to file with pickled paths to preprocessed masks per polygon for simulations.', type=str)
-@click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies.')
+@click.option('--anomaly/--no-anomaly', default=False, help='whether or not to compute anomalies of simulations.')
+@click.option('--sim-log/--no-sim-log', default=False, help='whether or not to compute log10 of simulations.')
+@click.option('--obs-log/--no-obs-log', default=False, help='whether or not to compute log10 of observations.')
 @click.option('--plot/--no-plot', default=False, help='whether or not to save a simple plot of results.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_masks, time_step, number_processes, anomaly, conversion_factor, coordinate_system, plot, verbose):
+def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_masks, time_step, number_processes, anomaly, conversion_factor, coordinate_system, obs_log, sim_log, plot, verbose):
     """
 
     Computes r, MSE, and RMSE for multiple polygons as provided by a shape-file between simulated and observed data.
@@ -42,5 +44,5 @@ def main(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_
 
     """  
 
-    pcrglobwb_utils.eval.POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_masks, time_step, number_processes, anomaly, conversion_factor, coordinate_system, plot, verbose)
+    pcrglobwb_utils.eval.POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks, sim_masks, time_step, number_processes, anomaly, conversion_factor, coordinate_system, obs_log, sim_log, plot, verbose)
 

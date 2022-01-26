@@ -21,6 +21,13 @@ sim='../../examples/example_data/GLEAM/totalEvaporation_monthTot_output_2010_Tan
 out='./eval_GLEAM'
 
 echo
-echo VALIDATING WITH GLEAM
+echo VALIDATING WITH GLEAM - NO LOG10
 
 pcru_eval_poly -o E -s total_evaporation -cf 1000 -id watprovID --plot $shp $sim $obs $out
+
+out='./eval_GLEAM/log10'
+
+echo
+echo VALIDATING WITH GLEAM - WITH LOG10
+
+pcru_eval_poly -o E -s total_evaporation -cf 1000 -id watprovID --sim-log --obs-log --plot --verbose $shp $sim $obs $out

@@ -104,7 +104,7 @@ def evaluate_polygons(ID, ply_id, extent_gdf, obs_data, sim_data, obs_var_name, 
 
     return gdd
 
-def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None, sim_masks=None, time_step='monthly', number_processes=None, anomaly=False, conversion_factor=1, coordinate_system='epsg:4326', plot=False, verbose=False):
+def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None, sim_masks=None, time_step='monthly', number_processes=None, anomaly=False, conversion_factor=1, coordinate_system='epsg:4326', obs_log=False, sim_log=False, plot=False, verbose=False):
 
     t_start = datetime.now()
 
@@ -124,7 +124,7 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     # extract variable data from datasets
     if verbose: click.echo('VERBOSE -- extract data from files')
     obs_data = obs_ds[obs_var_name]
-    if verbose: click.echo('VERBOSE -- applying conversion factor {} to simulated data'.format(conversion_factor))
+    if verbose: click.echo('VERBOSE -- applying conversion factor {} to SIM data'.format(conversion_factor))
     sim_data = sim_ds[sim_var_name] * conversion_factor
 
     # retrieve time indices
@@ -148,6 +148,13 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     except:
         sim_data.rio.set_spatial_dims(x_dim='longitude', y_dim='latitude', inplace=True)
     sim_data.rio.write_crs(coordinate_system, inplace=True)
+
+    if obs_log:
+        if verbose: click.echo('VERBOSE -- applying log10 to OBS data')
+        obs_data = xr.ufuncs.log10(obs_data)
+    if sim_log:
+        if verbose: click.echo('VERBOSE -- applying log10 to SIM data')
+        sim_data = xr.ufuncs.log10(sim_data)
 
     # if masks for observations is provided...
     if obs_masks != None:
