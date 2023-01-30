@@ -504,23 +504,41 @@ def EXCEL(ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, 
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def calc_metrics(final_df, obs_var_name, sim_var_name, verbose=False, return_all=False):
+def calc_metrics(df: pd.DataFrame, obs_var_name: str, sim_var_name: str, verbose=False, return_all=False) -> dict:
+    """Calculates a range of evaluation metrics.
+    Both timeseries (i.e., simulation and observation) need to be stored in df.
+    Returns metric values as dictionary.
+
+    Args:
+        df (pd.DataFrame): dataframe containing simulated and observed values.
+        obs_var_name (str): column name of observed values.
+        sim_var_name (str): column name of simulated values.
+        verbose (bool, optional): whether or not to print more info. Defaults to False.
+        return_all (bool, optional): whether or not return all KGE components. Defaults to False.
+
+    Returns:
+        dict: dictionary containing metrics with their values.
+    """
 
     # computing evaluation metrics
-    kge = spotpy.objectivefunctions.kge(final_df[obs_var_name].values, final_df[sim_var_name].values, return_all=return_all)
-    nse = spotpy.objectivefunctions.nashsutcliffe(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    kge = spotpy.objectivefunctions.kge(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
+    kge_np = spotpy.objectivefunctions.kge_non_parametric(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
+    nse = spotpy.objectivefunctions.nashsutcliffe(df[obs_var_name].values, df[sim_var_name].values)
+    r2 = spotpy.objectivefunctions.rsquared(df[obs_var_name].values, df[sim_var_name].values)
+    mse = spotpy.objectivefunctions.mse(df[obs_var_name].values, df[sim_var_name].values)
+    rmse = spotpy.objectivefunctions.rmse(df[obs_var_name].values, df[sim_var_name].values)
     # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values) # this RRMSE divides RMSE with mean(eval)
-    rrmse = rmse / final_df[obs_var_name].std()
-    if verbose: click.echo('VERBOSE -- KGE is {}'.format(kge))
-    if verbose: click.echo('VERBOSE -- NSE is {}'.format(nse))                                                             # but we rather want to have RMSE divided by std(eval)
-    if verbose: click.echo('VERBOSE -- R2 is {}'.format(r2))
-    if verbose: click.echo('VERBOSE -- MSE is {}'.format(mse))
-    if verbose: click.echo('VERBOSE -- RMSE is {}'.format(rmse))
-    if verbose: click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
+    rrmse = rmse / df[obs_var_name].std()
 
-    dd = {'KGE': kge, 'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
+    if verbose: 
+        click.echo('VERBOSE -- KGE is {}'.format(kge))
+        click.echo('VERBOSE -- KGE non-parametric is {}'.format(kge_np))
+        click.echo('VERBOSE -- NSE is {}'.format(nse))
+        click.echo('VERBOSE -- R2 is {}'.format(r2))
+        click.echo('VERBOSE -- MSE is {}'.format(mse))
+        click.echo('VERBOSE -- RMSE is {}'.format(rmse))
+        click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
+
+    dd = {'KGE': kge, 'KGE_NP': kge_np,'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
 
     return dd
