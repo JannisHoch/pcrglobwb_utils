@@ -19,15 +19,17 @@ def resample_to_month(df: pd.DataFrame, stat_func='mean', suffix=None) -> pd.Dat
         pd.DataFrame: dataframe containing resampled timeseries.
     """
 
-    click.echo('INFO -- resampling data to monthly {}.'.format(stat_func))
+    df = resample_time(df, 'M')
+
+    click.echo('INFO -- resampling data to monthly time scale.')
     if stat_func == 'mean':
-        df = df.resample('M', convention='start').mean()
+        df = df.mean()
     elif stat_func == 'max':
-        df = df.resample('M', convention='start').max()
+        df = df.max()
     elif stat_func == 'min':
-        df = df.resample('M', convention='start').min()
+        df = df.min()
     elif stat_func == 'sum':
-        df = df.resample('M', convention='start').sum()
+        df = df.sum()
     else:
         raise ValueError('no supported statistical function provided - choose between mean, max, min or sum')
 
@@ -51,20 +53,39 @@ def resample_to_annual(df: pd.DataFrame, stat_func='mean', suffix=None) -> pd.Da
         pd.DataFrame: dataframe containing resampled timeseries.
     """
 
+    df = resample_time(df, 'Y')
+
     click.echo('INFO -- resampling data to yearly time scale.')
     if stat_func == 'mean':
-        df = df.resample('Y', convention='start').mean()
+        df = df.mean()
     elif stat_func == 'max':
-        df = df.resample('Y', convention='start').max()
+        df = df.max()
     elif stat_func == 'min':
-        df = df.resample('Y', convention='start').min()
+        df = df.min()
     elif stat_func == 'sum':
-        df = df.resample('Y', convention='start').sum()
+        df = df.sum()
     else:
         raise ValueError('no supported statistical function provided - choose between mean, max, min or sum')
 
     if suffix != None:
         df = df.add_suffix(suffix)
+
+    return df
+
+def resample_time(df: pd.DataFrame, resampling_period: str) -> pd.core.resample.DatetimeIndexResampler:
+    """Resamples a dataframe in time.
+    The resampling duration is set with 'time' and needs to follow pandas conventions.
+    Output needs to be combined with a statistic, such as ".mean()".
+
+    Args:
+        df (pd.DataFrame): dataframe to be resampled.
+        resampling_period (str): resampling duration.
+
+    Returns:
+        pd.core.resample.DatetimeIndexResampler
+    """
+
+    df = df.resample(resampling_period, convention='start')
 
     return df
 
