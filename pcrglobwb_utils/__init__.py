@@ -14,4 +14,4 @@ from . import eval
 __author__ = """Jannis M. Hoch, Niko Wanders"""
 __institute__= """Utrecht University"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.3.4'
+__version__ = '0.4.0b1'
