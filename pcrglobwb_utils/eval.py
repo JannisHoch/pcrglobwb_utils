@@ -541,4 +541,6 @@ def calc_metrics(df: pd.DataFrame, obs_var_name: str, sim_var_name: str, verbose
 
     dd = {'KGE': kge, 'KGE_NP': kge_np,'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
 
+    dd = {key : round(dd[key], 3) for key in dd}
+
     return dd
