@@ -72,7 +72,7 @@ def resample_to_annual(df: pd.DataFrame, stat_func='mean', suffix=None) -> pd.Da
 
     return df
 
-def resample_time(df: pd.DataFrame, resampling_period: str) -> pd.core.resample.DatetimeIndexResampler:
+def resample_time(df: pd.DataFrame, resampling_period: str) -> pd.DataFrame:
     """Resamples a dataframe in time.
     The resampling duration is set with 'time' and needs to follow pandas conventions.
     Output needs to be combined with a statistic, such as ".mean()".
@@ -82,7 +82,7 @@ def resample_time(df: pd.DataFrame, resampling_period: str) -> pd.core.resample.
         resampling_period (str): resampling duration.
 
     Returns:
-        pd.core.resample.DatetimeIndexResampler
+        pd.DataFrame: actually returns a pd.core.resample.DatetimeIndexResampler
     """
 
     df = df.resample(resampling_period, convention='start')
