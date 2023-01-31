@@ -200,7 +200,7 @@ def apply_window_search(ds: xr.Dataset, lon: float, lat: float, obs_mean=None, v
         tuple[float, float]: updated lat/lon values.
     """
 
-    click.echo('INFO -- Applying search within {} km window for finding cell with best matching discharge.')
+    click.echo('INFO -- Applying search within {} km window for finding cell with best matching discharge.'.format(window))
     
     # find lat/lon coords for cell in window which matches observation mean best
     # define search window of 5 km in all direction
@@ -239,10 +239,13 @@ def apply_window_search(ds: xr.Dataset, lon: float, lat: float, obs_mean=None, v
             new_lat = out.latitude.values[0]
 
         if (lat, lon) != (new_lat, new_lon):
-            click.echo('VERBOSE -- original lat/lon coords {}/{} were replaced by {}/{}.'.format(lat, lon, new_lat, new_lon))
+            click.echo('INFO -- Original lat/lon coords {}/{} were replaced by {}/{}.'.format(lat, lon, new_lat, new_lon))
+        else:
+            click.echo('INFO -- Original lat/lon coords remain unchanged after window search')
 
     # if not possible, do not apply masks and continue
     except:
+        click.echo('INFO -- Window search not possible.')
         new_lat = lat
         new_lon = lon
 
