@@ -9,7 +9,7 @@ Installation
 From source
 ------------
 
-The sources for pcrglobwb_utils can be downloaded from the `Github repo`_.
+The sources for ``pcrglobwb_utils`` can be downloaded from the `Github repo`_.
 
 You can clone the public repository:
 
@@ -17,7 +17,7 @@ You can clone the public repository:
 
     $ git clone git://github.com/JannisHoch/pcrglobwb_utils
 
-To avoid conflicting package version numbers, it is advised to create a separate conda environnmet
+To avoid conflicting package version numbers, it is advised to create a separate ``conda`` environnmet
 for this package:
 
 .. code-block:: console
@@ -47,7 +47,7 @@ Alternatively, you can use:
 From PyPI
 ----------
 
-pcrglobwb_utils can also be installed from PyPI. To do so, use this command:
+``pcrglobwb_utils`` can also be installed from PyPI. To do so, use this command:
 
 .. code-block:: console
 

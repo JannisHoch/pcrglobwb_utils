@@ -1,14 +1,37 @@
-Retrieving timeseries
+Simulated data
 ======================
 
-From points
------------
+From netCDF files
+----------------------
 
 PCR-GLOBWB writes output to netCDF4-files. It is thus necessary to have the right tools to read and process the data.
 
-Of particular interest are timeseries of, for instance, discharge to validate model output.
+The 'from_nc' class
+^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: sim_data.from_nc
+``pcrglobwb_utils`` has a dedicated class to extract values from a netCDF-file for a given location. 
+Also, the timeseries can be resampled in time.
+
+.. autoclass:: pcrglobwb_utils.sim_data.from_nc
     :members:
+
+Functions
+^^^^^^^^^^^^^^^^^^^^
+
+The underlying function to extract and validate data are.
+
+.. autofunction:: pcrglobwb_utils.sim_data.find_indices_from_coords
+
+.. autofunction:: pcrglobwb_utils.sim_data.apply_window_search
+
+.. autofunction:: pcrglobwb_utils.sim_data.read_at_indices
+
+.. autofunction:: pcrglobwb_utils.sim_data.read_at_coords
+
+.. autofunction:: pcrglobwb_utils.sim_data.validate_timeseries
+
+.. note:: 
+
+    Functions for resampling in time are part of the :ref:`time functions <time_funcs>` module.
 
     
