@@ -8,7 +8,7 @@ Or you can use some of the pre-built command line functions covering some of the
 Within python
 --------------------
 
-To use pcrglobwb_utils in a project:
+To use ``pcrglobwb_utils`` in a project:
 
 .. code-block:: Python
 
@@ -21,21 +21,25 @@ See the jupyter notebook in the :ref:`Examples`  for more information. They also
 From command line
 ---------------------
 
-Alternatively, you can use the command line functionality of pcrglobwb_utils. There are currently two kinds of applications for which command line scripts are developed.
+Alternatively, you can use the command line functionality of ``pcrglobwb_utils``. There are currently two kinds of applications for which command line scripts are developed.
 
 First, for validating timeseries of simulated discharge. This can be done using GRDC-data (for selected files or entire batch runs) or by providing observations in an Excel-file. 
 The latter option then requires a geojson-file with the locations of the observation stations in the Excel-file.
 
-And second, to validate timeseries of any other modle output with gridded observations in netCDF-format. The validation will be performed at a user-specified aggregation level. 
-This level is defined by providing a geojson-file containing one or multiple polygons for which the spatial mean is computed per time step.
-
-Top-level information abou the command line scripts can be accessed via
+For further help about these command line scripts, see
 
 .. code-block:: console
 
-    $ pcr_utils_evaluate --help
+    $ pcru_eval_tims --help
 
-For an elaborated overview, please see the documention of the various command line functions.
+And second, to validate timeseries of any other model output with gridded observations in netCDF-format. The validation will be performed at a user-specified aggregation level. 
+This level is defined by providing a geojson-file containing one or multiple polygons for which the spatial mean is computed per time step and evaluation metrics are computed subsequently.
+
+Top-level information about this command line script can be accessed via
+
+.. code-block:: console
+
+    $ pcru_eval_poly --help
 
 .. toctree::
    :numbered:
