@@ -12,7 +12,7 @@ The 'from_nc' class
 ``pcrglobwb_utils`` has a dedicated class to extract values from a netCDF-file for a given location. 
 Also, the timeseries can be resampled in time.
 
-.. autoclass:: pcrglobwb_utils.sim_data.from_nc
+.. autoclass:: sim_data.from_nc
     :members:
 
 Functions
@@ -20,15 +20,15 @@ Functions
 
 The underlying function to extract and validate data are.
 
-.. autofunction:: pcrglobwb_utils.sim_data.find_indices_from_coords
+.. autofunction:: sim_data.find_indices_from_coords
 
-.. autofunction:: pcrglobwb_utils.sim_data.apply_window_search
+.. autofunction:: sim_data.apply_window_search
 
-.. autofunction:: pcrglobwb_utils.sim_data.read_at_indices
+.. autofunction:: sim_data.read_at_indices
 
-.. autofunction:: pcrglobwb_utils.sim_data.read_at_coords
+.. autofunction:: sim_data.read_at_coords
 
-.. autofunction:: pcrglobwb_utils.sim_data.validate_timeseries
+.. autofunction:: sim_data.validate_timeseries
 
 .. note:: 
 
