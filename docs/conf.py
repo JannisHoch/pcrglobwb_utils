@@ -54,7 +54,6 @@ sys.path.insert(0, os.path.abspath('../pcrglobwb_utils'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx_automodapi.automodapi',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
