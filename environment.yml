@@ -4,26 +4,22 @@ channels:
   - conda-forge
 
 dependencies:
-  - python>=3.7
-  - rasterio>=1.1
-  - xarray>=0.18
-  - pandas>=1.2
-  - numpy>=1.20
-  - matplotlib>=3.2.0
-  - geopandas>=0.9
-  - rioxarray>=0.4
-  - ipython
-  - nbconvert
-  - notebook
-  - click>=7.1.1
-  - scipy
-  - xlrd>=2.0
-  - openpyxl>=3.0.7
-  - descartes
-  - spotpy>=1.5.8
-  - netcdf4
-  - setuptools>=49.6
-  - pyyaml
-  - pcraster
-  - dask
-  - dask-jobqueue
+  - rasterio>=1.3.4
+  - xarray>=2023.1.0
+  - pandas>=1.5.3
+  - numpy>=1.23.5
+  - matplotlib>=3.6.3
+  - geopandas>=0.12.2
+  - rioxarray>=0.13.3
+  - click>=8.1.3
+  - scipy>=1.10.0
+  - xlrd>=2.0.1
+  - openpyxl>=3.0.10
+  - descartes>=1.1.0
+  - spotpy>=1.6.1
+  - netcdf4>=1.6.2
+  - setuptools>=66.1.1
+  - jinja2>=3.1.2
+  - pyyaml>=6.0
+  - nbsphinx>=0.8.12
+  - nbsphinx_link>=1.3.0
