@@ -3,12 +3,13 @@
 import pandas as pd
 import numpy as np
 import warnings
-import os
+
+from . import time_funcs
 
 class grdc_data:
     """Retrieve, re-work and visualize data from a GRDC-file.
 
-    Arguments:
+    Args:
         fo (str): path to file with GRDC data
     """
 
@@ -18,14 +19,16 @@ class grdc_data:
 
         self.fo = fo
         
-    def get_grdc_station_properties(self, encoding='ISO-8859-1'):
+    def get_grdc_station_properties(self, encoding='ISO-8859-1') -> dict:
         """Retrieves GRDC station properties from txt-file. Creates and returns header from those properties as well as a dictionary containt station name, lat, and lon info.
 
+        Args:
+            encoding (str, optional): encoding of GDRC files. Defaults to 'ISO-8859-1'.
+
         Returns:
-            str: plot title containing station name and lat/lon info
-            dict: dictionary containing name, lat, and lon info
+            dict: dictionary containing properties.
         """
-        
+
         # open file
         f = open(self.fo, encoding=encoding)
 
@@ -84,30 +87,25 @@ class grdc_data:
         if 'ts_start' not in self.props.keys(): warnings.warn('WARNING -- no start date of timeseries found in file.')
         if 'ts_end' not in self.props.keys(): warnings.warn('WARNING -- no end date of timeseries found in file.')
         if 'no_years' not in self.props.keys(): warnings.warn('WARNING -- no "No. of years" information found in file.')
-        
-        # create simple title for plots
-        plot_title = 'station ' + str(station_grdc) + ' at latitude/longitude ' + str(lat_grdc) + '/' + str(lon_grdc)
 
-        return plot_title, self.props
+        return self.props
 
-    def get_grdc_station_values(self, var_name, col_name=' Value', remove_mv=True, mv_val=-999, encoding='ISO-8859-1', verbose=False):
-        """Reads (discharge-)values of GRDC station from txt-file. Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. Also possible to remove possible missing values in the timeseries and plot the resulting series.
+    def get_grdc_station_values(self, var_name=None, col_name=' Value', remove_mv=True, mv_val=-999, encoding='ISO-8859-1', verbose=False) -> pd.DataFrame:
+        """Reads (discharge-)values of GRDC station from txt-file and returns them as dataframe. 
+        Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. 
+        Possible to remove possible missing values in the timeseries and plot the resulting series.
 
-        Arguments:
-            var_name (str): user-specified variable name to be given to time series
-
-        Keyword Arguments:
-            col_name (str): name of column in GRDC-file to be read. Defaults to ' Value'.
-            remove_mv (bool): whether or not remove missing values in timeseries (default: True).
-            mv_val (int): missing value in timeseries (default: -999).
-            verbose (bool): verbose mode on or off. Defaults to False.
+        Args:
+            var_name (str): user-specified variable name to be given to column. If None, col_name is used. Default to 'None'.
+            col_name (str, optional): name of column in GRDC-file to be read. Defaults to ' Value'.
+            remove_mv (bool, optional): whether or not remove missing values in timeseries. Defaults to True.
+            mv_val (int, optional): missing value in timeseries. Defaults to -999.
+            encoding (str, optional): encoding of GDRC files. Defaults to 'ISO-8859-1'.
+            verbose (bool, optional): whether or not to show more info. Defaults to False.
 
         Returns:
-            dataframe: dataframe containing datetime objects as index and observations as column values
+            pd.DataFrame: dataframe containing observational data.
         """
-
-        #TODO: this function should also work if get_grdc_station_properties() was not executed before;
-        #TODO: because, if not executed before, self.props is no attribute yet and function exists with error
 
         # open file
         f = open(self.fo, encoding=encoding)
@@ -122,10 +120,16 @@ class grdc_data:
 
         df = pd.read_csv(self.fo, skiprows=stopline, sep=';', encoding=encoding)
 
+        # if var_name is specified, use it
+        if var_name != None:
+            var_name = var_name
+        else:
+            var_name = str(col_name)
+
         try: 
             if verbose: print('VERBOSE -- reading column {}'.format(col_name))
             df[var_name] = df[str(col_name)].copy()
-            del df[str(col_name)]
+            # del df[str(col_name)]
         except:
             if col_name == ' Value':
                 raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
@@ -149,58 +153,43 @@ class grdc_data:
 
         self.df = df_out
 
-        # self.props['start_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[0]
-        # self.props['end_data_obs'] = self.df.index.strftime('%m/%d/%Y').values[-1]
-
-        return self.df, self.props
+        return self.df 
         
-    def resample2monthly(self, stat_func='mean', suffix='_monthly'):
+    def to_monthly(self, stat_func='mean', suffix=None) -> pd.DataFrame:
         """Resampling values to monthly time scale.
 
-        Keyword Arguments:
-            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
+        Args:
+            stat_func (str, optional): statistical descriptor to be used in resampling. Currently supported is 'mean', 'max', and 'min'. Defaults to 'mean'.
+            suffix (str, optional): suffix to be added to column name. Defaults to None.
 
         Returns:
-            dataframe: dataframe containing monthly average values
-        """        
+            pd.DataFrame: dataframe containing monthly average values
+        """
+     
+        df = self.df
 
-        if stat_func == 'mean':
-            self.df_monthly = self.df.resample('M').mean()
-        elif stat_func == 'max':
-            self.df_monthly = self.df.resample('M').max()
-        elif stat_func == 'min':
-            self.df_monthly = self.df.resample('M').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = time_funcs.resample_to_month(df, stat_func=stat_func, suffix=suffix)
 
-        self.df_monthly = self.df_monthly.rename(columns={self.df_monthly.columns.values[0]: self.df_monthly.columns.values[0] + suffix + '_' + stat_func})
+        return df
 
-        return self.df_monthly
+    def to_annual(self, stat_func='mean', suffix=None) -> pd.DataFrame:
+        """Resampling values to annual time scale.
 
-    def resample2yearly(self, stat_func='mean', suffix='_yearly'):
-        """Resampling values to monthly time scale.
-
-        Keyword Arguments:
-            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
+        Args:
+            stat_func (str, optional): statistical descriptor to be used in resampling. Currently supported is 'mean', 'max', and 'min'. Defaults to 'mean'.
+            suffix (str, optional): suffix to be added to column name. Defaults to None.
 
         Returns:
-            dataframe: dataframe containing monthly average values
-        """        
+            pd.DataFrame: dataframe containing annual average values
+        """      
 
-        if stat_func == 'mean':
-            self.df_yearly = self.df.resample('Y').mean()
-        elif stat_func == 'max':
-            self.df_yearly = self.df.resample('Y').max()
-        elif stat_func == 'min':
-            self.df_yearly = self.df.resample('Y').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = self.df 
 
-        self.df_yearly = self.df_yearly.rename(columns={self.df_yearly.columns.values[0]: self.df_yearly.columns.values[0] + suffix + '_' + stat_func})
+        df = time_funcs.resample_to_annual(df, stat_func=stat_func, suffix=suffix)
+        
+        return df
 
-        return self.df_yearly
+class other_data:
 
     """Retrieve, re-work and visualize data from other data sources than GRDC files
 
@@ -214,100 +203,86 @@ class grdc_data:
 
         self.fo = fo
 
-    def get_values_from_csv(self, var_name, remove_mv=True, mv_val=-999, print_head=False, plot=False, plot_title=None):
+    def get_values_from_csv(self, var_name=None, remove_mv=True, mv_val=-999) -> pd.DataFrame:
         """Reads simple two-column csv file and returns dataframe for dates and selected column.
 
-        Arguments:
-            var_name (str): user-specified column name
-
-        Keyword Arguments:
-            remove_mv (bool): whether or not to remove missing values (default: True)
-            mv_val (int): placeholder value of missing values (default: -999)
-            print_head (bool): whether or not to print the header of dataframe (default: False)
-            plot (bool): whether or not to plot the timeseries (default: False)
-            plot_title (str): optional title for plot (default: None)
+        Args:
+            var_name (str, optional): _description_. Defaults to None.
+            remove_mv (bool, optional): whether or not to remove missing values. Defaults to True.
+            mv_val (int, optional): placeholder value of missing values. Defaults to -999.
 
         Returns:
-            dataframe: dataframe containing datetime objects as index and observations as column values
+            pd.DataFrame: _description_
         """
         
         df = pd.read_csv(self.fo, sep=None, engine='python', parse_dates=[0], index_col=0)
 
-        df = df.rename(columns={df.columns.values[0]: var_name})
+        if var_name != None:
+            df = df.rename(columns={df.columns.values[0]: var_name})
 
         if remove_mv == True:
             df.replace(mv_val, np.nan, inplace=True)
-            
-        if print_head == True:
-            print(df.head())
-            
-        if plot == True:
-            df.plot(title=plot_title, legend=True)
         
         self.df = df
 
         return self.df
 
-    def get_values_from_excel(self, var_name, remove_mv=True, mv_val=-999, plot=False, plot_title=None):
+    def get_values_from_excel(self, var_name=None, remove_mv=True, mv_val=-999) -> pd.DataFrame:
+        """Retrieves observational values from an Excel file.
+        The file should have two columns: one with timestamps, the second with values.
+        The second column should ideally have a meaningful name, if not it can be set with 'var_name'.
+
+        Args:
+            var_name (str, optional): user-specified variable name to be given to column. If None, use name in Excel sheet. Defaults to None.
+            remove_mv (bool, optional): whether or not remove missing values in timeseries. Defaults to True.
+            mv_val (int, optional): missing value in timeseries. Defaults to -999.
+
+        Returns:
+            pd.DataFrame: dataframe containing observational values.
+        """
 
         df = pd.read_excel(self.fo, index_col=0)
 
-        df = df.rename(columns={df.columns.values[0]: var_name})
+        if var_name != None:
+            df = df.rename(columns={df.columns.values[0]: var_name})
 
         if remove_mv == True:
             df.replace(mv_val, np.nan, inplace=True)
-
-        if plot == True:
-            df.plot(title=plot_title, legend=True)
 
         self.df = df
 
         return self.df
 
-    def resample2monthly(self, stat_func='mean', suffix='_monthly'):
+    def to_monthly(self, stat_func='mean', suffix=None) -> pd.DataFrame:
         """Resampling values to monthly time scale.
 
-        Keyword Arguments:
-            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
+        Args:
+            stat_func (str, optional): statistical descriptor to be used in resampling. Currently supported is 'mean', 'max', and 'min'. Defaults to 'mean'.
+            suffix (str, optional): suffix to be added to column name. Defaults to None.
 
         Returns:
-            dataframe: dataframe containing monthly average values
-        """        
+            pd.DataFrame: dataframe containing monthly average values
+        """
+        
+        df = self.df
 
-        if stat_func == 'mean':
-            self.df_monthly = self.df.resample('M').mean()
-        elif stat_func == 'max':
-            self.df_monthly = self.df.resample('M').max()
-        elif stat_func == 'min':
-            self.df_monthly = self.df.resample('M').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = time_funcs.resample_to_month(df, stat_func=stat_func, suffix=suffix)
 
-        self.df_monthly = self.df_monthly.rename(columns={self.df_monthly.columns.values[0]: self.df_monthly.columns.values[0] + suffix + '_' + stat_func})
+        return df
 
-        return self.df_monthly
+    def to_annual(self, stat_func='mean', suffix=None) -> pd.DataFrame:
+        """Resampling values to annual time scale.
 
-    def resample2yearly(self, stat_func='mean', suffix='_yearly'):
-        """Resampling values to monthly time scale.
-
-        Keyword Arguments:
-            stat_func (str): statistical descriptor to be used in resampling . currently supported is 'mean', 'max', and 'min' (default: mean)
-            suffix (str): suffix to be added to column name (default: _monthly)
+        Args:
+            stat_func (str, optional): statistical descriptor to be used in resampling. Currently supported is 'mean', 'max', and 'min'. Defaults to 'mean'.
+            suffix (str, optional): suffix to be added to column name. Defaults to None.
 
         Returns:
-            dataframe: dataframe containing monthly average values
-        """        
+            pd.DataFrame: dataframe containing annual average values
+        """      
 
-        if stat_func == 'mean':
-            self.df_yearly = self.df.resample('Y').mean()
-        elif stat_func == 'max':
-            self.df_yearly = self.df.resample('Y').max()
-        elif stat_func == 'min':
-            self.df_yearly = self.df.resample('Y').min()
-        else:
-            raise ValueError('no supported statistical function provided - choose between mean, max, and min')
+        df = self.df 
 
-        self.df_yearly = self.df_yearly.rename(columns={self.df_yearly.columns.values[0]: self.df_yearly.columns.values[0] + suffix + '_' + stat_func})
-
-        return self.df_yearly
+        df = time_funcs.resample_to_annual(df, stat_func=stat_func, suffix=suffix)
+        
+        return df

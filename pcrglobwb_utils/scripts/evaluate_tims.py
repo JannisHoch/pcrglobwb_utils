@@ -11,20 +11,17 @@ def cli():
 
 @cli.command()
 @click.argument('ncf',)
+@click.argument('data_loc')
 @click.argument('out',)
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
-@click.option('-y', '--yaml-file', default=None, help='path to yaml-file referencing to multiple GRDC-files.', type=str)
-@click.option('-f', '--folder', default=None, help='path to folder with GRDC-files.', type=click.Path())
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read (only used with -f option)', type=str)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
-@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if upscaling is desired: month, year, quarter', type=str)
+@click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if resampling is desired. String needs to follow pandas conventions.', type=str)
 @click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
-@click.option('--geojson/--no-geojson', default=True, help='create GeoJSON file with KGE per GRDC station.')
-@click.option('--plot/--no-plot', default=False, help='simple output plots.')
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, number_processes, verbose):
+def GRDC(ncf, var_name, out, data_loc, grdc_column, encoding, selection_file, time_scale, number_processes, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -37,11 +34,13 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection
     If specified, it also returns a geojson-file containing KGE values per station evaluated.
 
     NCF: Path to the netCDF-file with simulations.
+
+    DATA_LOC: either yaml-file or folder with GRDC files.
         
     OUT: Main output directory. Per station, a sub-directory will be created.
     """   
 
-    pcrglobwb_utils.eval.GRDC(ncf, out, var_name, yaml_file, folder, grdc_column, encoding, selection_file, time_scale, geojson, plot, number_processes, verbose)
+    pcrglobwb_utils.eval.GRDC(ncf, out, var_name, data_loc, grdc_column=grdc_column, encoding=encoding, selection_file=selection_file, time_scale=time_scale, number_processes=number_processes, verbose=verbose)
 
 #------------------------------
 

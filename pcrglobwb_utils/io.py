@@ -8,15 +8,7 @@ import click
 import pickle
 import os
 
-def write_output(outputList, time_scale, geojson, out):
-    """[summary]
-
-    Args:
-        outputList ([type]): [description]
-        time_scale ([type]): [description]
-        geojson ([type]): [description]
-        out ([type]): [description]
-    """    
+def write_output(outputList, time_scale, out):    
 
     all_scores, geo_dict = create_output(outputList)
 
@@ -30,14 +22,13 @@ def write_output(outputList, time_scale, geojson, out):
         all_scores.to_csv(os.path.join(out, 'all_scores.csv'))
 
     # write geojson-file to disc
-    if geojson:
-        gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
-        if time_scale != None:
-            click.echo('INFO -- saving spatial information to {}'.format(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale))))
-            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
-        else:
-            click.echo('INFO -- saving spatial information to {}'.format(os.path.join(os.path.abspath(out), 'scores_per_location.geojson')))
-            gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
+    gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
+    if time_scale != None:
+        click.echo('INFO -- saving spatial information to {}'.format(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale))))
+        gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location_{}.geojson'.format(time_scale)), driver='GeoJSON')
+    else:
+        click.echo('INFO -- saving spatial information to {}'.format(os.path.join(os.path.abspath(out), 'scores_per_location.geojson')))
+        gdf.to_file(os.path.join(os.path.abspath(out), 'scores_per_location.geojson'), driver='GeoJSON')
 
 def write_output_poly(outputList, sim_var_name, obs_var_name, out, plot):
     """[summary]

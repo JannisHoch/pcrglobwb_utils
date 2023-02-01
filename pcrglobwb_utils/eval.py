@@ -213,26 +213,7 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose):
-    """[summary]
-
-    Args:
-        station ([type]): [description]
-        pcr_ds ([type]): [description]
-        out ([type]): [description]
-        mode ([type]): [description]
-        yaml_root ([type]): [description]
-        data ([type]): [description]
-        var_name ([type]): [description]
-        time_scale ([type]): [description]
-        encoding ([type]): [description]
-        geojson ([type]): [description]
-        plot ([type]): [description]
-        verbose ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """    
+def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', encoding='ISO-8859-1', verbose=False):    
     
     # print some info
     click.echo(click.style('INFO -- validating station {}.'.format(station), fg='cyan'))
@@ -243,63 +224,63 @@ def evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, tim
 
     # if data is via yml-file, the data is read here as well as are station properties
     if mode == 'yml': 
-        df_obs, props, lat_lon_flag = pcrglobwb_utils.utils.get_data_from_yml(yaml_root, data, station, var_name, encoding, verbose)
+        df_obs, grdc_props, apply_window_search = pcrglobwb_utils.utils.get_data_from_yml(yaml_root, grdc_data_dict, station, var_name=station, encoding=encoding, verbose=verbose)
 
     # if data comes from folder, it was already read and can now be retrieved from dictionary
     if mode == 'fld':
-        df_obs, props = data[str(station)][1], data[str(station)][0]
-        lat_lon_flag = False
+        df_obs, grdc_props = grdc_data_dict[str(station)][1], grdc_data_dict[str(station)][0]
+        # apply window search by default when gathering data from a folder
+        apply_window_search = True
 
     # compute mean value of observations
-    df_obs_mean = np.mean(df_obs.dropna().values)
+    df_obs_mean = df_obs.dropna().mean()
 
     # prepare a geojson-file for output later (if specified)
-    if geojson:
-        if verbose: click.echo('VERBOSE -- preparing geo-dict for GeoJSON output')
-        gdd = {'station': station, 'geometry': Point(props['longitude'], props['latitude'])}
+    gdd = {'station': station, 'geometry': Point(grdc_props['longitude'], grdc_props['latitude'])}
 
     # get row/col combination for cell corresponding to lon/lat combination
     if verbose: click.echo('VERBOSE -- getting row/column combination from longitude/latitude.')
-    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, df_obs_mean, props['longitude'], props['latitude'], lat_lon_flag, var_name=var_name)
+    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, grdc_props['longitude'], grdc_props['latitude'], window_search=apply_window_search, obs_mean=df_obs_mean[0], var_name=sim_var_name)
 
     # retrieving values at that cell
-    if verbose: click.echo('VERBOSE -- reading variable {} at row {} and column {}.'.format(var_name, row, col))
-    df_sim = pcrglobwb_utils.sim_data.read_at_indices(pcr_ds, row, col, var_name=var_name, plot_var_name='SIM')
+    if verbose: click.echo('VERBOSE -- reading variable {} at row {} and column {}.'.format(sim_var_name, row, col))
+    df_sim = pcrglobwb_utils.sim_data.read_at_indices(pcr_ds, row, col, var_name=sim_var_name)
     df_sim.set_index(pd.to_datetime(df_sim.index), inplace=True)
 
-    df_obs, df_sim = pcrglobwb_utils.time_funcs.resample_ts(df_obs, df_sim, time_scale)
+    if time_scale != None:
+        click.echo('INFO -- Resampling timeseries to period {}'.format(time_scale))
+        df_obs = pcrglobwb_utils.time_funcs.resample_time(df_obs, resampling_period=time_scale).mean()
+        df_sim = pcrglobwb_utils.time_funcs.resample_time(df_sim, resampling_period=time_scale).mean()
 
     # compute scores
     click.echo('INFO -- computing scores.')
-    df_scores = pcrglobwb_utils.sim_data.validate_timeseries(df_sim, df_obs, out_dir, station, suffix=time_scale, return_all_KGE=False)
-    df_scores = df_scores.T
+    scores_dict = pcrglobwb_utils.sim_data.validate_timeseries(df_sim, df_obs, out_dir, station, suffix=time_scale, return_all_KGE=False)
 
-    # update geojson-file with KGE info
-    if geojson: 
-        # if verbose: click.echo('VERBOSE -- adding station KGE to geo-dict')
-        gdd['KGE']   = df_scores['KGE'][0]
-        gdd['R2']    = df_scores['R2'][0]
-        gdd['NSE']   = df_scores['NSE'][0]
-        gdd['MSE']   = df_scores['MSE'][0]
-        gdd['RMSE']  = df_scores['RMSE'][0]
-        gdd['RRMSE'] = df_scores['RRMSE'][0]
-
-    # make as simple plot of time series if specified and save
-    if plot:
-        fig, ax = plt.subplots(1, 1, figsize=(20,10))
-        df_sim.plot(ax=ax, c='r')
-        df_obs.plot(ax=ax, c='k')
-        ax.set_ylabel('discharge [m3/s]')
-        ax.set_xlabel(None)
-        plt.legend()
-        if time_scale != None:
-            plt.savefig(os.path.join(out_dir, 'timeseries_{}.png'.format(time_scale)), bbox_inches='tight', dpi=300)
-        else:
-            plt.savefig(os.path.join(out_dir, 'timeseries.png'), bbox_inches='tight', dpi=300)
+    for key in scores_dict.keys():
+        gdd[key] = scores_dict[key]
 
     return gdd
 
-def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column='discharge', encoding='ISO-8859-1', selection_file=None, time_scale='monthly', geojson=True, plot=False, number_processes=None, verbose=False):
+def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Value', encoding='ISO-8859-1', selection_file=None, time_scale=None, number_processes=None, verbose=False) -> None:
+    """Top-level function to evaluate GRDC stations.
+    GRDC stations to be evaluated can either be defined in a yaml-file or, using a "batch mode", all GRDC files in a folder are used.
+    In case of the latter, a selection can be made using a 'selection_file'.
+    The actual evaluation takes place in function 'evaluate_stations' and can be executed in parallel or sequentially.
+
+    .. autofunction:: evaluate_stations
+
+    Args:
+        ncf (str): netCDF file with simulated data.
+        out (str): output directory where to store evaluation output.
+        sim_var_name: str (str): variable name in 'ncf' to be considered.
+        data_loc (str): either yml-file specifying GRDC stations or a folder with GRDC files.
+        grdc_column (str, optional): column in GRDC file to use for data extraction. Defaults to ' Value'.
+        encoding (str, optional): encoding of GRDC files. Defaults to 'ISO-8859-1'.
+        selection_file (str, optional): file with selected GRDC stations. Only used when 'data_loc' is a folder. Defaults to None.
+        time_scale (str, optional): time scale at which to perform the evaluation. For resampling purposes, the provided string needs to follow pandas conventions. Defaults to 'None'.
+        number_processes (int, optional): number of cores to use when executing evaluation in parallel. Defaults to None.
+        verbose (bool, optional): whether or not to print more info. Defaults to False.
+    """
 
     t_start = datetime.now()
 
@@ -316,52 +297,61 @@ def GRDC(ncf, out, var_name, yaml_file, folder, grdc_column='discharge', encodin
     pcr_ds = xr.open_dataset(ncf)
 
     # check if data comes via yml-file or from folder
-    mode = pcrglobwb_utils.utils.check_mode(yaml_file, folder)
+    mode = pcrglobwb_utils.utils.check_mode(data_loc)
 
     # depending on mode, data is read at different stages of this script
     if mode == 'yml':
-        data, yaml_root = pcrglobwb_utils.utils.read_yml(yaml_file)
+        # get content of yaml-file
+        grdc_data_dict = pcrglobwb_utils.utils.read_yml(data_loc)
+        # get location of yml-file
+        yaml_root = os.path.dirname(data_loc)
+
     if mode == 'fld':
-        # note that 'data' is in fact a dictionary here!
-        data, files = pcrglobwb_utils.utils.glob_folder(folder, grdc_column, verbose, encoding=encoding)
+        # note that 'data' is in fact a dictionary here with a list per station
+        # for each station, GRDC station properties and timeseries are stored
+        grdc_data_dict = pcrglobwb_utils.utils.glob_folder(data_loc, col_name=grdc_column, verbose=verbose, encoding=encoding)
         yaml_root = None
 
     # if specified, getting station numbers of selected stations
+    # selected stations are listed in a separate 'selection_file'
     if (selection_file != None) and (mode == 'fld'):
         
         click.echo('INFO -- reading selected GRDC No.s from {}.'.format(os.path.abspath(selection_file)))
         selection_file = os.path.abspath(selection_file)
 
         with open(selection_file) as file:
-            sel_grdc_no = file.readlines()
-            sel_grdc_no = [line.rstrip() for line in sel_grdc_no]
+            selected_stations = file.readlines()
+            selected_stations = [line.rstrip() for line in selected_stations]
 
-    # otherwise, all stations in folder or yml-file are considered
+    # otherwise, all stations in folder are considered
+    # when providing stations via a yml-file, they are always considered
     else:
 
-        sel_grdc_no = data.keys()
+        selected_stations = list(grdc_data_dict.keys())
 
-    if not sel_grdc_no:
+    if selected_stations == []:
         raise Warning('WARNING: no stations selected to be evaluated!')
 
+    # if specified, evaluate stations in parallel
     if number_processes != None:
 
-        min_number_processes = min(number_processes, len(sel_grdc_no), mp.cpu_count())
+        min_number_processes = min(number_processes, len(selected_stations), mp.cpu_count())
         if number_processes > min_number_processes: 
             click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
         else:
             click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
         pool = mp.Pool(processes=min_number_processes)
 
-        results = [pool.apply_async(evaluate_stations,args=(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose)) for station in sel_grdc_no]
+        results = [pool.apply_async(evaluate_station,args=(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, encoding, verbose)) for station in selected_stations]
 
         outputList = [p.get() for p in results]
 
+    # if not, analyse stations sequentially
     else:
 
-        outputList = [evaluate_stations(station, pcr_ds, out, mode, yaml_root, data, var_name, time_scale, encoding, geojson, plot, verbose) for station in sel_grdc_no]
+        outputList = [evaluate_station(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, encoding, verbose) for station in selected_stations]
 
-    pcrglobwb_utils.io.write_output(outputList, time_scale, geojson, out)
+    pcrglobwb_utils.io.write_output(outputList, time_scale, out)
 
     t_end = datetime.now()
     delta_t  = t_end - t_start
@@ -504,23 +494,43 @@ def EXCEL(ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, 
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def calc_metrics(final_df, obs_var_name, sim_var_name, verbose=False, return_all=False):
+def calc_metrics(df: pd.DataFrame, obs_var_name: str, sim_var_name: str, verbose=False, return_all=False) -> dict:
+    """Calculates a range of evaluation metrics.
+    Both timeseries (i.e., simulation and observation) need to be stored in df.
+    Returns metric values as dictionary.
+
+    Args:
+        df (pd.DataFrame): dataframe containing simulated and observed values.
+        obs_var_name (str): column name of observed values.
+        sim_var_name (str): column name of simulated values.
+        verbose (bool, optional): whether or not to print more info. Defaults to False.
+        return_all (bool, optional): whether or not return all KGE components. Defaults to False.
+
+    Returns:
+        dict: dictionary containing metrics with their values.
+    """
 
     # computing evaluation metrics
-    kge = spotpy.objectivefunctions.kge(final_df[obs_var_name].values, final_df[sim_var_name].values, return_all=return_all)
-    nse = spotpy.objectivefunctions.nashsutcliffe(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    r2 = spotpy.objectivefunctions.rsquared(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    mse = spotpy.objectivefunctions.mse(final_df[obs_var_name].values, final_df[sim_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(final_df[obs_var_name].values, final_df[sim_var_name].values)
+    kge = spotpy.objectivefunctions.kge(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
+    kge_np = spotpy.objectivefunctions.kge_non_parametric(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
+    nse = spotpy.objectivefunctions.nashsutcliffe(df[obs_var_name].values, df[sim_var_name].values)
+    r2 = spotpy.objectivefunctions.rsquared(df[obs_var_name].values, df[sim_var_name].values)
+    mse = spotpy.objectivefunctions.mse(df[obs_var_name].values, df[sim_var_name].values)
+    rmse = spotpy.objectivefunctions.rmse(df[obs_var_name].values, df[sim_var_name].values)
     # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values) # this RRMSE divides RMSE with mean(eval)
-    rrmse = rmse / final_df[obs_var_name].std()
-    if verbose: click.echo('VERBOSE -- KGE is {}'.format(kge))
-    if verbose: click.echo('VERBOSE -- NSE is {}'.format(nse))                                                             # but we rather want to have RMSE divided by std(eval)
-    if verbose: click.echo('VERBOSE -- R2 is {}'.format(r2))
-    if verbose: click.echo('VERBOSE -- MSE is {}'.format(mse))
-    if verbose: click.echo('VERBOSE -- RMSE is {}'.format(rmse))
-    if verbose: click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
+    rrmse = rmse / df[obs_var_name].std()
 
-    dd = {'KGE': kge, 'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
+    if verbose: 
+        click.echo('VERBOSE -- KGE is {}'.format(kge))
+        click.echo('VERBOSE -- KGE non-parametric is {}'.format(kge_np))
+        click.echo('VERBOSE -- NSE is {}'.format(nse))
+        click.echo('VERBOSE -- R2 is {}'.format(r2))
+        click.echo('VERBOSE -- MSE is {}'.format(mse))
+        click.echo('VERBOSE -- RMSE is {}'.format(rmse))
+        click.echo('VERBOSE -- RRMSE is {}'.format(rrmse))
+
+    dd = {'KGE': kge, 'KGE_NP': kge_np,'NSE': nse, 'R2': r2, 'MSE': mse, 'RMSE': rmse, 'RRMSE': rrmse}
+
+    dd = {key : round(dd[key], 3) for key in dd}
 
     return dd

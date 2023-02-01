@@ -19,7 +19,7 @@ def test_daily2monthly():
     df = pd.DataFrame({'test': days, 'col2': data})
     df = df.set_index('test')
 
-    df_test = pcrglobwb_utils.time_funcs.resample_to_month(df,  stat_func='sum')
+    df_test = pcrglobwb_utils.time_funcs.resample_time(df, 'M').sum()
 
     assert float(df_test.sum()) == float(df.sum())
 
@@ -33,7 +33,7 @@ def test_daily2yearly():
     df = pd.DataFrame({'test': days, 'col2': data})
     df = df.set_index('test')
 
-    df_test = pcrglobwb_utils.time_funcs.resample_to_annual(df,  stat_func='sum')
+    df_test = pcrglobwb_utils.time_funcs.resample_time(df, 'Y').sum()
 
     assert float(df_test.sum()) == float(df.sum())
 
@@ -44,7 +44,7 @@ def test_get_grdc_station_properties():
 
     obs = pcrglobwb_utils.obs_data.grdc_data(fo)
 
-    plot_title, properties = obs.get_grdc_station_properties()
+    properties = obs.get_grdc_station_properties()
 
     assert properties['station'] == 'OBIDOS - PORTO'
 
