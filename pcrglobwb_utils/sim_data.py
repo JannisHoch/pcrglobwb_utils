@@ -378,7 +378,9 @@ def validate_timeseries(df_sim: pd.DataFrame, df_obs: pd.DataFrame, out_dir: str
     # this yields a dataframe containing values only for common time period
     # which is needed to applying objective functions
     both_noMV = both.dropna()
-    
+
+    assert both_noMV.columns.size == 2, 'More than two columns with data found at station {}, please check why. It is not working...'.format(station)
+
     # # apply objective functions
     metrics_dict = eval.calc_metrics(both_noMV, both_noMV.columns[0], both_noMV.columns[1], return_all=return_all_KGE)
 
