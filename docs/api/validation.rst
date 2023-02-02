@@ -8,10 +8,18 @@ GRDC
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The top-level to evalute simulated timeseries with GRDC observations can be used via command line.
+See :ref:`_usage_timeseries`.
 
 .. currentmodule:: pcrglobwb_utils.eval
 
 .. autofunction:: GRDC
+
+GSIM
+^^^^^^
+
+.. todo::
+    
+    Would be very nice to have
 
 EXCEL
 ^^^^^^^

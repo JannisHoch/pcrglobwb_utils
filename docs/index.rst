@@ -1,7 +1,7 @@
 PCRGLOBWB_UTILS
 ======================================
 
-This is the read-the-docs documentation of PCRGLOBWB_UTILS, a Python-package
+This is the read-the-docs documentation of ``pcrglobwb_utils``, a Python-package
 containing useful functions and scripts to evaluate output from PCR-GLOBWB.
 
 .. note:: 

@@ -8,7 +8,7 @@ From GRDC data
 
 For reading GRDC data, working with a python-object can be done like this.
 
-.. currentmodule:: pcrglobwb_utils.obs_data
+.. currentmodule:: obs_data
 
 .. autoclass:: grdc_data
 
@@ -31,7 +31,7 @@ For reading GRDC data, working with a python-object can be done like this.
 From other sources
 --------------------
 
-.. currentmodule:: pcrglobwb_utils.obs_data
+.. currentmodule:: obs_data
 
 .. autoclass:: other_data
 

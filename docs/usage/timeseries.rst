@@ -1,3 +1,5 @@
+.. _usage_timeseries:
+
 Timeseries analysis
 ======================================
 

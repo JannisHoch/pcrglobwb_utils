@@ -7,7 +7,7 @@ From netCDF files
 ``pcrglobwb_utils`` has a dedicated class to extract values from a netCDF-file for a given location. 
 Also, the timeseries can be resampled in time.
 
-.. currentmodule:: pcrglobwb_utils.sim_data
+.. currentmodule:: sim_data
 
 .. autoclass:: from_nc
 
@@ -36,7 +36,7 @@ Also, the timeseries can be resampled in time.
 Functions
 -----------
 
-.. currentmodule:: pcrglobwb_utils.sim_data
+.. currentmodule:: sim_data
 
 .. autofunction:: apply_window_search
 .. autofunction:: find_indices_from_coords
