@@ -40,7 +40,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath('../pcrglobwb_utils'))
 # sys.path.insert(0, os.path.abspath('.'))
 
-# import pcrglobwb_utils
+import pcrglobwb_utils
 
 # -- General configuration ---------------------------------------------
 
