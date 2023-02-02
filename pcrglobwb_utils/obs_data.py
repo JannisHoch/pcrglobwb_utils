@@ -330,6 +330,32 @@ class gsim_data:
 
         return self.df
 
+    def update_props_from_file(self, fo: str) -> dict:
+        """Updates station properties longitude, latitude, and area with data from a user-defined file.
+
+        Args:
+            fo (str): path to file containing data.
+
+        Returns:
+            dict: dictionary with updated station properties.
+        """
+
+        click.echo('INFO -- Updating station properties for station {}.'.format(self.props['gsim_no']))
+
+        df = pd.read_csv(fo, delimiter=',', index_col=0, low_memory=False)
+
+        df_station = df[df['gsim.no'].isin([self.props['gsim_no']])]
+
+        if not df_station.empty:
+            self.props['longitude'] = df_station['lon_snapped'].values[0]
+            self.props['latitude'] = df_station['lat_snapped'].values[0]
+            self.props['area'] = df_station['area_snapped'].values[0]
+
+        else:
+            warnings.warn('WARNING -- No data for station {} found in file {}.'.format(self.props['gsim_no'], fo))
+
+        return self.props
+
     def to_annual(self, stat_func='mean', suffix=None) -> pd.DataFrame:
         """Resampling values to annual time scale.
 
