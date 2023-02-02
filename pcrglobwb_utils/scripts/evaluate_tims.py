@@ -15,13 +15,14 @@ def cli():
 @click.argument('out',)
 @click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
 @click.option('-gc', '--grdc-column', default=' Calculated', help='name of column in GRDC file to be read (only used with -f option)', type=str)
+@click.option('-w', '--window', default=5, help='size of search window to be applied.', type=int)
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if resampling is desired. String needs to follow pandas conventions.', type=str)
 @click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
-def GRDC(ncf, var_name, out, data_loc, grdc_column, encoding, selection_file, time_scale, number_processes, verbose):
+def GRDC(ncf, var_name, out, data_loc, grdc_column, window, encoding, selection_file, time_scale, number_processes, verbose):
     """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
     with observations (currently only GRDC) for one or more stations. The station name and file with GRDC data
     need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
@@ -40,7 +41,7 @@ def GRDC(ncf, var_name, out, data_loc, grdc_column, encoding, selection_file, ti
     OUT: Main output directory. Per station, a sub-directory will be created.
     """   
 
-    pcrglobwb_utils.eval.GRDC(ncf, out, var_name, data_loc, grdc_column=grdc_column, encoding=encoding, selection_file=selection_file, time_scale=time_scale, number_processes=number_processes, verbose=verbose)
+    pcrglobwb_utils.eval.GRDC(ncf, out, var_name, data_loc, grdc_column=grdc_column, search_window=window, encoding=encoding, selection_file=selection_file, time_scale=time_scale, number_processes=number_processes, verbose=verbose)
 
 #------------------------------
 

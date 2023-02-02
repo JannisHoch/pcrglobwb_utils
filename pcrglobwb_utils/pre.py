@@ -157,7 +157,7 @@ def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
         geo_dict = {'station': list(), 'geometry': list()}
 
     # collect all GRDC-files in the input folder
-    data, files = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
+    data = pcrglobwb_utils.utils.glob_folder(in_dir, grdc_column, verbose, encoding=encoding)
 
     # from each file, collect properties and apply selection
     click.echo('INFO -- applying selection criteria')
@@ -176,7 +176,7 @@ def select_grdc_stations(in_dir, out, grdc_column, verbose, encoding, cat_area_t
                 geo_dict['station'].append(props['station'])
                 geo_dict['geometry'].append(Point(props['longitude'], props['latitude']))
 
-    click.echo('INFO -- {}/{} stations selected'.format(len(out_ll), len(files)))
+    click.echo('INFO -- {}/{} stations selected'.format(len(out_ll), len(data.keys())))
     
     if geojson: 
         gdf = gpd.GeoDataFrame(geo_dict, crs="EPSG:4326")
