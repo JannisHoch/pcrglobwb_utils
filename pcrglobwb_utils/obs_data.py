@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 import warnings
+import os
+import click
 
 from . import time_funcs
 
@@ -127,9 +129,9 @@ class grdc_data:
             var_name = str(col_name)
 
         try: 
-            if verbose: print('VERBOSE -- reading column {}'.format(col_name))
+            if verbose: click.echo('VERBOSE -- reading column {}'.format(col_name))
             df[var_name] = df[str(col_name)].copy()
-            # del df[str(col_name)]
+
         except:
             if col_name == ' Value':
                 raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
@@ -171,6 +173,162 @@ class grdc_data:
         df = time_funcs.resample_to_month(df, stat_func=stat_func, suffix=suffix)
 
         return df
+
+    def to_annual(self, stat_func='mean', suffix=None) -> pd.DataFrame:
+        """Resampling values to annual time scale.
+
+        Args:
+            stat_func (str, optional): statistical descriptor to be used in resampling. Currently supported is 'mean', 'max', and 'min'. Defaults to 'mean'.
+            suffix (str, optional): suffix to be added to column name. Defaults to None.
+
+        Returns:
+            pd.DataFrame: dataframe containing annual average values
+        """      
+
+        df = self.df 
+
+        df = time_funcs.resample_to_annual(df, stat_func=stat_func, suffix=suffix)
+        
+        return df
+
+class gsim_data:
+    """Retrieve, re-work and visualize data from a GSIM-file.
+
+    Args:
+        fo (str): path to file with GSIM data
+    """
+
+    def __init__(self, fo):
+        """Initiates grdc_data object.
+        """
+
+        self.fo = fo
+
+    def get_gsim_station_properties(self) -> dict:
+        """Retrieves GSIM station properties from txt-file. 
+        Creates and returns header from those properties as well as a dictionary containt station name, lat, and lon info.
+
+        Returns:
+            dict: dictionary containing properties.
+        """
+
+        # open file
+        f = open(self.fo)
+
+        self.props = dict()
+        
+        # go through lines in file
+        for i, line in enumerate(f):
+
+            split_line = line.split(":")[0]
+
+            if 'gsim.no' in split_line:
+                gsim_no = line.split(":")[-2].strip()
+                self.props['gsim_no'] = gsim_no
+
+            if 'station' in split_line:
+                station_gsim = line.split(":")[-2].strip()
+                self.props['station'] = station_gsim
+
+            if 'latitude' in split_line:
+                lat_gsim = line.split(":")[-2].strip()
+                self.props['latitude'] = float(lat_gsim)
+
+            if 'longitude' in split_line:
+                lon_gsim = line.split(":")[-2].strip()
+                self.props['longitude'] = float(lon_gsim)
+
+            if 'area' in split_line:
+                cat_area = line.split(":")[-2].strip()
+                if cat_area == '':
+                    cat_area = 'N/A'
+                self.props['cat_area'] = cat_area
+
+            if 'altitude' in split_line:
+                alt_gsim = line.split(":")[-2].strip()
+                self.props['altitude'] = float(alt_gsim)
+
+            if 'river' in split_line:
+                river = line.split(":")[-2].strip()
+                self.props['river'] = river
+
+            # break loop to save time and not read all observed values   
+            if i > 20:
+                break
+                
+        # close file        
+        f.close()
+
+        if 'gsim_no' not in self.props.keys(): warnings.warn('WARNING -- no "gsim.no" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'station' not in self.props.keys(): warnings.warn('WARNING -- no "station" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'latitude' not in self.props.keys(): warnings.warn('WARNING -- no "latitude" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'longitude' not in self.props.keys(): warnings.warn('WARNING -- no "longitude" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'cat_area' not in self.props.keys(): warnings.warn('WARNING -- no "area" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'altitude' not in self.props.keys(): warnings.warn('WARNING -- no "altitude" information found in file {}.'.format(os.path.abspath(self.fo)))
+        if 'river' not in self.props.keys(): warnings.warn('WARNING -- no "river" information found in file {}.'.format(os.path.abspath(self.fo)))
+
+        return self.props
+
+    def get_gsim_station_values(self, var_name='GSIM', col_name='"MEAN"', remove_mv=True, mv_val=-999, verbose=False) -> pd.DataFrame:
+        """Reads (discharge-)values of GSIM station from txt-file and returns them as dataframe. 
+        Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. 
+        Possible to remove possible missing values in the timeseries and plot the resulting series.
+
+        Args:
+            var_name (str): user-specified variable name to be given to column. If None, col_name is used. Default to 'GSIM'.
+            col_name (str, optional): name of column in GSIM-file to be read. Defaults to '	"MEAN"'.
+            remove_mv (bool, optional): whether or not remove missing values in timeseries. Defaults to True.
+            mv_val (int, optional): missing value in timeseries. Defaults to -999.
+            verbose (bool, optional): whether or not to show more info. Defaults to False.
+
+        Returns:
+            pd.DataFrame: dataframe containing observational data.
+        """
+
+        # open file
+        f = open(self.fo)
+
+        # find line in file in which meta-data starts and observational record starts
+        for i, line in enumerate(f):
+            if '#' in line:
+                pass
+            else:
+                stopline = i
+                break
+
+        df = pd.read_csv(self.fo, skiprows=stopline, sep=',\t', skipinitialspace=True, na_values='NA', engine='python')
+
+        # if var_name is specified, use it
+        if var_name != None:
+            var_name = var_name
+        else:
+            var_name = str(col_name)
+
+        try: 
+            if verbose: click.echo('VERBOSE -- reading column {}'.format(col_name))
+            df[var_name] = df[str(col_name)].copy()
+
+        except:
+            if col_name == "MEAN":
+                raise ValueError('ERROR: column "{}" - which is also the fall back option - cannot be found in file {}'.format(col_name, self.fo))
+            else:
+                warnings.warn('WARNING: column {} not found, falling back to column Value'.format(col_name))
+                df[var_name] = df[' Value'].copy()
+                del df[' Value']
+
+        df.rename(columns={'"date"': 'date'}, inplace=True)
+        df['date'] = pd.to_datetime(df['date'])
+        df.set_index(df['date'], inplace=True)
+
+        df_out = pd.DataFrame(index=df.index,
+                            data=df[var_name])
+        
+        if remove_mv == True:
+            df_out.replace(mv_val, np.nan, inplace=True)
+
+        self.df = df_out
+
+        return self.df
 
     def to_annual(self, stat_func='mean', suffix=None) -> pd.DataFrame:
         """Resampling values to annual time scale.

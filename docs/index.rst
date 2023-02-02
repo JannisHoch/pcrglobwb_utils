@@ -11,7 +11,7 @@ containing useful functions and scripts to evaluate output from PCR-GLOBWB.
 
 .. toctree::
    :numbered:
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    readme
