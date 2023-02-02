@@ -213,7 +213,7 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', encoding='ISO-8859-1', verbose=False):    
+def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', search_window=5, encoding='ISO-8859-1', verbose=False):    
     
     # print some info
     click.echo(click.style('INFO -- validating station {}.'.format(station), fg='cyan'))
@@ -240,7 +240,7 @@ def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml
 
     # get row/col combination for cell corresponding to lon/lat combination
     if verbose: click.echo('VERBOSE -- getting row/column combination from longitude/latitude.')
-    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, grdc_props['longitude'], grdc_props['latitude'], window_search=apply_window_search, obs_mean=df_obs_mean[0], var_name=sim_var_name)
+    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, grdc_props['longitude'], grdc_props['latitude'], window_search=apply_window_search, window=search_window, obs_mean=df_obs_mean[0], var_name=sim_var_name)
 
     # retrieving values at that cell
     if verbose: click.echo('VERBOSE -- reading variable {} at row {} and column {}.'.format(sim_var_name, row, col))
@@ -261,7 +261,7 @@ def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml
 
     return gdd
 
-def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Value', encoding='ISO-8859-1', selection_file=None, time_scale=None, number_processes=None, verbose=False) -> None:
+def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Value', search_window=5, encoding='ISO-8859-1', selection_file=None, time_scale=None, number_processes=None, verbose=False) -> None:
     """Top-level function to evaluate GRDC stations.
     GRDC stations to be evaluated can either be defined in a yaml-file or, using a "batch mode", all GRDC files in a folder are used.
     In case of the latter, a selection can be made using a 'selection_file'.
@@ -275,6 +275,7 @@ def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Val
         sim_var_name: str (str): variable name in 'ncf' to be considered.
         data_loc (str): either yml-file specifying GRDC stations or a folder with GRDC files.
         grdc_column (str, optional): column in GRDC file to use for data extraction. Defaults to ' Value'.
+        search_window (int, optional): search window to be applied around GRDC coords.
         encoding (str, optional): encoding of GRDC files. Defaults to 'ISO-8859-1'.
         selection_file (str, optional): file with selected GRDC stations. Only used when 'data_loc' is a folder. Defaults to None.
         time_scale (str, optional): time scale at which to perform the evaluation. For resampling purposes, the provided string needs to follow pandas conventions. Defaults to 'None'.
@@ -342,14 +343,14 @@ def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Val
             click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
         pool = mp.Pool(processes=min_number_processes)
 
-        results = [pool.apply_async(evaluate_station,args=(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, encoding, verbose)) for station in selected_stations]
+        results = [pool.apply_async(evaluate_station,args=(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, search_window, encoding, verbose)) for station in selected_stations]
 
         outputList = [p.get() for p in results]
 
     # if not, analyse stations sequentially
     else:
 
-        outputList = [evaluate_station(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, encoding, verbose) for station in selected_stations]
+        outputList = [evaluate_station(station, pcr_ds, out, mode, yaml_root, grdc_data_dict, time_scale, sim_var_name, search_window, encoding, verbose) for station in selected_stations]
 
     pcrglobwb_utils.io.write_output(outputList, time_scale, out)
 
@@ -511,13 +512,14 @@ def calc_metrics(df: pd.DataFrame, obs_var_name: str, sim_var_name: str, verbose
     """
 
     # computing evaluation metrics
-    kge = spotpy.objectivefunctions.kge(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
-    kge_np = spotpy.objectivefunctions.kge_non_parametric(df[obs_var_name].values, df[sim_var_name].values, return_all=return_all)
-    nse = spotpy.objectivefunctions.nashsutcliffe(df[obs_var_name].values, df[sim_var_name].values)
-    r2 = spotpy.objectivefunctions.rsquared(df[obs_var_name].values, df[sim_var_name].values)
-    mse = spotpy.objectivefunctions.mse(df[obs_var_name].values, df[sim_var_name].values)
-    rmse = spotpy.objectivefunctions.rmse(df[obs_var_name].values, df[sim_var_name].values)
-    # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].values, final_df[sim_var_name].values) # this RRMSE divides RMSE with mean(eval)
+    kge = spotpy.objectivefunctions.kge(df[obs_var_name].to_list(), df[sim_var_name].to_list(), return_all=return_all)
+    # kge_np = spotpy.objectivefunctions.kge_non_parametric(df[obs_var_name].to_list(), df[sim_var_name].to_list(), return_all=return_all)
+    kge_np = np.nan # something odd with it
+    nse = spotpy.objectivefunctions.nashsutcliffe(df[obs_var_name].to_list(), df[sim_var_name].to_list())
+    r2 = spotpy.objectivefunctions.rsquared(df[obs_var_name].to_list(), df[sim_var_name].to_list())
+    mse = spotpy.objectivefunctions.mse(df[obs_var_name].to_list(), df[sim_var_name].to_list())
+    rmse = spotpy.objectivefunctions.rmse(df[obs_var_name].to_list(), df[sim_var_name].to_list())
+    # rrmse = spotpy.objectivefunctions.rrmse(final_df[obs_var_name].to_list(), final_df[sim_var_name].to_list()) # this RRMSE divides RMSE with mean(eval)
     rrmse = rmse / df[obs_var_name].std()
 
     if verbose: 
