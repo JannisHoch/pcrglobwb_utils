@@ -213,8 +213,28 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', search_window=5, encoding='ISO-8859-1', verbose=False):    
-    
+def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', search_window=5, encoding='ISO-8859-1', verbose=False) -> dict:
+    """Evaluates simulated discharge with observations for a given station.
+    Returns a dictionary containing geo-spatial information of station plus metric values.
+    Per station, evaluated timeseries plus metric scores are stored to a station-specific folder within 'out'.
+
+    Args:
+        station (str): station name or other ID.
+        pcr_ds (xr.Dataset): dataset containing simulated data.
+        out (str): main output folder.
+        mode (str): whether data is read from a yaml-file ("yml") or collected from a folder ("fld")
+        yaml_root (str): location where yaml-file is located. only needed if 'mode' is "yml".
+        grdc_data_dict (dict): dictionary containing data of GRDC stations.
+        time_scale (str, optional): time scale at which to perform evaluation, i.e., data is resampled if needed. Needs to comply with pandas conventions. Defaults to None.
+        sim_var_name (str, optional): variable name in 'pcr_ds' containing data. Defaults to 'discharge'.
+        search_window (int, optional): size of search window to apply around GRDC coords. Defaults to 5.
+        encoding (str, optional): encoding of GRDC files. Defaults to 'ISO-8859-1'.
+        verbose (bool, optional): whether or not to print more info. Defaults to False.
+
+    Returns:
+        dict: dictionary containing geo-spatial information of station plus metric values.
+    """
+
     # print some info
     click.echo(click.style('INFO -- validating station {}.'.format(station), fg='cyan'))
     
@@ -266,8 +286,6 @@ def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Val
     GRDC stations to be evaluated can either be defined in a yaml-file or, using a "batch mode", all GRDC files in a folder are used.
     In case of the latter, a selection can be made using a 'selection_file'.
     The actual evaluation takes place in function 'evaluate_stations' and can be executed in parallel or sequentially.
-
-    .. autofunction:: evaluate_stations
 
     Args:
         ncf (str): netCDF file with simulated data.

@@ -36,13 +36,12 @@ Also, the timeseries can be resampled in time.
 Functions
 -----------
 
-
 .. currentmodule:: pcrglobwb_utils.sim_data
 
 .. autofunction:: apply_window_search
 .. autofunction:: find_indices_from_coords
 .. autofunction:: read_at_coords
 .. autofunction:: read_at_indices
-.. autofunction:: alidate_timeseries
+.. autofunction:: validate_timeseries
 
     

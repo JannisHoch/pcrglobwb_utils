@@ -123,6 +123,21 @@ class from_nc:
         return df
 
     def validate(self, df_obs: pd.DataFrame, out_dir: str, station: str, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False) -> pd.DataFrame:
+        """Validates simulated data with observed data.
+        Metric values are stored to a dictionary and returned as dataframe.
+
+        Args:
+            df_obs (pd.DataFrame): dataframe containing observed data.
+            out_dir (str): location to store metrics as dictionary.
+            station (str): name of station or other ID.
+            suffix (str, optional): suffix to be added to output. Defaults to None.
+            var_name_obs (str, optional): column name of observed data. Defaults to None.
+            var_name_sim (str, optional): column name of simulated data. Defaults to None.
+            return_all_KGE (bool, optional): whether or not to return all KGE components. Defaults to False.
+
+        Returns:
+            pd.DataFrame: dataframe containing metric values.
+        """
 
         df_sim = self.df
 
