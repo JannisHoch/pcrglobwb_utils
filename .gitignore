@@ -108,7 +108,7 @@ ENV/
 # example output folders
 /examples/_OUT/
 /tests/scripts/masks*/
-/tests/scripts/eval_GRDC/
+/tests/scripts/eval_GRDC_GSIM/
 /tests/scripts/eval_GLEAM/
 /tests/scripts/eval_GLEAM_annualMean/
 /tests/scripts/eval_GLEAM_withMasks/
