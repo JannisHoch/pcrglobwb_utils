@@ -122,7 +122,7 @@ class from_nc:
         
         return df
 
-    def validate(self, df_obs: pd.DataFrame, out_dir: str, station: str, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False) -> pd.DataFrame:
+    def validate(self, df_obs: pd.DataFrame, out_dir: str, station: str, suffix=None, var_name_obs=None, var_name_sim=None, time_scale=None, return_all_KGE=False) -> pd.DataFrame:
         """Validates simulated data with observed data.
         Metric values are stored to a dictionary and returned as dataframe.
 
@@ -133,6 +133,7 @@ class from_nc:
             suffix (str, optional): suffix to be added to output. Defaults to None.
             var_name_obs (str, optional): column name of observed data. Defaults to None.
             var_name_sim (str, optional): column name of simulated data. Defaults to None.
+            time_scale (str, optional): 
             return_all_KGE (bool, optional): whether or not to return all KGE components. Defaults to False.
 
         Returns:
@@ -142,7 +143,7 @@ class from_nc:
         df_sim = self.df
 
         df_out = validate_timeseries(df_sim, df_obs, out_dir, station,
-                                     suffix=suffix, var_name_obs=var_name_obs, var_name_sim=var_name_sim, return_all_KGE=return_all_KGE)
+                                     suffix=suffix, var_name_obs=var_name_obs, var_name_sim=var_name_sim, time_scale=time_scale, return_all_KGE=return_all_KGE)
         
         return df_out
 
@@ -326,6 +327,9 @@ def read_at_coords(ds_obs: xr.Dataset, lon: float, lat: float, var_name='dischar
 
     df = pd.DataFrame(data=dsq.to_pandas(), columns=[var_name])
 
+    if df.isnull().values.all():
+        warnings.warn('WARNING -- Only NaN found for this location')
+
     # if data is at monthly time step, we drop day from timestemp
     # as montlhy data may not be set to same day within a month
     if (pd.infer_freq(df.index) == 'M') or (pd.infer_freq(df.index) == 'MS'):
@@ -334,7 +338,7 @@ def read_at_coords(ds_obs: xr.Dataset, lon: float, lat: float, var_name='dischar
 
     return df
 
-def validate_timeseries(df_sim: pd.DataFrame, df_obs: pd.DataFrame, out_dir: str, station: str, suffix=None, var_name_obs=None, var_name_sim=None, return_all_KGE=False) -> dict:
+def validate_timeseries(df_sim: pd.DataFrame, df_obs: pd.DataFrame, out_dir: str, station: str, suffix=None, var_name_obs=None, var_name_sim=None, time_scale=None,return_all_KGE=False) -> dict:
     """Validates two timeseries with each other, i.e., observations with simulations.
     Timeseries are stored in dataframes.
     If dataframes containg multiple columns, a column can be specified with 'var_name_obs' and 'var_name_sim', respectively.
@@ -346,9 +350,10 @@ def validate_timeseries(df_sim: pd.DataFrame, df_obs: pd.DataFrame, out_dir: str
         df_obs (pd.DataFrame): dataframe containing observed timeseries.
         out_dir (str): directory where to store csv-files of timeseries and metrics.
         station (str): name of station or location where simulation is evaluated. Can also be any form of unique ID.
-        suffix (_type_, optional): suffix to be added to csv-files. Defaults to None.
-        var_name_obs (_type_, optional): column name in 'df_obs' containing timeseries. Defaults to None.
-        var_name_sim (_type_, optional): column name in 'df_sim' containing timeseries. Defaults to None.
+        suffix (str, optional): suffix to be added to csv-files. Defaults to None.
+        var_name_obs (str, optional): column name in 'df_obs' containing timeseries. Defaults to None.
+        var_name_sim (str, optional): column name in 'df_sim' containing timeseries. Defaults to None.
+        time_scale (str, optional):
         return_all_KGE (bool, optional): whether or not to return all components of the KGE. Defaults to False.
 
     Returns:
@@ -370,6 +375,11 @@ def validate_timeseries(df_sim: pd.DataFrame, df_obs: pd.DataFrame, out_dir: str
         df_sim = df_sim[var_name_sim]
     else:
         df_sim = df_sim
+
+    if time_scale != None:
+        click.echo('INFO -- Resampling timeseries to period {}'.format(time_scale))
+        df_obs = time_funcs.resample_time(df_obs, resampling_period=time_scale).mean()
+        df_sim = time_funcs.resample_time(df_sim, resampling_period=time_scale).mean()
     
     # concatenate both dataframes
     try:
