@@ -213,7 +213,7 @@ def POLY(ply, sim, obs, out, ply_id, obs_var_name, sim_var_name, obs_masks=None,
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
 
-def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, grdc_data_dict: dict, time_scale=None, sim_var_name='discharge', search_window=5, encoding='ISO-8859-1', verbose=False) -> dict:
+def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml_root: str, station_data_dict: dict, time_scale=None, sim_var_name='discharge', search_window=5, encoding='ISO-8859-1', verbose=False) -> dict:
     """Evaluates simulated discharge with observations for a given station.
     Returns a dictionary containing geo-spatial information of station plus metric values.
     Per station, evaluated timeseries plus metric scores are stored to a station-specific folder within 'out'.
@@ -224,7 +224,7 @@ def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml
         out (str): main output folder.
         mode (str): whether data is read from a yaml-file ("yml") or collected from a folder ("fld")
         yaml_root (str): location where yaml-file is located. only needed if 'mode' is "yml".
-        grdc_data_dict (dict): dictionary containing data of GRDC stations.
+        station_data_dict (dict): dictionary containing data of GRDC stations.
         time_scale (str, optional): time scale at which to perform evaluation, i.e., data is resampled if needed. Needs to comply with pandas conventions. Defaults to None.
         sim_var_name (str, optional): variable name in 'pcr_ds' containing data. Defaults to 'discharge'.
         search_window (int, optional): size of search window to apply around GRDC coords. Defaults to 5.
@@ -244,11 +244,11 @@ def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml
 
     # if data is via yml-file, the data is read here as well as are station properties
     if mode == 'yml': 
-        df_obs, grdc_props, apply_window_search = pcrglobwb_utils.utils.get_data_from_yml(yaml_root, grdc_data_dict, station, var_name=station, encoding=encoding, verbose=verbose)
+        df_obs, station_props, apply_window_search = pcrglobwb_utils.obs_data.get_data_from_yml(yaml_root, station_data_dict, station, var_name=station, encoding=encoding, verbose=verbose)
 
     # if data comes from folder, it was already read and can now be retrieved from dictionary
     if mode == 'fld':
-        df_obs, grdc_props = grdc_data_dict[str(station)][1], grdc_data_dict[str(station)][0]
+        df_obs, station_props = station_data_dict[str(station)][1], station_data_dict[str(station)][0]
         # apply window search by default when gathering data from a folder
         apply_window_search = True
 
@@ -256,11 +256,11 @@ def evaluate_station(station: str, pcr_ds: xr.Dataset, out: str, mode: str, yaml
     df_obs_mean = df_obs.dropna().mean()
 
     # prepare a geojson-file for output later (if specified)
-    gdd = {'station': station, 'geometry': Point(grdc_props['longitude'], grdc_props['latitude'])}
+    gdd = {'station': station, 'geometry': Point(station_props['longitude'], station_props['latitude'])}
 
     # get row/col combination for cell corresponding to lon/lat combination
     if verbose: click.echo('VERBOSE -- getting row/column combination from longitude/latitude.')
-    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, grdc_props['longitude'], grdc_props['latitude'], window_search=apply_window_search, window=search_window, obs_mean=df_obs_mean[0], var_name=sim_var_name)
+    row, col = pcrglobwb_utils.sim_data.find_indices_from_coords(pcr_ds, station_props['longitude'], station_props['latitude'], window_search=apply_window_search, window=search_window, obs_mean=df_obs_mean[0], var_name=sim_var_name)
 
     # retrieving values at that cell
     if verbose: click.echo('VERBOSE -- reading variable {} at row {} and column {}.'.format(sim_var_name, row, col))
@@ -328,7 +328,7 @@ def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Val
     if mode == 'fld':
         # note that 'data' is in fact a dictionary here with a list per station
         # for each station, GRDC station properties and timeseries are stored
-        grdc_data_dict = pcrglobwb_utils.utils.glob_folder(data_loc, col_name=grdc_column, verbose=verbose, encoding=encoding)
+        grdc_data_dict = pcrglobwb_utils.utils.glob_GRDC_folder(data_loc, col_name=grdc_column, verbose=verbose, encoding=encoding)
         yaml_root = None
 
     # if specified, getting station numbers of selected stations
@@ -377,6 +377,86 @@ def GRDC(ncf: str, out: str, sim_var_name: str, data_loc: str, grdc_column=' Val
         
     click.echo(click.style('INFO -- done.', fg='green'))
     click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
+
+def GSIM(ncf: str, out: str, sim_var_name: str, data_loc: str, gsim_column='"MEAN"', search_window=5, selection_file=None, time_scale='M', number_processes=None, verbose=False) -> None:
+
+    t_start = datetime.now()
+
+    click.echo(click.style('INFO -- start.', fg='green'))
+    click.echo(click.style('INFO -- pcrglobwb_utils version {}.'.format(pcrglobwb_utils.__version__), fg='green'))
+
+    # create main output dir
+    out = os.path.abspath(out)
+    pcrglobwb_utils.utils.create_out_dir(out)
+
+    # now get started with simulated data
+    ncf = os.path.abspath(ncf)
+    click.echo(click.style('INFO -- loading simulated data from {}.'.format(ncf), fg='red'))
+    pcr_ds = xr.open_dataset(ncf)
+
+    # check if data comes via yml-file or from folder
+    mode = pcrglobwb_utils.utils.check_mode(data_loc)
+
+    # depending on mode, data is read at different stages of this script
+    if mode == 'yml':
+        # get content of yaml-file
+        gsim_data_dict = pcrglobwb_utils.utils.read_yml(data_loc)
+        # get location of yml-file
+        yaml_root = os.path.dirname(data_loc)
+
+    if mode == 'fld':
+        # note that 'data' is in fact a dictionary here with a list per station
+        # for each station, GRDC station properties and timeseries are stored
+        gsim_data_dict = pcrglobwb_utils.utils.glob_GSIM_folder(data_loc, col_name=gsim_column, verbose=verbose)
+        yaml_root = None
+
+    # if specified, getting station numbers of selected stations
+    # selected stations are listed in a separate 'selection_file'
+    if (selection_file != None) and (mode == 'fld'):
+        
+        click.echo('INFO -- reading selected GSIM No.s from {}.'.format(os.path.abspath(selection_file)))
+        selection_file = os.path.abspath(selection_file)
+
+        df_select = pd.read_csv(selection_file, delimiter=',', index_col=0, low_memory=False)
+        selected_stations = df_select['gsim.no'].to_list()
+
+    # otherwise, all stations in folder are considered
+    # when providing stations via a yml-file, they are always considered
+    else:
+
+        selected_stations = list(gsim_data_dict.keys())
+
+    if selected_stations == []:
+        raise Warning('WARNING: no stations selected to be evaluated!')
+
+    # if specified, evaluate stations in parallel
+    if number_processes != None:
+
+        min_number_processes = min(number_processes, len(selected_stations), mp.cpu_count())
+        if number_processes > min_number_processes: 
+            click.echo('INFO -- number of CPUs reduced to {}'.format(min_number_processes))
+        else:
+            click.echo('INFO -- using {} CPUs for multiprocessing'.format(min_number_processes))
+        pool = mp.Pool(processes=min_number_processes)
+
+        results = [pool.apply_async(evaluate_station,args=(station, pcr_ds, out, mode, yaml_root, gsim_data_dict, time_scale, sim_var_name, search_window, 'UTF-8',verbose)) for station in selected_stations]
+
+        outputList = [p.get() for p in results]
+
+    # if not, analyse stations sequentially
+    else:
+
+        outputList = [evaluate_station(station, pcr_ds, out, mode, yaml_root, gsim_data_dict, time_scale, sim_var_name, search_window, 'UTF-8', verbose) for station in selected_stations]
+
+    pcrglobwb_utils.io.write_output(outputList, time_scale, out)
+
+    t_end = datetime.now()
+    delta_t  = t_end - t_start
+        
+    click.echo(click.style('INFO -- done.', fg='green'))
+    click.echo(click.style('INFO -- run time: {}.'.format(delta_t), fg='green'))
+
+    return
 
 def EXCEL(ncf, xls, loc, out, var_name, location_id, time_scale, plot, geojson, verbose):
 

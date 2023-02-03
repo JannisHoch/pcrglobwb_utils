@@ -246,7 +246,10 @@ class gsim_data:
 
             if 'altitude' in split_line:
                 alt_gsim = line.split(":")[-2].strip()
-                self.props['altitude'] = float(alt_gsim)
+                try:                
+                    self.props['altitude'] = float(alt_gsim)
+                except:
+                    self.props['altitude'] = np.nan
 
             if 'river' in split_line:
                 river = line.split(":")[-2].strip()
@@ -269,7 +272,7 @@ class gsim_data:
 
         return self.props
 
-    def get_gsim_station_values(self, var_name='GSIM', col_name='"MEAN"', remove_mv=True, mv_val=-999, verbose=False) -> pd.DataFrame:
+    def get_gsim_station_values(self, var_name='GSIM', col_name='"MEAN"', remove_mv=True, mv_val=-999, verbose=False) -> tuple[pd.DataFrame, dict]:
         """Reads (discharge-)values of GSIM station from txt-file and returns them as dataframe. 
         Creates a pandas dataframe with a user-specified column header for values instead of default ' Values' header name. 
         Possible to remove possible missing values in the timeseries and plot the resulting series.
@@ -282,7 +285,7 @@ class gsim_data:
             verbose (bool, optional): whether or not to show more info. Defaults to False.
 
         Returns:
-            pd.DataFrame: dataframe containing observational data.
+            [pd.DataFrame, dict]: dataframe containing observational data; updated station properties dictionary
         """
 
         # open file
@@ -478,3 +481,70 @@ class other_data:
         df = time_funcs.resample_to_annual(df, stat_func=stat_func, suffix=suffix)
         
         return df
+
+## FUNCTIONS
+
+def get_data_from_yml(yaml_root: str, data_dict: dict, station: str, var_name: str, encoding='ISO-8859-1', verbose=False) -> tuple[pd.DataFrame, dict, bool]: 
+    """Extracting data from yaml-file for one station.
+    This data contains of a dataframe with a timeseries and a dictionary with station properties.
+    Additionally, a flag is returned whether or not to apply a window search.
+    This is done automatically if the yaml-file should not contain lat/lon coordinates for a station.
+
+    Args:
+        yaml_root (str): location where yaml-file is stored.
+        data_dict (dict): dictionary containing data of all GRDC stations to be evaluated.
+        station (str): name of station to be evaluated.
+        var_name (str): user-specified column name for returned dataframe.
+        encoding (str, optional): encoding of GRDC file. Defaults to 'ISO-8859-1'.
+        verbose (bool, optional): whether or not to print more info. Defaults to False.
+
+    Returns:
+        tuple[pd.DataFrame, dict, bool]: dataframe containing timeseries; dictionary containing station properties; flag wheter or not to execute window search
+    """
+
+    # each station in the yaml-file has data stored as a dictionary
+    station_dict = data_dict[str(station)] 
+
+    # if path to GRDC-file in yaml-file is relative, construct absolute path
+    if not os.path.isabs(station_dict['file']):
+        grdc_file = os.path.join(yaml_root, station_dict['file'])
+
+    else:
+        grdc_file = station_dict['file']           
+    click.echo('INFO -- reading observations from file {}.'.format(grdc_file))
+
+    grdc_obj = grdc_data(grdc_file)
+
+    if verbose: click.echo('VERBOSE -- retrieving GRDC station properties.')
+    grdc_props = grdc_obj.get_grdc_station_properties(encoding=encoding)
+
+    # retrieving values from GRDC file
+    # either use a specific column name for the GRDC file
+    if 'column' in station_dict.keys():
+        df_obs = grdc_obj.get_grdc_station_values(col_name=station_dict['column'], var_name=var_name, encoding=encoding, verbose=verbose)
+    
+    # or use the default name
+    else:
+        df_obs = grdc_obj.get_grdc_station_values(var_name=var_name, verbose=verbose, encoding=encoding)
+
+    df_obs.set_index(pd.to_datetime(df_obs.index), inplace=True)
+
+    # if 'lat' or 'lon' are specified for a station in the yaml-file,
+    # use this instead of GRDC coordinates
+    if 'lat' in station_dict.keys():
+        if verbose: click.echo('VERBOSE -- overwriting GRDC latitude information {} with user input {}.'.format(grdc_props['latitude'], station_dict['lat']))
+        grdc_props['latitude'] = station_dict['lat']
+
+    if 'lon' in station_dict.keys():
+        if verbose: click.echo('VERBOSE -- overwriting GRDC longitude information {} with user input {}.'.format(grdc_props['longitude'], station_dict['lon']))
+        grdc_props['longitude'] = station_dict['lon']
+
+    # if 'lat' and 'lon' are not specified for a station in the yaml-file,
+    # apply window search to avoid mismatch of default GRDC coords
+    if ('lon' in station_dict.keys()) and ('lat' in station_dict.keys()):
+        apply_window_search = False
+
+    else:
+        apply_window_search = True
+
+    return df_obs, grdc_props, apply_window_search

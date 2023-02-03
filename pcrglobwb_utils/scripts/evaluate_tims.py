@@ -19,7 +19,7 @@ def cli():
 @click.option('-e', '--encoding', default='ISO-8859-1', help='encoding of GRDC-files.', type=str)
 @click.option('-sf', '--selection-file', default=None, help='path to file produced by pcru_sel_grdc function (only used with -f option)', type=str)
 @click.option('-t', '--time-scale', default=None, help='time scale at which analysis is performed if resampling is desired. String needs to follow pandas conventions.', type=str)
-@click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()- defaults to number of CPUs in the system.', type=int)
+@click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()', type=int)
 @click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
 
 def GRDC(ncf, var_name, out, data_loc, grdc_column, window, encoding, selection_file, time_scale, number_processes, verbose):
@@ -42,6 +42,39 @@ def GRDC(ncf, var_name, out, data_loc, grdc_column, window, encoding, selection_
     """   
 
     pcrglobwb_utils.eval.GRDC(ncf, out, var_name, data_loc, grdc_column=grdc_column, search_window=window, encoding=encoding, selection_file=selection_file, time_scale=time_scale, number_processes=number_processes, verbose=verbose)
+
+#------------------------------
+
+@cli.command()
+@click.argument('ncf',)
+@click.argument('data_loc')
+@click.argument('out',)
+@click.option('-v', '--var-name', help='variable name in netCDF-file', default='discharge', type=str)
+@click.option('-gc', '--gsim-column', default='"MEAN"', help='name of column in GSIM file to be read (only used with -f option)', type=str)
+@click.option('-w', '--window', default=5, help='size of search window to be applied.', type=int)
+@click.option('-sf', '--selection-file', default=None, help='file containing only selected stations to be considered', type=str)
+@click.option('-N', '--number-processes', default=None, help='number of processes to be used in multiprocessing.Pool()', type=int)
+@click.option('--verbose/--no-verbose', default=False, help='more or less print output.')
+
+def GSIM(ncf, var_name, out, data_loc, gsim_column, window, selection_file, number_processes, verbose):
+    """Uses pcrglobwb_utils to validate simulated time series (currently only discharge is supported) 
+    with GSIM observations or one or more stations. The station name and file with GSIM data
+    need to be provided in a separate yml-file. Per station, it is also possible to provide lat/lon coordinates
+    which will supersede those provided by GSIM.
+
+    Returns a csv-file with the evaluated time series (OBS and SIM), 
+    a csv-file with the resulting scores (KGE, R2, RMSE, RRMSE, NSE), 
+    and if specified a simple plot of the time series.
+    If specified, it also returns a geojson-file containing KGE values per station evaluated.
+
+    NCF: Path to the netCDF-file with simulations.
+
+    DATA_LOC: either yaml-file or folder with GRDC files.
+        
+    OUT: Main output directory. Per station, a sub-directory will be created.
+    """   
+
+    pcrglobwb_utils.eval.GSIM(ncf, out, var_name, data_loc, gsim_column=gsim_column, search_window=window, selection_file=selection_file, time_scale='M', number_processes=number_processes, verbose=verbose)
 
 #------------------------------
 
