@@ -326,9 +326,17 @@ class gsim_data:
         if remove_mv == True:
             df_out.replace(mv_val, np.nan, inplace=True)
 
+        mean_val = df_out[var_name].mean()
+        ts_start = df_out.index.values[0]
+        ts_end = df_out.index.values[-1]
+
+        self.props['mean'] = round(mean_val, 3)
+        self.props['ts_start'] = pd.to_datetime(ts_start, format='%Y-%m-%d')
+        self.props['ts_end'] = pd.to_datetime(ts_end, format='%Y-%m-%d')
+
         self.df = df_out
 
-        return self.df
+        return self.df, self.props
 
     def update_props_from_file(self, fo: str) -> dict:
         """Updates station properties longitude, latitude, and area with data from a user-defined file.
